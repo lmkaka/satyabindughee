@@ -272,7 +272,7 @@ const Hero = () => {
             >
               <div className="relative w-full h-[380px] sm:h-[420px] bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl overflow-hidden mb-5">
                 <img
-                  src="https://radarofc.onrender.com/sb.jpg"
+                  src="https://radarofc.onrender.com/sb1.jpg"
                   alt="Premium SBGhee Jar"
                   className="w-full h-full object-contain p-4"
                   loading="eager"
