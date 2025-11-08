@@ -5,7 +5,7 @@ import { Award, Users, MapPin, Calendar, Shield, Heart } from 'lucide-react';
 const AboutUs = () => {
   const stats = [
     { number: '10+', label: 'Years Experience', icon: Calendar },
-    { number: '50K+', label: 'Happy Customers', icon: Users },
+    { number: '2K+', label: 'Happy Customers', icon: Users },
     { number: '100%', label: 'Pure & Natural', icon: Shield },
     { number: '24/7', label: 'Customer Support', icon: Heart }
   ];
@@ -119,7 +119,7 @@ Thank you for your continued support!
               className="relative"
             >
               <img
-                src="https://images.unsplash.com/photo-1559181567-c3190ca9959b?w=500&h=600&fit=crop"
+                src="https://radarofc.onrender.com/sb1.jpg"
                 alt="Traditional Ghee Making"
                 className="w-full rounded-2xl shadow-2xl"
               />
