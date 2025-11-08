@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Star, Award, Shield, Truck, ArrowRight, Play, ChevronLeft, ChevronRight } from 'lucide-react';
-import OrderForm from './OrderForm';
 
 const Hero = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -59,13 +58,7 @@ const Hero = () => {
   }, [images.length, imagesLoaded]);
 
   const handleShopNow = () => {
-    console.log('Quick Buy Now clicked!'); // Debug log
     setIsOrderFormOpen(true);
-  };
-
-  const handleCloseOrderForm = () => {
-    console.log('Closing OrderForm'); // Debug log
-    setIsOrderFormOpen(false);
   };
 
   const handleWatchStory = () => {
@@ -358,11 +351,39 @@ const Hero = () => {
         `}</style>
       </section>
 
-      {/* OrderForm - Always rendered, visibility controlled by prop */}
-      <OrderForm 
-        isOpen={isOrderFormOpen}
-        onClose={handleCloseOrderForm}
-      />
+      {/* OrderForm Modal Popup - Proper z-index */}
+      {isOrderFormOpen && (
+        <div 
+          className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+          style={{ zIndex: 9999 }}
+        >
+          {/* Backdrop */}
+          <div 
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={() => setIsOrderFormOpen(false)}
+          />
+          
+          {/* Modal Content */}
+          <div className="relative z-[10000] w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            {/* Close button */}
+            <button
+              onClick={() => setIsOrderFormOpen(false)}
+              className="absolute top-4 right-4 z-[10001] w-10 h-10 flex items-center justify-center rounded-full bg-white hover:bg-gray-100 shadow-lg transition-colors"
+            >
+              <svg className="w-5 h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="width" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+            
+            {/* Your existing OrderForm image */}
+            <img 
+              src="https://radarofc.onrender.com/orderform.jpg" 
+              alt="Order Form"
+              className="w-full h-auto rounded-2xl shadow-2xl"
+            />
+          </div>
+        </div>
+      )}
     </>
   );
 };
