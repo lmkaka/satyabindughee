@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Star, Award, Shield, Truck, ArrowRight, Play, ChevronLeft, ChevronRight } from 'lucide-react';
+import OrderForm from './OrderForm';
 
 const Hero = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -16,6 +17,17 @@ const Hero = () => {
     'https://radarofc.onrender.com/6.jpg',
     'https://radarofc.onrender.com/7.jpg',
   ];
+
+  // Product object for OrderForm - Same as ProductCard
+  const heroProduct = {
+    name: 'Premium Pure Ghee',
+    weight: '250gms',
+    price: 299,
+    originalPrice: 349,
+    image: 'https://radarofc.onrender.com/sb1.jpg',
+    description: 'Pure and natural ghee made with traditional methods',
+    inStock: true
+  };
 
   const stats = [
     { number: '50K+', label: 'Happy Customers' },
@@ -289,7 +301,7 @@ const Hero = () => {
                   <motion.button
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
-                    onClick={handleShopNow}
+                    onClick={() => setIsOrderFormOpen(true)}
                     className="w-full bg-gradient-to-r from-orange-500 to-amber-500 text-white px-6 py-3 rounded-xl font-bold text-base hover:from-orange-600 hover:to-amber-600 transition-all shadow-lg hover:shadow-xl"
                   >
                     Quick Buy Now
@@ -351,39 +363,12 @@ const Hero = () => {
         `}</style>
       </section>
 
-      {/* OrderForm Modal Popup - Proper z-index */}
-      {isOrderFormOpen && (
-        <div 
-          className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
-          style={{ zIndex: 9999 }}
-        >
-          {/* Backdrop */}
-          <div 
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-            onClick={() => setIsOrderFormOpen(false)}
-          />
-          
-          {/* Modal Content */}
-          <div className="relative z-[10000] w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            {/* Close button */}
-            <button
-              onClick={() => setIsOrderFormOpen(false)}
-              className="absolute top-4 right-4 z-[10001] w-10 h-10 flex items-center justify-center rounded-full bg-white hover:bg-gray-100 shadow-lg transition-colors"
-            >
-              <svg className="w-5 h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="width" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-            
-            {/* Your existing OrderForm image */}
-            <img 
-              src="https://radarofc.onrender.com/orderform.jpg" 
-              alt="Order Form"
-              className="w-full h-auto rounded-2xl shadow-2xl"
-            />
-          </div>
-        </div>
-      )}
+      {/* ✅ EXACT SAME AS PRODUCTCARD - OrderForm with product prop */}
+      <OrderForm
+        isOpen={isOrderFormOpen}
+        onClose={() => setIsOrderFormOpen(false)}
+        product={heroProduct}
+      />
     </>
   );
 };
