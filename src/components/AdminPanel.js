@@ -2,27 +2,26 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Package, User, Phone, MapPin, Eye, Download, Trash2, FileText,
-  ClipboardList, Clock, CheckCircle, IndianRupee, RefreshCw, Filter,
-  BarChart3, MessageCircle, Mail, Reply, Menu, X, ChevronDown
+  ClipboardList, Clock, CheckCircle, IndianRupee, RefreshCw,
+  MessageCircle, Mail, Reply, Lock, LogOut, X
 } from 'lucide-react';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { supabase } from '../supabaseClient';
 
-// Enhanced safe function - removes all non-ASCII and problematic characters
+// Helper Functions
 const sanitizeText = (text = '') => {
   if (!text) return '';
   return String(text)
-    .normalize('NFD') // Normalize to decomposed form
-    .replace(/[\u0300-\u036f]/g, '') // Remove diacritics
-    .replace(/[^\x20-\x7E]/g, '') // Keep only printable ASCII
-    .replace(/[°º™®©]/g, '') // Remove special symbols
-    .replace(/₹/g, 'Rs.') // Replace rupee symbol
-    .replace(/\s+/g, ' ') // Normalize whitespace
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^\x20-\x7E]/g, '')
+    .replace(/[°º™®©]/g, '')
+    .replace(/₹/g, 'Rs.')
+    .replace(/\s+/g, ' ')
     .trim();
 };
 
-// Format currency without symbol issues
 const formatCurrency = (amount) => {
   return `Rs. ${parseFloat(amount || 0).toLocaleString('en-IN', { 
     minimumFractionDigits: 0, 
@@ -60,6 +59,14 @@ const getMessageStatusColor = (status) => {
 };
 
 const AdminPanel = () => {
+  // Authentication States
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [loginUsername, setLoginUsername] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+  const [loginError, setLoginError] = useState('');
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
+
+  // Data States
   const [orders, setOrders] = useState([]);
   const [messages, setMessages] = useState([]);
   const [selectedOrder, setSelectedOrder] = useState(null);
@@ -68,10 +75,63 @@ const AdminPanel = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  // Check saved login
   useEffect(() => {
-    loadOrders();
-    loadMessages();
+    const savedLogin = localStorage.getItem('sbghee-admin-logged-in');
+    if (savedLogin === 'true') {
+      setIsAuthenticated(true);
+    }
   }, []);
+
+  // Load data after login
+  useEffect(() => {
+    if (isAuthenticated) {
+      loadOrders();
+      loadMessages();
+    }
+  }, [isAuthenticated]);
+
+  // Login Handler
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setLoginError('');
+    setIsLoggingIn(true);
+
+    try {
+      const { data, error: supabaseError } = await supabase
+        .from('admin_login')
+        .select('*')
+        .eq('username', loginUsername.trim())
+        .eq('password', loginPassword)
+        .single();
+
+      if (supabaseError || !data) {
+        setLoginError('Invalid username or password');
+        setIsLoggingIn(false);
+        return;
+      }
+
+      localStorage.setItem('sbghee-admin-logged-in', 'true');
+      localStorage.setItem('sbghee-admin-username', loginUsername);
+      setIsAuthenticated(true);
+      setLoginUsername('');
+      setLoginPassword('');
+    } catch (err) {
+      console.error('Login error:', err);
+      setLoginError('Login failed. Please try again.');
+    } finally {
+      setIsLoggingIn(false);
+    }
+  };
+
+  // Logout Handler
+  const handleLogout = () => {
+    localStorage.removeItem('sbghee-admin-logged-in');
+    localStorage.removeItem('sbghee-admin-username');
+    setIsAuthenticated(false);
+    setOrders([]);
+    setMessages([]);
+  };
 
   const loadOrders = async () => {
     setIsLoading(true);
@@ -183,18 +243,15 @@ const AdminPanel = () => {
     }
   };
 
-  // PROFESSIONAL PDF EXPORT - ALL ORDERS
   const exportOrdersToPDF = () => {
     try {
       const doc = new jsPDF('p', 'mm', 'a4');
       const pageWidth = doc.internal.pageSize.getWidth();
       const pageHeight = doc.internal.pageSize.getHeight();
 
-      // Header with gradient effect (orange background)
       doc.setFillColor(255, 140, 0);
       doc.rect(0, 0, pageWidth, 35, 'F');
 
-      // Company name and logo area
       doc.setFontSize(24);
       doc.setTextColor(255, 255, 255);
       doc.setFont('helvetica', 'bold');
@@ -205,13 +262,11 @@ const AdminPanel = () => {
       doc.text('Pure & Natural Ghee Products', 15, 22);
       doc.text('Lalpur, Ranchi, Jharkhand', 15, 28);
 
-      // Date and report info (right side)
       doc.setFontSize(9);
       doc.text('ORDERS REPORT', pageWidth - 15, 12, { align: 'right' });
       doc.text(`Date: ${new Date().toLocaleDateString('en-IN')}`, pageWidth - 15, 18, { align: 'right' });
       doc.text(`Total Orders: ${orders.length}`, pageWidth - 15, 24, { align: 'right' });
 
-      // Summary section
       let yPos = 45;
       const totalRevenue = orders.reduce((sum, o) => sum + (parseFloat(o.total) || 0), 0);
       const pendingCount = orders.filter(o => o.status === 'pending').length;
@@ -233,7 +288,6 @@ const AdminPanel = () => {
 
       yPos += 28;
 
-      // Table header
       doc.setFillColor(255, 140, 0);
       doc.rect(15, yPos, pageWidth - 30, 10, 'F');
 
@@ -250,13 +304,11 @@ const AdminPanel = () => {
 
       yPos += 12;
 
-      // Table rows
       orders.forEach((order, index) => {
         if (yPos > pageHeight - 25) {
           doc.addPage();
           yPos = 20;
 
-          // Repeat header on new page
           doc.setFillColor(255, 140, 0);
           doc.rect(15, yPos, pageWidth - 30, 10, 'F');
           doc.setFontSize(9);
@@ -272,7 +324,6 @@ const AdminPanel = () => {
           yPos += 12;
         }
 
-        // Alternate row colors
         if (index % 2 === 0) {
           doc.setFillColor(250, 250, 250);
           doc.rect(15, yPos - 4, pageWidth - 30, 8, 'F');
@@ -296,7 +347,6 @@ const AdminPanel = () => {
         doc.text(String(order.quantity || 0), 118, yPos + 2);
         doc.text(formatCurrency(order.total), 130, yPos + 2);
 
-        // Status with color
         const statusText = sanitizeText(order.status).toUpperCase();
         const [r, g, b] = getStatusColorRGB(statusText);
         doc.setTextColor(r, g, b);
@@ -310,7 +360,6 @@ const AdminPanel = () => {
         yPos += 9;
       });
 
-      // Footer - Grand Total
       yPos += 5;
       doc.setDrawColor(255, 140, 0);
       doc.setLineWidth(0.5);
@@ -322,7 +371,6 @@ const AdminPanel = () => {
       doc.setTextColor(255, 140, 0);
       doc.text(`GRAND TOTAL: ${formatCurrency(totalRevenue)}`, pageWidth - 15, yPos, { align: 'right' });
 
-      // Page numbers
       const totalPages = doc.internal.getNumberOfPages();
       for (let i = 1; i <= totalPages; i++) {
         doc.setPage(i);
@@ -345,13 +393,11 @@ const AdminPanel = () => {
     }
   };
 
-  // PROFESSIONAL SINGLE ORDER INVOICE
   const exportSingleOrderPDF = (order) => {
     try {
       const doc = new jsPDF('p', 'mm', 'a4');
       const pageWidth = doc.internal.pageSize.getWidth();
 
-      // Header
       doc.setFillColor(255, 140, 0);
       doc.rect(0, 0, pageWidth, 40, 'F');
 
@@ -365,13 +411,11 @@ const AdminPanel = () => {
       doc.text('SBGhee - Pure & Natural Ghee', 15, 28);
       doc.text('Lalpur, Ranchi', 15, 34);
 
-      // Invoice details (right side)
       doc.setFontSize(10);
       doc.text(`Invoice No: #${sanitizeText(order.id.toString().slice(-8))}`, pageWidth - 15, 20, { align: 'right' });
       doc.text(`Date: ${new Date(order.order_date || order.created_at).toLocaleDateString('en-IN')}`, 
         pageWidth - 15, 27, { align: 'right' });
 
-      // Customer details box
       let yPos = 52;
       doc.setFillColor(245, 245, 245);
       doc.rect(15, yPos, 90, 40, 'F');
@@ -386,11 +430,9 @@ const AdminPanel = () => {
       doc.text(sanitizeText(order.name), 20, yPos + 16);
       doc.text(`Phone: ${sanitizeText(order.phone)}`, 20, yPos + 23);
       
-      // Address with word wrap
       const addressLines = doc.splitTextToSize(sanitizeText(order.address), 80);
       doc.text(addressLines, 20, yPos + 30);
 
-      // Order status box (right side)
       doc.setFillColor(245, 245, 245);
       doc.rect(110, yPos, 85, 20, 'F');
 
@@ -403,7 +445,6 @@ const AdminPanel = () => {
       doc.setFontSize(12);
       doc.text(statusText, 115, yPos + 16);
 
-      // Product table
       yPos = 105;
       doc.setFillColor(255, 140, 0);
       doc.rect(15, yPos, pageWidth - 30, 12, 'F');
@@ -418,7 +459,6 @@ const AdminPanel = () => {
 
       yPos += 15;
 
-      // Product details
       doc.setFillColor(250, 250, 250);
       doc.rect(15, yPos, pageWidth - 30, 12, 'F');
 
@@ -433,7 +473,6 @@ const AdminPanel = () => {
       doc.text(formatCurrency(order.product?.price || 0), 140, yPos + 8);
       doc.text(formatCurrency(order.total), 170, yPos + 8);
 
-      // Total section
       yPos += 25;
       doc.setDrawColor(255, 140, 0);
       doc.setLineWidth(0.5);
@@ -460,7 +499,6 @@ const AdminPanel = () => {
       doc.text('GRAND TOTAL:', 125, yPos);
       doc.text(formatCurrency(order.total), 170, yPos);
 
-      // Footer
       yPos = 260;
       doc.setFontSize(9);
       doc.setTextColor(100, 100, 100);
@@ -472,7 +510,6 @@ const AdminPanel = () => {
       doc.setFontSize(8);
       doc.text('For any queries, contact: +91-XXXXXXXXXX | email@sbghee.com', pageWidth / 2, yPos, { align: 'center' });
 
-      // Page border
       doc.setDrawColor(255, 140, 0);
       doc.setLineWidth(0.5);
       doc.rect(10, 10, pageWidth - 20, 277);
@@ -484,14 +521,12 @@ const AdminPanel = () => {
     }
   };
 
-  // MESSAGES PDF EXPORT
   const exportMessagesToPDF = () => {
     try {
       const doc = new jsPDF('p', 'mm', 'a4');
       const pageWidth = doc.internal.pageSize.getWidth();
       const pageHeight = doc.internal.pageSize.getHeight();
 
-      // Header
       doc.setFillColor(255, 140, 0);
       doc.rect(0, 0, pageWidth, 30, 'F');
 
@@ -513,7 +548,6 @@ const AdminPanel = () => {
           yPos = 20;
         }
 
-        // Message box
         doc.setFillColor(250, 250, 250);
         doc.rect(15, yPos, pageWidth - 30, 35, 'F');
 
@@ -526,7 +560,6 @@ const AdminPanel = () => {
         doc.setFont('helvetica', 'bold');
         doc.text(`#${sanitizeText(msg.id.toString().slice(-6))}`, 18, yPos + 6);
 
-        // Status badge
         const statusText = sanitizeText(msg.status).toUpperCase();
         doc.setFontSize(8);
         doc.text(statusText, pageWidth - 35, yPos + 6);
@@ -546,7 +579,6 @@ const AdminPanel = () => {
         yPos += 40;
       });
 
-      // Footer
       const totalPages = doc.internal.getNumberOfPages();
       for (let i = 1; i <= totalPages; i++) {
         doc.setPage(i);
@@ -562,8 +594,100 @@ const AdminPanel = () => {
     }
   };
 
-  // COMPONENT RENDER
+  // LOGIN SCREEN
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-red-50 flex items-center justify-center p-4">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="w-full max-w-md"
+        >
+          <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
+            <div className="bg-gradient-to-r from-orange-500 to-amber-500 p-8 text-center">
+              <Lock className="w-16 h-16 text-white mx-auto mb-4" />
+              <h1 className="text-3xl font-bold text-white mb-2">SBGhee Admin</h1>
+              <p className="text-white/90 text-sm">Secure Admin Panel Login</p>
+            </div>
+
+            <form onSubmit={handleLogin} className="p-8">
+              {loginError && (
+                <motion.div
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  className="bg-red-50 border-l-4 border-red-500 p-4 mb-6 rounded"
+                >
+                  <p className="text-red-700 text-sm font-medium">{loginError}</p>
+                </motion.div>
+              )}
+
+              <div className="space-y-5">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <User size={16} className="inline mr-2 text-orange-500" />
+                    Username
+                  </label>
+                  <input
+                    type="text"
+                    value={loginUsername}
+                    onChange={(e) => setLoginUsername(e.target.value)}
+                    placeholder="Enter username"
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-orange-500 focus:outline-none transition-colors"
+                    required
+                    autoFocus
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <Lock size={16} className="inline mr-2 text-orange-500" />
+                    Password
+                  </label>
+                  <input
+                    type="password"
+                    value={loginPassword}
+                    onChange={(e) => setLoginPassword(e.target.value)}
+                    placeholder="Enter password"
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-orange-500 focus:outline-none transition-colors"
+                    required
+                  />
+                </div>
+
+                <motion.button
+                  type="submit"
+                  disabled={isLoggingIn}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className={`w-full py-4 rounded-lg font-bold text-white shadow-lg transition-all ${
+                    isLoggingIn
+                      ? 'bg-gray-400 cursor-not-allowed'
+                      : 'bg-gradient-to-r from-orange-500 to-amber-500 hover:shadow-xl'
+                  }`}
+                >
+                  {isLoggingIn ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      Logging in...
+                    </span>
+                  ) : (
+                    'Login'
+                  )}
+                </motion.button>
+              </div>
+
+              <div className="mt-6 pt-6 border-t border-gray-200">
+                <p className="text-xs text-gray-500 text-center">Default: admin / admin123</p>
+              </div>
+            </form>
+          </div>
+        </motion.div>
+      </div>
+    );
+  }
+
+  // ADMIN PANEL (After Login)
   const filteredOrders = orders.filter(order => filterStatus === 'all' || order.status === filterStatus);
+  const adminUsername = localStorage.getItem('sbghee-admin-username') || 'Admin';
 
   const stats = activeTab === 'orders' ? [
     { label: 'Orders', value: orders.length, icon: ClipboardList, color: 'blue' },
@@ -579,6 +703,25 @@ const AdminPanel = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20 md:pb-0">
+      {/* Header with Logout */}
+      <div className="bg-gradient-to-r from-orange-500 to-amber-500 p-4 shadow-lg sticky top-0 z-40">
+        <div className="max-w-7xl mx-auto flex justify-between items-center">
+          <div className="text-white">
+            <h1 className="text-xl font-bold">SBGhee Admin</h1>
+            <p className="text-xs text-white/90">Welcome, {adminUsername}</p>
+          </div>
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={handleLogout}
+            className="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg font-semibold flex items-center gap-2 transition-colors text-sm"
+          >
+            <LogOut size={18} />
+            Logout
+          </motion.button>
+        </div>
+      </div>
+
       {/* Floating Refresh FAB Button */}
       <motion.button
         whileHover={{ scale: 1.1 }}
@@ -643,7 +786,6 @@ const AdminPanel = () => {
       {/* Orders Tab */}
       {activeTab === 'orders' && (
         <div className="px-4 space-y-4">
-          {/* Filter & Export */}
           <div className="bg-white rounded-xl shadow-lg p-4">
             <div className="flex flex-col sm:flex-row gap-3">
               <select
@@ -666,7 +808,6 @@ const AdminPanel = () => {
               </button>
             </div>
           </div>
-          {/* Orders List */}
           {isLoading ? (
             <div className="bg-white rounded-xl shadow-lg p-8 text-center">
               <div className="w-10 h-10 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
