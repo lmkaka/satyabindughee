@@ -19,8 +19,8 @@ const Home = () => {
     },
     {
       icon: Truck,
-      title: 'Fast Delivery',
-      description: 'Quick and safe delivery to your doorstep within 2-3 days'
+      title: 'Superfast Delivery',
+      description: 'Quick and safe delivery to your doorstep within the same day'
     },
     {
       icon: Clock,
