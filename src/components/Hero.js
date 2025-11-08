@@ -4,6 +4,7 @@ import { Star, Award, Shield, Truck, ArrowRight, Play, ChevronLeft, ChevronRight
 
 const Hero = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [imagesLoaded, setImagesLoaded] = useState(false);
   
   const images = [
     'https://radarofc.onrender.com/1.jpg',
@@ -22,14 +23,40 @@ const Hero = () => {
     { number: '10+', label: 'Years Experience' }
   ];
 
+  // Preload all images immediately
+  useEffect(() => {
+    const preloadImages = async () => {
+      const imagePromises = images.map((src) => {
+        return new Promise((resolve, reject) => {
+          const img = new Image();
+          img.src = src;
+          img.onload = resolve;
+          img.onerror = reject;
+        });
+      });
+
+      try {
+        await Promise.all(imagePromises);
+        setImagesLoaded(true);
+      } catch (error) {
+        console.error('Error preloading images:', error);
+        setImagesLoaded(true); // Still show carousel even if some images fail
+      }
+    };
+
+    preloadImages();
+  }, []);
+
   // Auto-slide effect
   useEffect(() => {
+    if (!imagesLoaded) return; // Don't start auto-slide until images are loaded
+
     const interval = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % images.length);
-    }, 3500); // Change slide every 3.5 seconds
+    }, 3500);
 
     return () => clearInterval(interval);
-  }, [images.length]);
+  }, [images.length, imagesLoaded]);
 
   const handleShopNow = () => {
     window.scrollBy({
@@ -63,7 +90,7 @@ const Hero = () => {
       </div>
 
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 sm:pt-12 pb-16 sm:pb-20">
-        {/* Image Carousel - Moved to Top */}
+        {/* Image Carousel - Increased Height */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -71,33 +98,47 @@ const Hero = () => {
           className="mb-8 sm:mb-12"
         >
           <div className="relative max-w-5xl mx-auto">
-            {/* Carousel Container */}
-            <div className="relative h-[180px] sm:h-[220px] md:h-[260px] bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl overflow-hidden">
-              <AnimatePresence mode="wait" initial={false}>
-                <motion.div
-                  key={currentSlide}
-                  initial={{ opacity: 0, x: 100 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -100 }}
-                  transition={{ 
-                    duration: 0.5,
-                    ease: [0.32, 0.72, 0, 1]
-                  }}
-                  className="absolute inset-0"
-                >
-                  <img
-                    src={images[currentSlide]}
-                    alt={`Ghee product ${currentSlide + 1}`}
-                    className="w-full h-full object-cover"
-                    loading="lazy"
-                  />
-                </motion.div>
-              </AnimatePresence>
+            {/* Carousel Container - Height increased from 180/220/260 to 280/340/400 */}
+            <div className="relative h-[280px] sm:h-[340px] md:h-[400px] lg:h-[450px] bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl overflow-hidden">
+              {/* Loading Spinner */}
+              {!imagesLoaded && (
+                <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-amber-100 to-orange-100">
+                  <div className="flex flex-col items-center gap-3">
+                    <div className="w-12 h-12 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
+                    <p className="text-orange-600 font-semibold">Loading Images...</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Images */}
+              {imagesLoaded && (
+                <AnimatePresence mode="wait" initial={false}>
+                  <motion.div
+                    key={currentSlide}
+                    initial={{ opacity: 0, x: 100 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -100 }}
+                    transition={{ 
+                      duration: 0.4,
+                      ease: [0.32, 0.72, 0, 1]
+                    }}
+                    className="absolute inset-0"
+                  >
+                    <img
+                      src={images[currentSlide]}
+                      alt={`Ghee product ${currentSlide + 1}`}
+                      className="w-full h-full object-cover"
+                      loading="eager"
+                    />
+                  </motion.div>
+                </AnimatePresence>
+              )}
 
               {/* Navigation Arrows */}
               <button
                 onClick={prevSlide}
-                className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/90 hover:bg-white rounded-full shadow-lg flex items-center justify-center backdrop-blur-sm transition-all hover:scale-110 active:scale-95 z-10"
+                disabled={!imagesLoaded}
+                className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/90 hover:bg-white rounded-full shadow-lg flex items-center justify-center backdrop-blur-sm transition-all hover:scale-110 active:scale-95 z-10 disabled:opacity-50 disabled:cursor-not-allowed"
                 aria-label="Previous slide"
               >
                 <ChevronLeft size={20} className="text-gray-800" />
@@ -105,32 +146,37 @@ const Hero = () => {
               
               <button
                 onClick={nextSlide}
-                className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/90 hover:bg-white rounded-full shadow-lg flex items-center justify-center backdrop-blur-sm transition-all hover:scale-110 active:scale-95 z-10"
+                disabled={!imagesLoaded}
+                className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/90 hover:bg-white rounded-full shadow-lg flex items-center justify-center backdrop-blur-sm transition-all hover:scale-110 active:scale-95 z-10 disabled:opacity-50 disabled:cursor-not-allowed"
                 aria-label="Next slide"
               >
                 <ChevronRight size={20} className="text-gray-800" />
               </button>
 
               {/* Dots Indicator */}
-              <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-2 z-10">
-                {images.map((_, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setCurrentSlide(index)}
-                    className={`transition-all rounded-full ${
-                      index === currentSlide 
-                        ? 'w-8 h-2 bg-orange-500' 
-                        : 'w-2 h-2 bg-white/60 hover:bg-white/80'
-                    }`}
-                    aria-label={`Go to slide ${index + 1}`}
-                  />
-                ))}
-              </div>
+              {imagesLoaded && (
+                <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-2 z-10">
+                  {images.map((_, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setCurrentSlide(index)}
+                      className={`transition-all rounded-full ${
+                        index === currentSlide 
+                          ? 'w-8 h-2 bg-orange-500' 
+                          : 'w-2 h-2 bg-white/60 hover:bg-white/80'
+                      }`}
+                      aria-label={`Go to slide ${index + 1}`}
+                    />
+                  ))}
+                </div>
+              )}
 
               {/* Slide Counter */}
-              <div className="absolute top-3 right-3 bg-black/50 backdrop-blur-sm text-white text-xs font-semibold px-3 py-1.5 rounded-full z-10">
-                {currentSlide + 1} / {images.length}
-              </div>
+              {imagesLoaded && (
+                <div className="absolute top-3 right-3 bg-black/50 backdrop-blur-sm text-white text-xs font-semibold px-3 py-1.5 rounded-full z-10">
+                  {currentSlide + 1} / {images.length}
+                </div>
+              )}
             </div>
           </div>
         </motion.div>
@@ -226,9 +272,10 @@ const Hero = () => {
             >
               <div className="relative w-full h-[380px] sm:h-[420px] bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl overflow-hidden mb-5">
                 <img
-                  src="https://radarofc.onrender.com/sb1.jpg"
+                  src="https://radarofc.onrender.com/sb.jpg"
                   alt="Premium SBGhee Jar"
                   className="w-full h-full object-contain p-4"
+                  loading="eager"
                 />
                 
                 {/* Badge on Product */}
