@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Star, Award, Shield, Truck, ArrowRight, Play, ChevronLeft, ChevronRight } from 'lucide-react';
-import OrderForm from './OrderForm'; // Import existing OrderForm
+import OrderForm from './OrderForm';
 
 const Hero = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [imagesLoaded, setImagesLoaded] = useState(false);
-  const [isOrderFormOpen, setIsOrderFormOpen] = useState(false); // State for OrderForm
+  const [isOrderFormOpen, setIsOrderFormOpen] = useState(false);
   
   const images = [
     'https://radarofc.onrender.com/1.jpg',
@@ -25,7 +25,6 @@ const Hero = () => {
     { number: '10+', label: 'Years Experience' }
   ];
 
-  // Preload all images immediately
   useEffect(() => {
     const preloadImages = async () => {
       const imagePromises = images.map((src) => {
@@ -49,7 +48,6 @@ const Hero = () => {
     preloadImages();
   }, []);
 
-  // Auto-slide effect
   useEffect(() => {
     if (!imagesLoaded) return;
 
@@ -61,7 +59,13 @@ const Hero = () => {
   }, [images.length, imagesLoaded]);
 
   const handleShopNow = () => {
-    setIsOrderFormOpen(true); // Open OrderForm modal
+    console.log('Quick Buy Now clicked!'); // Debug log
+    setIsOrderFormOpen(true);
+  };
+
+  const handleCloseOrderForm = () => {
+    console.log('Closing OrderForm'); // Debug log
+    setIsOrderFormOpen(false);
   };
 
   const handleWatchStory = () => {
@@ -82,7 +86,6 @@ const Hero = () => {
   return (
     <>
       <section className="relative overflow-hidden bg-gradient-to-br from-amber-50 via-orange-50 to-red-50 min-h-screen">
-        {/* Decorative Background */}
         <div className="absolute inset-0 opacity-30">
           <div className="absolute top-20 right-10 w-72 h-72 bg-orange-300 rounded-full mix-blend-multiply filter blur-3xl animate-blob"></div>
           <div className="absolute top-40 left-10 w-72 h-72 bg-amber-300 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-2000"></div>
@@ -90,7 +93,6 @@ const Hero = () => {
         </div>
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 sm:pt-12 pb-16 sm:pb-20">
-          {/* Image Carousel - Increased Height */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -176,7 +178,6 @@ const Hero = () => {
           </motion.div>
 
           <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
-            {/* Left Content */}
             <motion.div
               initial={{ opacity: 0, x: -30 }}
               animate={{ opacity: 1, x: 0 }}
@@ -249,7 +250,6 @@ const Hero = () => {
               </div>
             </motion.div>
 
-            {/* Right Content - Product Card */}
             <motion.div
               initial={{ opacity: 0, x: 30 }}
               animate={{ opacity: 1, x: 0 }}
@@ -317,7 +317,6 @@ const Hero = () => {
             </motion.div>
           </div>
 
-          {/* Stats Section - Compact */}
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
@@ -359,10 +358,11 @@ const Hero = () => {
         `}</style>
       </section>
 
-      {/* OrderForm Modal */}
-      {isOrderFormOpen && (
-        <OrderForm onClose={() => setIsOrderFormOpen(false)} />
-      )}
+      {/* OrderForm - Always rendered, visibility controlled by prop */}
+      <OrderForm 
+        isOpen={isOrderFormOpen}
+        onClose={handleCloseOrderForm}
+      />
     </>
   );
 };
