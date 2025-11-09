@@ -1,351 +1,602 @@
 import React, { useState, useEffect, memo, useCallback } from 'react';
-import { Star, Award, Shield, Truck, ArrowRight, Play, ChevronLeft, ChevronRight, BadgeCheck } from 'lucide-react';
-import OrderForm from './OrderForm';
+import { motion, AnimatePresence } from 'framer-motion';
+import { X, User, Phone, MapPin, ShoppingCart, Download, CheckCircle, AlertCircle, Package, Sparkles } from 'lucide-react';
+import { supabase } from '../supabaseClient';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 
-// ✅ Memoized Slide Component for Performance
-const Slide = memo(({ src, alt }) => (
-  <div className="absolute inset-0">
-    <img
-      src={src}
-      alt={alt}
-      className="w-full h-full object-cover"
-      loading="eager"
-    />
-  </div>
-));
-
-Slide.displayName = 'Slide';
-
-const Hero = () => {
-  const [currentSlide, setCurrentSlide] = useState(0);
-  const [imagesLoaded, setImagesLoaded] = useState(false);
-  const [isOrderFormOpen, setIsOrderFormOpen] = useState(false);
-  const [loadingProgress, setLoadingProgress] = useState(0);
+// ✅ Product Card Component
+const ProductCard = memo(({ variant, isSelected, quantity, onToggle }) => {
+  const discount = Math.round(((variant.originalPrice - variant.price) / variant.originalPrice) * 100);
   
-  const images = [
-    'https://radarofc.onrender.com/1.jpg',
-    'https://radarofc.onrender.com/2.jpg',
-    'https://radarofc.onrender.com/3.jpg',
-    'https://radarofc.onrender.com/4.jpg',
-    'https://radarofc.onrender.com/5.jpg',
-    'https://radarofc.onrender.com/6.jpg',
-    'https://radarofc.onrender.com/7.jpg',
+  return (
+    <motion.button
+      type="button"
+      onClick={() => onToggle(variant)}
+      whileTap={{ scale: 0.96 }}
+      className={`relative w-full rounded-lg overflow-hidden transition-all ${
+        isSelected ? 'ring-2 ring-orange-500 shadow-md' : 'ring-1 ring-gray-200'
+      }`}
+    >
+      {discount > 0 && (
+        <div className="absolute top-1.5 left-1.5 z-10 bg-red-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full">
+          {discount}% OFF
+        </div>
+      )}
+
+      <AnimatePresence>
+        {isSelected && (
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            exit={{ scale: 0 }}
+            className="absolute top-1.5 right-1.5 z-10 w-5 h-5 bg-orange-500 rounded-full flex items-center justify-center"
+          >
+            <CheckCircle size={12} className="text-white" strokeWidth={3} />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <div className={`p-2 ${isSelected ? 'bg-gradient-to-br from-orange-50 to-amber-50' : 'bg-white'}`}>
+        <div className="w-full aspect-square bg-gradient-to-br from-orange-100 to-amber-100 rounded-md mb-1.5 flex items-center justify-center">
+          <Package size={20} className="text-orange-600" strokeWidth={1.5} />
+        </div>
+
+        <h3 className={`text-xs font-black mb-0.5 ${isSelected ? 'text-orange-600' : 'text-gray-900'}`}>
+          {variant.weight}
+        </h3>
+        
+        <div className="flex items-baseline gap-1 mb-1">
+          <span className={`text-sm font-black ${isSelected ? 'text-orange-600' : 'text-gray-900'}`}>
+            ₹{variant.price}
+          </span>
+          <span className="text-[9px] text-gray-400 line-through">
+            ₹{variant.originalPrice}
+          </span>
+        </div>
+
+        {isSelected && quantity > 0 && (
+          <div className="pt-1 border-t border-orange-200">
+            <div className="flex justify-between items-center text-[10px]">
+              <span className="text-gray-600 font-semibold">Qty: {quantity}</span>
+              <span className="text-orange-600 font-black">₹{variant.price * quantity}</span>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className={`py-1 text-center text-[9px] font-bold ${
+        isSelected ? 'bg-orange-500 text-white' : 'bg-gray-100 text-gray-600'
+      }`}>
+        {isSelected ? '✓ SELECTED' : 'TAP TO SELECT'}
+      </div>
+    </motion.button>
+  );
+});
+
+ProductCard.displayName = 'ProductCard';
+
+// ✅ Cart Item Component
+const CartItem = memo(({ item, onUpdateQuantity }) => {
+  return (
+    <motion.div
+      layout
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="bg-white rounded-md p-2 flex items-center gap-1.5 border border-orange-100"
+    >
+      <div className="w-8 h-8 bg-gradient-to-br from-orange-100 to-amber-100 rounded-md flex items-center justify-center flex-shrink-0">
+        <Package className="text-orange-600" size={14} />
+      </div>
+      
+      <div className="flex-1 min-w-0">
+        <p className="font-bold text-[11px] text-gray-900 truncate">{item.weight}</p>
+        <p className="text-[9px] text-gray-500">₹{item.price} each</p>
+      </div>
+
+      <div className="flex items-center gap-0.5 bg-orange-50 rounded-md px-1 py-0.5">
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onUpdateQuantity(item.id, item.quantity - 1);
+          }}
+          className="w-5 h-5 bg-white rounded flex items-center justify-center text-orange-600 font-black text-sm active:bg-orange-100"
+        >
+          −
+        </button>
+        
+        <span className="w-5 text-center font-black text-[10px]">{item.quantity}</span>
+        
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onUpdateQuantity(item.id, item.quantity + 1);
+          }}
+          className="w-5 h-5 bg-white rounded flex items-center justify-center text-orange-600 font-black text-sm active:bg-orange-100"
+        >
+          +
+        </button>
+      </div>
+
+      <div className="text-right min-w-[45px]">
+        <p className="font-black text-xs text-gray-900">₹{item.price * item.quantity}</p>
+      </div>
+    </motion.div>
+  );
+});
+
+CartItem.displayName = 'CartItem';
+
+const OrderForm = ({ isOpen, onClose, product }) => {
+  const [formData, setFormData] = useState({
+    name: '',
+    phone: '',
+    address: ''
+  });
+
+  const [cart, setCart] = useState([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
+  const [error, setError] = useState(null);
+  const [completedOrder, setCompletedOrder] = useState(null);
+
+  const productVariants = [
+    { id: 1, name: 'Premium Pure Ghee', weight: '250gms', price: 299, originalPrice: 349 },
+    { id: 2, name: 'Premium Pure Ghee', weight: '500gms', price: 549, originalPrice: 649 },
+    { id: 3, name: 'Premium Pure Ghee', weight: '1kg', price: 999, originalPrice: 1199 },
+    { id: 4, name: 'Premium Pure Ghee', weight: '2kg', price: 1899, originalPrice: 2299 },
+    { id: 5, name: 'Premium Pure Ghee', weight: '5kg', price: 4799, originalPrice: 5299 }
   ];
 
-  const heroProduct = {
-    name: 'Premium Pure Ghee',
-    weight: '250gms',
-    price: 299,
-    originalPrice: 349,
-    image: 'https://radarofc.onrender.com/sb1.jpg',
-    description: 'Pure and natural ghee made with traditional methods',
-    inStock: true
-  };
-
-  const stats = [
-    { number: '2k+', label: 'Happy Customers' },
-    { number: '4.9★', label: 'Rating' },
-    { number: '100%', label: 'Pure & Natural' },
-    { number: '10+', label: 'Years Experience' }
-  ];
-
-  // ✅ Optimized Image Preloading
+  // ✅ Browser Back Button Handler - Closes Modal Instead of Navigating Away
   useEffect(() => {
-    const loadImages = async () => {
-      let loaded = 0;
-      const promises = images.map((src) => {
-        return new Promise((resolve) => {
-          const img = new Image();
-          img.src = src;
-          img.onload = () => {
-            loaded++;
-            setLoadingProgress(Math.round((loaded / images.length) * 100));
-            resolve();
-          };
-          img.onerror = () => {
-            loaded++;
-            setLoadingProgress(Math.round((loaded / images.length) * 100));
-            resolve();
-          };
-        });
+    if (isOpen) {
+      // Push a new history state when modal opens
+      window.history.pushState({ modalOpen: true }, '');
+      
+      const handlePopState = (event) => {
+        if (event.state?.modalOpen) {
+          // Close modal instead of going back
+          onClose();
+          // Prevent further back navigation
+          window.history.pushState({ modalOpen: false }, '');
+        }
+      };
+
+      window.addEventListener('popstate', handlePopState);
+
+      return () => {
+        window.removeEventListener('popstate', handlePopState);
+      };
+    }
+  }, [isOpen, onClose]);
+
+  const toggleCartItem = useCallback((variant) => {
+    setCart(prevCart => {
+      const existingItem = prevCart.find(item => item.id === variant.id);
+      if (existingItem) {
+        return prevCart.filter(item => item.id !== variant.id);
+      } else {
+        return [...prevCart, { ...variant, quantity: 1 }];
+      }
+    });
+  }, []);
+
+  const updateQuantity = useCallback((variantId, newQuantity) => {
+    if (newQuantity < 1) {
+      setCart(prevCart => prevCart.filter(item => item.id !== variantId));
+      return;
+    }
+    if (newQuantity > 10) return;
+    
+    setCart(prevCart => prevCart.map(item =>
+      item.id === variantId ? { ...item, quantity: newQuantity } : item
+    ));
+  }, []);
+
+  const calculateTotal = useCallback(() => {
+    return cart.reduce((total, item) => total + (item.price * item.quantity), 0);
+  }, [cart]);
+
+  const calculateSavings = useCallback(() => {
+    return cart.reduce((total, item) => total + ((item.originalPrice - item.price) * item.quantity), 0);
+  }, [cart]);
+
+  const downloadInvoice = useCallback(() => {
+    if (!completedOrder) return;
+    try {
+      const doc = new jsPDF('p', 'mm', 'a4');
+      const pageWidth = doc.internal.pageSize.getWidth();
+      
+      doc.setFillColor(255, 140, 0);
+      doc.rect(0, 0, pageWidth, 40, 'F');
+      doc.setFontSize(28);
+      doc.setTextColor(255, 255, 255);
+      doc.setFont('helvetica', 'bold');
+      doc.text('INVOICE', 15, 20);
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'normal');
+      doc.text('SBGhee - Premium Pure Ghee', 15, 28);
+      doc.text('Lalpur, Ranchi', 15, 34);
+      doc.setFontSize(10);
+      doc.text(`#${completedOrder.id.toString().slice(-8)}`, pageWidth - 15, 20, { align: 'right' });
+      doc.text(new Date(completedOrder.order_date).toLocaleDateString('en-IN'), pageWidth - 15, 27, { align: 'right' });
+
+      let yPos = 52;
+      doc.setFillColor(248, 250, 252);
+      doc.rect(15, yPos, 85, 38, 'F');
+      doc.setFontSize(10);
+      doc.setTextColor(0, 0, 0);
+      doc.setFont('helvetica', 'bold');
+      doc.text('CUSTOMER', 20, yPos + 8);
+      doc.setFont('helvetica', 'normal');
+      doc.text(completedOrder.name, 20, yPos + 15);
+      doc.text(completedOrder.phone, 20, yPos + 21);
+      const addr = doc.splitTextToSize(completedOrder.address, 75);
+      doc.text(addr, 20, yPos + 27);
+
+      doc.setFillColor(254, 243, 199);
+      doc.rect(105, yPos, 90, 18, 'F');
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(180, 83, 9);
+      doc.text('STATUS: PENDING', 110, yPos + 12);
+
+      yPos = 105;
+      doc.setFillColor(255, 140, 0);
+      doc.rect(15, yPos, pageWidth - 30, 9, 'F');
+      doc.setFontSize(9);
+      doc.setTextColor(255, 255, 255);
+      doc.text('PRODUCT', 20, yPos + 6);
+      doc.text('QTY', 110, yPos + 6);
+      doc.text('PRICE', 130, yPos + 6);
+      doc.text('TOTAL', 165, yPos + 6);
+
+      yPos += 12;
+      doc.setTextColor(0, 0, 0);
+      completedOrder.items.forEach((item, i) => {
+        if (i % 2 === 0) {
+          doc.setFillColor(249, 250, 251);
+          doc.rect(15, yPos - 3, pageWidth - 30, 9, 'F');
+        }
+        doc.text(`${item.weight}`, 20, yPos + 3);
+        doc.text(String(item.quantity), 115, yPos + 3);
+        doc.text(`₹${item.price}`, 130, yPos + 3);
+        doc.text(`₹${item.price * item.quantity}`, 165, yPos + 3);
+        yPos += 9;
       });
 
-      await Promise.all(promises);
-      setTimeout(() => setImagesLoaded(true), 100);
+      yPos += 10;
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(12);
+      doc.setTextColor(255, 140, 0);
+      doc.text('TOTAL:', 120, yPos);
+      doc.text(`₹${completedOrder.total}`, 170, yPos);
+
+      doc.setFontSize(8);
+      doc.setTextColor(100, 100, 100);
+      doc.text('Thank you!', pageWidth / 2, 270, { align: 'center' });
+      
+      doc.save(`Invoice_${completedOrder.id.toString().slice(-6)}.pdf`);
+    } catch (error) {
+      console.error('PDF error:', error);
+    }
+  }, [completedOrder]);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (cart.length === 0) {
+      setError('Please select at least one product');
+      return;
+    }
+
+    setIsSubmitting(true);
+    setError(null);
+
+    const order = {
+      name: formData.name.trim(),
+      phone: formData.phone.trim(),
+      address: formData.address.trim(),
+      product: {
+        name: 'Premium Pure Ghee',
+        weight: cart.map(item => `${item.weight}×${item.quantity}`).join(', '),
+        price: Math.round(calculateTotal() / cart.reduce((sum, item) => sum + item.quantity, 0))
+      },
+      quantity: cart.reduce((sum, item) => sum + item.quantity, 0),
+      total: calculateTotal(),
+      status: 'pending',
+      order_date: new Date().toISOString()
     };
 
-    loadImages();
+    try {
+      const { data, error: supabaseError } = await supabase
+        .from('orders')
+        .insert([order])
+        .select();
+
+      if (supabaseError) throw new Error(`Database error: ${supabaseError.message}`);
+
+      const existingOrders = JSON.parse(localStorage.getItem('sbghee-orders') || '[]');
+      existingOrders.push({ id: data[0].id, ...order, created_at: new Date().toISOString() });
+      localStorage.setItem('sbghee-orders', JSON.stringify(existingOrders));
+
+      setCompletedOrder({
+        id: data[0].id,
+        name: formData.name,
+        phone: formData.phone,
+        address: formData.address,
+        items: cart,
+        total: calculateTotal(),
+        order_date: new Date().toISOString()
+      });
+
+      setIsSubmitting(false);
+      setIsSuccess(true);
+    } catch (err) {
+      const fallbackOrder = { id: Date.now(), ...order, created_at: new Date().toISOString() };
+      const existingOrders = JSON.parse(localStorage.getItem('sbghee-orders') || '[]');
+      existingOrders.push(fallbackOrder);
+      localStorage.setItem('sbghee-orders', JSON.stringify(existingOrders));
+      
+      setCompletedOrder({
+        id: fallbackOrder.id,
+        name: formData.name,
+        phone: formData.phone,
+        address: formData.address,
+        items: cart,
+        total: calculateTotal(),
+        order_date: new Date().toISOString()
+      });
+      
+      setIsSubmitting(false);
+      setIsSuccess(true);
+    }
+  };
+
+  const handleInputChange = useCallback((e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
   }, []);
 
-  useEffect(() => {
-    if (!imagesLoaded) return;
-    const interval = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % images.length);
-    }, 3500);
-    return () => clearInterval(interval);
-  }, [images.length, imagesLoaded]);
+  const handleClose = useCallback(() => {
+    setFormData({ name: '', phone: '', address: '' });
+    setCart([]);
+    setIsSuccess(false);
+    setCompletedOrder(null);
+    setError(null);
+    onClose();
+  }, [onClose]);
 
-  const handleShopNow = useCallback(() => {
-    setIsOrderFormOpen(true);
-  }, []);
-
-  const handleWatchStory = useCallback(() => {
-    window.scrollBy({ top: window.innerHeight * 0.8, behavior: 'smooth' });
-  }, []);
-
-  const nextSlide = useCallback(() => {
-    setCurrentSlide((prev) => (prev + 1) % images.length);
-  }, [images.length]);
-
-  const prevSlide = useCallback(() => {
-    setCurrentSlide((prev) => (prev - 1 + images.length) % images.length);
-  }, [images.length]);
+  if (!isOpen) return null;
 
   return (
-    <>
-      <section className="relative overflow-hidden bg-gradient-to-br from-amber-50 via-orange-50 to-red-50 min-h-screen">
-        {/* Simplified Background - No Heavy Animations */}
-        <div className="absolute inset-0 opacity-20 pointer-events-none">
-          <div className="absolute top-20 right-10 w-72 h-72 bg-orange-300 rounded-full blur-3xl"></div>
-          <div className="absolute top-40 left-10 w-72 h-72 bg-amber-300 rounded-full blur-3xl"></div>
-          <div className="absolute bottom-20 left-1/2 w-72 h-72 bg-red-300 rounded-full blur-3xl"></div>
-        </div>
-
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-10 pb-12 sm:pb-16">
-          {/* Carousel Section - Optimized */}
-          <div className="mb-6 sm:mb-10">
-            <div className="relative max-w-5xl mx-auto">
-              <div className="relative h-[280px] sm:h-[360px] md:h-[450px] lg:h-[520px] xl:h-[600px] bg-gradient-to-br from-orange-100 to-amber-100 rounded-2xl shadow-xl overflow-hidden">
-                {!imagesLoaded ? (
-                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-orange-50 to-amber-100">
-                    <div className="flex flex-col items-center gap-4 w-full max-w-sm px-6">
-                      <div className="w-16 h-16 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
-                      <div className="text-center">
-                        <p className="text-orange-700 font-bold text-lg mb-1">Loading Images...</p>
-                        <p className="text-orange-600 text-base font-semibold">{loadingProgress}%</p>
-                      </div>
-                      <div className="w-full h-2 bg-orange-200 rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-gradient-to-r from-orange-500 to-amber-500 rounded-full transition-all duration-300"
-                          style={{ width: `${loadingProgress}%` }}
-                        />
-                      </div>
-                    </div>
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 z-50 flex items-start justify-center pt-20 sm:pt-0 sm:items-center"
+      >
+        <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={handleClose} />
+        
+        <motion.div
+          initial={{ y: "100%" }}
+          animate={{ y: 0 }}
+          exit={{ y: "100%" }}
+          transition={{ type: "spring", damping: 30, stiffness: 400 }}
+          className="relative bg-white w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl shadow-2xl flex flex-col"
+          style={{ maxHeight: 'calc(100vh - 5rem)' }}
+        >
+          {!isSuccess ? (
+            <>
+              {/* ✅ COMPACT STICKY HEADER */}
+              <div className="sticky top-0 z-50 bg-gradient-to-r from-orange-500 to-amber-500 px-3 py-2 flex items-center justify-between rounded-t-2xl shadow-md">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 bg-white/20 rounded-lg flex items-center justify-center">
+                    <ShoppingCart size={14} className="text-white" strokeWidth={2.5} />
                   </div>
-                ) : (
-                  <Slide src={images[currentSlide]} alt={`Premium Ghee ${currentSlide + 1}`} />
-                )}
-
-                {/* Navigation */}
-                <button
-                  onClick={prevSlide}
-                  disabled={!imagesLoaded}
-                  className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 w-10 h-10 sm:w-12 sm:h-12 bg-white/95 hover:bg-white rounded-full shadow-xl flex items-center justify-center transition-all z-10 disabled:opacity-50"
-                >
-                  <ChevronLeft size={24} className="text-gray-800" strokeWidth={2.5} />
-                </button>
+                  <div>
+                    <h3 className="text-xs font-black text-white leading-tight">Place Order</h3>
+                    {cart.length > 0 && (
+                      <p className="text-[8px] text-white/90 font-bold leading-tight">
+                        {cart.reduce((sum, item) => sum + item.quantity, 0)} items • ₹{calculateTotal()}
+                      </p>
+                    )}
+                  </div>
+                </div>
                 
+                {/* ✅ CLOSE BUTTON */}
                 <button
-                  onClick={nextSlide}
-                  disabled={!imagesLoaded}
-                  className="absolute right-3 sm:right-4 top-1/2 -translate-y-1/2 w-10 h-10 sm:w-12 sm:h-12 bg-white/95 hover:bg-white rounded-full shadow-xl flex items-center justify-center transition-all z-10 disabled:opacity-50"
+                  onClick={handleClose}
+                  className="w-8 h-8 bg-white rounded-lg hover:bg-gray-100 transition-colors flex items-center justify-center flex-shrink-0 shadow-sm"
                 >
-                  <ChevronRight size={24} className="text-gray-800" strokeWidth={2.5} />
+                  <X size={18} className="text-orange-600" strokeWidth={3} />
                 </button>
-
-                {imagesLoaded && (
-                  <>
-                    <div className="absolute bottom-4 sm:bottom-5 left-1/2 -translate-x-1/2 flex gap-2 z-10 bg-black/30 backdrop-blur-md px-3 py-2 rounded-full">
-                      {images.map((_, index) => (
-                        <button
-                          key={index}
-                          onClick={() => setCurrentSlide(index)}
-                          className={`transition-all rounded-full ${
-                            index === currentSlide 
-                              ? 'w-8 h-2.5 bg-white' 
-                              : 'w-2.5 h-2.5 bg-white/60'
-                          }`}
-                        />
-                      ))}
-                    </div>
-                    <div className="absolute top-3 sm:top-4 right-3 sm:right-4 bg-black/60 backdrop-blur-md text-white text-xs sm:text-sm font-bold px-3 py-1.5 rounded-full z-10">
-                      {currentSlide + 1} / {images.length}
-                    </div>
-                  </>
-                )}
               </div>
-            </div>
-          </div>
 
-          {/* 🔥 NEW: Eye-Catching Mobile-Friendly Refund Badge */}
-          <div className="mb-8 sm:mb-12">
-            <div className="max-w-5xl mx-auto">
-              <div className="bg-gradient-to-r from-green-500 to-emerald-600 rounded-2xl shadow-2xl p-[2px]">
-                <div className="bg-white rounded-2xl p-4 sm:p-6">
-                  {/* Mobile Layout */}
-                  <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-                    {/* Icon + Text */}
-                    <div className="flex items-center gap-3 sm:gap-4">
-                      <div className="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center shadow-lg flex-shrink-0">
-                        <Shield className="text-white" size={28} strokeWidth={2.5} />
-                      </div>
-                      <div className="text-center sm:text-left">
-                        <h3 className="text-lg sm:text-xl font-black text-gray-900 mb-0.5">
-                          100% Money-Back Guarantee
-                        </h3>
-                        <p className="text-xs sm:text-sm font-bold text-red-600">
-                          Full Refund if Proven Impure • No Questions
-                        </p>
-                      </div>
-                    </div>
+              {/* ✅ SCROLLABLE CONTENT */}
+              <div className="flex-1 overflow-y-auto px-3 py-2.5 space-y-2.5" style={{ WebkitOverflowScrolling: 'touch' }}>
+                
+                {/* Products */}
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <h4 className="text-[11px] font-black text-gray-900 flex items-center gap-1">
+                      <Sparkles size={11} className="text-orange-500" />
+                      Select Products
+                    </h4>
+                    {cart.length > 0 && (
+                      <span className="text-[8px] font-bold text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded-full">
+                        {cart.length} selected
+                      </span>
+                    )}
+                  </div>
 
-                    {/* Trust Badges */}
-                    <div className="flex items-center gap-2 flex-wrap justify-center">
-                      {[
-                        { icon: BadgeCheck, text: 'Lab Tested', bg: 'bg-green-50', text_color: 'text-green-700', border: 'border-green-200' },
-                        { icon: BadgeCheck, text: 'Certified', bg: 'bg-blue-50', text_color: 'text-blue-700', border: 'border-blue-200' },
-                        { icon: BadgeCheck, text: '2k+ Trust', bg: 'bg-orange-50', text_color: 'text-orange-700', border: 'border-orange-200' }
-                      ].map((item, idx) => (
-                        <div
-                          key={idx}
-                          className={`flex items-center gap-1.5 ${item.bg} px-2.5 sm:px-3 py-1.5 rounded-lg border-2 ${item.border}`}
-                        >
-                          <item.icon size={14} className={item.text_color} strokeWidth={2.5} />
-                          <span className={`text-xs font-bold ${item.text_color}`}>{item.text}</span>
+                  <div className="grid grid-cols-3 gap-1.5">
+                    {productVariants.map((variant) => {
+                      const cartItem = cart.find(item => item.id === variant.id);
+                      return (
+                        <ProductCard
+                          key={variant.id}
+                          variant={variant}
+                          isSelected={!!cartItem}
+                          quantity={cartItem?.quantity || 0}
+                          onToggle={toggleCartItem}
+                        />
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Cart */}
+                {cart.length > 0 && (
+                  <div>
+                    <h4 className="text-[11px] font-black text-gray-900 mb-1.5 flex items-center gap-1">
+                      <ShoppingCart size={11} className="text-orange-500" />
+                      Cart ({cart.length})
+                    </h4>
+                    <div className="space-y-1.5 bg-gray-50 rounded-lg p-1.5">
+                      <AnimatePresence>
+                        {cart.map((item) => (
+                          <CartItem key={item.id} item={item} onUpdateQuantity={updateQuantity} />
+                        ))}
+                      </AnimatePresence>
+                      
+                      {/* Total */}
+                      <div className="bg-gradient-to-r from-orange-500 to-amber-500 rounded-md p-2 mt-1.5">
+                        <div className="flex justify-between items-center">
+                          <div>
+                            <p className="text-white/80 text-[8px] font-bold">Total</p>
+                            <p className="text-white text-base font-black">₹{calculateTotal()}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-white/80 text-[8px] font-bold">Save</p>
+                            <p className="text-white text-xs font-black">₹{calculateSavings()}</p>
+                          </div>
                         </div>
-                      ))}
+                      </div>
                     </div>
                   </div>
-                </div>
-              </div>
-            </div>
-          </div>
+                )}
 
-          {/* Main Content Grid */}
-          <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
-            {/* Left Column */}
-            <div>
-              <div className="inline-flex items-center gap-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white px-4 py-2 rounded-full text-sm font-bold mb-4 shadow-lg">
-                <Award size={16} />
-                #1 Premium Ghee Brand in Ranchi
-              </div>
-
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight mb-4">
-                <span className="block text-gray-900">Premium</span>
-                <span className="block bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 bg-clip-text text-transparent">
-                  Pure Ghee
-                </span>
-              </h1>
-              
-              <p className="text-base sm:text-lg text-gray-700 mb-6 leading-relaxed max-w-xl">
-                Experience the authentic taste of traditional ghee made with love using 
-                <strong className="text-orange-600 font-semibold"> time-honored methods</strong> passed down through generations.
-              </p>
-              
-              <div className="grid grid-cols-2 gap-3 mb-6">
-                {[
-                  { icon: Shield, text: '100% Pure' },
-                  { icon: Award, text: 'FSSAI Certified' },
-                  { icon: Truck, text: 'Free Delivery' },
-                  { icon: Star, text: '4.9★ Rating' }
-                ].map((feature, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center gap-2.5 bg-white/60 backdrop-blur-sm rounded-xl px-3 py-2.5 shadow-sm"
-                  >
-                    <div className="w-9 h-9 bg-gradient-to-br from-amber-100 to-orange-100 rounded-lg flex items-center justify-center">
-                      <feature.icon className="text-orange-600" size={18} strokeWidth={2.5} />
-                    </div>
-                    <span className="font-semibold text-gray-800 text-sm">{feature.text}</span>
+                {/* Error */}
+                {error && (
+                  <div className="bg-red-50 border border-red-200 rounded-md p-1.5 flex items-start gap-1.5">
+                    <AlertCircle className="text-red-600 flex-shrink-0" size={12} />
+                    <p className="text-red-700 text-[10px] font-medium">{error}</p>
                   </div>
-                ))}
-              </div>
+                )}
 
-              <div className="flex flex-col sm:flex-row gap-3">
-                <button
-                  onClick={handleShopNow}
-                  className="bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 text-white px-6 sm:px-8 py-3.5 rounded-xl font-bold text-base shadow-xl hover:shadow-2xl transition-shadow flex items-center justify-center gap-2 group"
-                >
-                  Shop Now
-                  <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" strokeWidth={2.5} />
-                </button>
-                
-                <button
-                  onClick={handleWatchStory}
-                  className="border-2 border-orange-500 text-orange-600 px-6 sm:px-8 py-3.5 rounded-xl font-bold text-base hover:bg-orange-500 hover:text-white transition-colors flex items-center justify-center gap-2 bg-white/50"
-                >
-                  <Play size={20} strokeWidth={2.5} />
-                  Watch Story
-                </button>
-              </div>
-            </div>
+                {/* Form */}
+                <form onSubmit={handleSubmit} className="space-y-2 pb-2">
+                  <h4 className="text-[11px] font-black text-gray-900 flex items-center gap-1">
+                    <MapPin size={11} className="text-orange-500" />
+                    Delivery Details
+                  </h4>
 
-            {/* Right Column - Product Card */}
-            <div className="relative">
-              <div className="bg-white/80 backdrop-blur-md rounded-3xl shadow-2xl p-5 sm:p-6">
-                <div className="relative w-full h-[350px] sm:h-[400px] bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl overflow-hidden mb-4">
-                  <img
-                    src="https://radarofc.onrender.com/sb1.jpg"
-                    alt="Premium SBGhee Jar"
-                    className="w-full h-full object-contain p-4"
-                    loading="eager"
+                  <input
+                    type="text"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleInputChange}
+                    required
+                    minLength={3}
+                    className="w-full px-2.5 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-300 focus:border-orange-500 text-[11px]"
+                    placeholder="Full Name"
                   />
-                  <div className="absolute top-4 right-4 bg-red-500 text-white px-3 py-1.5 rounded-full text-sm font-bold shadow-lg">
-                    BESTSELLER
-                  </div>
-                </div>
-                
-                <div className="text-center">
-                  <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">Premium Pure Ghee</h3>
-                  <div className="flex items-center justify-center gap-2 text-gray-600 font-medium mb-3">
-                    <span className="text-sm">250 grams</span>
-                    <span className="w-1 h-1 bg-gray-400 rounded-full"></span>
-                    <div className="flex items-center gap-1">
-                      <Star size={14} className="text-yellow-500 fill-current" />
-                      <span className="text-sm">4.9</span>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center justify-center gap-3 flex-wrap mb-4">
-                    <span className="text-3xl font-bold text-gray-900">₹299</span>
-                    <span className="text-lg text-gray-500 line-through">₹349</span>
-                    <span className="bg-gradient-to-r from-red-500 to-orange-500 text-white px-3 py-1 rounded-lg text-sm font-bold">
-                      SAVE 15%
-                    </span>
-                  </div>
-                  
+
+                  <input
+                    type="tel"
+                    name="phone"
+                    value={formData.phone}
+                    onChange={handleInputChange}
+                    required
+                    pattern="[0-9]{10}"
+                    inputMode="numeric"
+                    className="w-full px-2.5 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-300 focus:border-orange-500 text-[11px]"
+                    placeholder="10-digit Phone Number"
+                  />
+
+                  <textarea
+                    name="address"
+                    value={formData.address}
+                    onChange={handleInputChange}
+                    required
+                    minLength={10}
+                    rows={2}
+                    className="w-full px-2.5 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-300 focus:border-orange-500 resize-none text-[11px]"
+                    placeholder="Delivery Address"
+                  />
+
                   <button
-                    onClick={() => setIsOrderFormOpen(true)}
-                    className="w-full bg-gradient-to-r from-orange-500 to-amber-500 text-white px-6 py-3 rounded-xl font-bold text-base hover:shadow-xl transition-shadow"
+                    type="submit"
+                    disabled={isSubmitting || cart.length === 0}
+                    className="w-full bg-gradient-to-r from-orange-500 to-amber-500 text-white font-black py-2.5 rounded-lg shadow-md disabled:opacity-50 text-xs active:scale-[0.98] transition-transform"
                   >
-                    Quick Buy Now
+                    {isSubmitting ? (
+                      <span className="flex items-center justify-center gap-1.5">
+                        <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        Processing...
+                      </span>
+                    ) : (
+                      <span className="flex items-center justify-center gap-1.5">
+                        <CheckCircle size={14} />
+                        {cart.length > 0 ? `Confirm Order • ₹{calculateTotal()}` : 'Select Items First'}
+                      </span>
+                    )}
                   </button>
+                </form>
+              </div>
+            </>
+          ) : (
+            <div className="p-5 text-center flex flex-col items-center justify-center min-h-[350px]">
+              <div className="w-14 h-14 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center mb-3">
+                <CheckCircle className="text-white" size={32} />
+              </div>
+              
+              <h3 className="text-lg font-black text-gray-900 mb-1.5">Order Placed!</h3>
+              <p className="text-gray-600 mb-4 text-xs">We'll contact you soon.</p>
+              
+              <div className="w-full bg-green-50 rounded-xl p-3 border-2 border-green-200 mb-4">
+                <p className="text-xs font-bold text-gray-700 mb-2">Summary</p>
+                <div className="space-y-1.5 text-left mb-2">
+                  {completedOrder?.items.map((item, i) => (
+                    <div key={i} className="flex justify-between text-[10px]">
+                      <span>{item.weight} × {item.quantity}</span>
+                      <span className="font-bold">₹{item.price * item.quantity}</span>
+                    </div>
+                  ))}
                 </div>
+                <div className="border-t-2 border-green-300 pt-2 flex justify-between">
+                  <span className="font-black text-gray-800 text-sm">Total</span>
+                  <span className="text-lg font-black text-green-700">₹{completedOrder?.total}</span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 w-full">
+                <button
+                  onClick={downloadInvoice}
+                  className="bg-gradient-to-r from-orange-500 to-amber-500 text-white font-bold py-2 rounded-lg flex items-center justify-center gap-1 text-xs"
+                >
+                  <Download size={14} />
+                  Invoice
+                </button>
+                
+                <button
+                  onClick={handleClose}
+                  className="bg-gray-100 text-gray-700 font-bold py-2 rounded-lg flex items-center justify-center gap-1 text-xs"
+                >
+                  <X size={14} />
+                  Close
+                </button>
               </div>
             </div>
-          </div>
-
-          {/* Stats Section */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 mt-10 sm:mt-14 pt-8 sm:pt-10 border-t border-gray-200">
-            {stats.map((stat, index) => (
-              <div key={index} className="text-center bg-white/60 backdrop-blur-sm rounded-xl p-4 shadow-sm">
-                <div className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-orange-600 to-amber-600 bg-clip-text text-transparent mb-1">
-                  {stat.number}
-                </div>
-                <div className="text-gray-700 font-medium text-sm">{stat.label}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <OrderForm
-        isOpen={isOrderFormOpen}
-        onClose={() => setIsOrderFormOpen(false)}
-        product={heroProduct}
-      />
-    </>
+          )}
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
   );
 };
 
-export default Hero;
+export default OrderForm;
