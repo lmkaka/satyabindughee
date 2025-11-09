@@ -275,35 +275,6 @@ const Hero = () => {
   </div>
 </div>
 
-              {/* Bottom Mini Cards - Compact on Mobile */}
-              <div className="grid grid-cols-2 gap-2 sm:gap-3 mt-3 sm:mt-4">
-                <div className="bg-blue-50 rounded-xl p-3 border border-blue-200">
-                  <div className="flex items-center gap-2 mb-1">
-                    <div className="w-6 h-6 bg-blue-500 rounded-md flex items-center justify-center flex-shrink-0">
-                      <Truck className="text-white" size={12} strokeWidth={2.5} />
-                    </div>
-                    <h4 className="font-black text-blue-900 text-xs">Free Delivery</h4>
-                  </div>
-                  <p className="text-blue-700 text-[10px] font-semibold">
-                    Same-day in Ranchi
-                  </p>
-                </div>
-
-                <div className="bg-orange-50 rounded-xl p-3 border border-orange-200">
-                  <div className="flex items-center gap-2 mb-1">
-                    <div className="w-6 h-6 bg-orange-500 rounded-md flex items-center justify-center flex-shrink-0">
-                      <Award className="text-white" size={12} strokeWidth={2.5} />
-                    </div>
-                    <h4 className="font-black text-orange-900 text-xs">Premium Quality</h4>
-                  </div>
-                  <p className="text-orange-700 text-[10px] font-semibold">
-                    Traditional methods
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
           {/* Main Content Grid */}
           <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
             {/* Left Column */}
