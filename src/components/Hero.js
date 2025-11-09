@@ -177,7 +177,7 @@ const Hero = () => {
             </div>
           </div>
 
-       {/* 🔥 MOBILE-FIRST: Guarantee Section */}
+      {/* 🔥 MOBILE-FIRST: Guarantee Section */}
 <div className="mb-6 sm:mb-10">
   <div className="max-w-5xl mx-auto">
     {/* Main Card */}
@@ -214,20 +214,20 @@ const Hero = () => {
             </div>
           </div>
 
-          {/* Trust Badges - Horizontal Scroll on Mobile, Centered on Desktop */}
-          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0 sm:flex sm:justify-center sm:gap-4">
+          {/* Trust Badges - 2 Column Grid on Mobile, Centered on Desktop */}
+          <div className="grid grid-cols-2 gap-2 sm:flex sm:justify-center sm:gap-4">
             {[
               { icon: BadgeCheck, text: 'Lab Tested' },
               { icon: Shield, text: 'FSSAI Certified' }
             ].map((item, idx) => (
               <div
                 key={idx}
-                className="flex-shrink-0 bg-white/15 backdrop-blur-sm rounded-lg px-4 py-2 flex items-center gap-2 min-w-[130px] sm:min-w-[160px] sm:flex-col sm:text-center sm:py-4"
+                className="bg-white/15 backdrop-blur-sm rounded-lg px-3 py-2.5 flex items-center gap-2 sm:min-w-[160px] sm:flex-col sm:text-center sm:py-4"
               >
                 <div className="w-7 h-7 sm:w-10 sm:h-10 bg-white/20 rounded-md flex items-center justify-center flex-shrink-0">
-                  <item.icon className="text-white" size={14} className="sm:w-5 sm:h-5" strokeWidth={2.5} />
+                  <item.icon className="text-white" size={14} strokeWidth={2.5} />
                 </div>
-                <p className="text-white font-bold text-xs sm:text-sm whitespace-nowrap">
+                <p className="text-white font-bold text-xs sm:text-sm">
                   {item.text}
                 </p>
               </div>
