@@ -354,7 +354,7 @@ const OrderForm = ({ isOpen, onClose, product }) => {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
+        className="fixed inset-0 z-50 flex items-start sm:items-center justify-center pt-16 sm:pt-0"
       >
         <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={handleClose} />
         
@@ -363,48 +363,48 @@ const OrderForm = ({ isOpen, onClose, product }) => {
           animate={{ y: 0 }}
           exit={{ y: "100%" }}
           transition={{ type: "spring", damping: 30, stiffness: 400 }}
-          className="relative bg-white w-full sm:max-w-lg sm:rounded-3xl rounded-t-3xl shadow-2xl flex flex-col"
-          style={{ maxHeight: '90vh' }}
+          className="relative bg-white w-full sm:max-w-lg rounded-t-3xl sm:rounded-3xl shadow-2xl flex flex-col"
+          style={{ maxHeight: 'calc(100vh - 4rem)' }}
         >
           {!isSuccess ? (
             <>
-              {/* ✅ STICKY FIXED HEADER - Always Visible */}
-              <div className="sticky top-0 z-50 bg-gradient-to-r from-orange-500 to-amber-500 px-4 py-3.5 flex items-center justify-between rounded-t-3xl shadow-lg">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-9 h-9 bg-white/20 rounded-xl flex items-center justify-center">
-                    <ShoppingCart size={18} className="text-white" strokeWidth={2.5} />
+              {/* ✅ COMPACT STICKY HEADER */}
+              <div className="sticky top-0 z-50 bg-gradient-to-r from-orange-500 to-amber-500 px-3 py-2.5 flex items-center justify-between rounded-t-3xl shadow-lg">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
+                    <ShoppingCart size={16} className="text-white" strokeWidth={2.5} />
                   </div>
                   <div>
-                    <h3 className="text-base font-black text-white">Place Order</h3>
+                    <h3 className="text-sm font-black text-white leading-tight">Place Order</h3>
                     {cart.length > 0 && (
-                      <p className="text-[10px] text-white/90 font-bold">
+                      <p className="text-[9px] text-white/90 font-bold leading-tight">
                         {cart.reduce((sum, item) => sum + item.quantity, 0)} items • ₹{calculateTotal()}
                       </p>
                     )}
                   </div>
                 </div>
                 
-                {/* ✅ ALWAYS VISIBLE CLOSE BUTTON */}
+                {/* ✅ PROMINENT CLOSE BUTTON */}
                 <button
                   onClick={handleClose}
-                  className="w-10 h-10 bg-white/90 rounded-xl hover:bg-white transition-colors flex items-center justify-center flex-shrink-0 shadow-md"
+                  className="w-9 h-9 bg-white rounded-lg hover:bg-gray-100 transition-colors flex items-center justify-center flex-shrink-0 shadow-md"
                 >
-                  <X size={22} className="text-orange-600" strokeWidth={3} />
+                  <X size={20} className="text-orange-600" strokeWidth={3} />
                 </button>
               </div>
 
-              {/* ✅ SCROLLABLE CONTENT AREA */}
-              <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4" style={{ WebkitOverflowScrolling: 'touch' }}>
+              {/* ✅ SCROLLABLE CONTENT */}
+              <div className="flex-1 overflow-y-auto px-3 py-3 space-y-3" style={{ WebkitOverflowScrolling: 'touch' }}>
                 
                 {/* Products */}
                 <div>
-                  <div className="flex items-center justify-between mb-2.5">
-                    <h4 className="text-sm font-black text-gray-900 flex items-center gap-1.5">
-                      <Sparkles size={14} className="text-orange-500" />
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="text-xs font-black text-gray-900 flex items-center gap-1.5">
+                      <Sparkles size={13} className="text-orange-500" />
                       Select Products
                     </h4>
                     {cart.length > 0 && (
-                      <span className="text-[10px] font-bold text-orange-600 bg-orange-50 px-2 py-0.5 rounded-full">
+                      <span className="text-[9px] font-bold text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded-full">
                         {cart.length} selected
                       </span>
                     )}
@@ -429,11 +429,11 @@ const OrderForm = ({ isOpen, onClose, product }) => {
                 {/* Cart */}
                 {cart.length > 0 && (
                   <div>
-                    <h4 className="text-sm font-black text-gray-900 mb-2 flex items-center gap-1.5">
-                      <ShoppingCart size={14} className="text-orange-500" />
+                    <h4 className="text-xs font-black text-gray-900 mb-2 flex items-center gap-1.5">
+                      <ShoppingCart size={13} className="text-orange-500" />
                       Cart ({cart.length})
                     </h4>
-                    <div className="space-y-2 bg-gray-50 rounded-xl p-2.5">
+                    <div className="space-y-2 bg-gray-50 rounded-xl p-2">
                       <AnimatePresence>
                         {cart.map((item) => (
                           <CartItem key={item.id} item={item} onUpdateQuantity={updateQuantity} />
@@ -441,15 +441,15 @@ const OrderForm = ({ isOpen, onClose, product }) => {
                       </AnimatePresence>
                       
                       {/* Total */}
-                      <div className="bg-gradient-to-r from-orange-500 to-amber-500 rounded-lg p-3 mt-2">
+                      <div className="bg-gradient-to-r from-orange-500 to-amber-500 rounded-lg p-2.5 mt-2">
                         <div className="flex justify-between items-center">
                           <div>
-                            <p className="text-white/80 text-[10px] font-bold">Total</p>
-                            <p className="text-white text-xl font-black">₹{calculateTotal()}</p>
+                            <p className="text-white/80 text-[9px] font-bold">Total</p>
+                            <p className="text-white text-lg font-black">₹{calculateTotal()}</p>
                           </div>
                           <div className="text-right">
-                            <p className="text-white/80 text-[10px] font-bold">Save</p>
-                            <p className="text-white text-base font-black">₹{calculateSavings()}</p>
+                            <p className="text-white/80 text-[9px] font-bold">Save</p>
+                            <p className="text-white text-sm font-black">₹{calculateSavings()}</p>
                           </div>
                         </div>
                       </div>
@@ -459,16 +459,16 @@ const OrderForm = ({ isOpen, onClose, product }) => {
 
                 {/* Error */}
                 {error && (
-                  <div className="bg-red-50 border-2 border-red-200 rounded-lg p-2.5 flex items-start gap-2">
-                    <AlertCircle className="text-red-600 flex-shrink-0" size={16} />
-                    <p className="text-red-700 text-xs font-medium">{error}</p>
+                  <div className="bg-red-50 border-2 border-red-200 rounded-lg p-2 flex items-start gap-2">
+                    <AlertCircle className="text-red-600 flex-shrink-0" size={14} />
+                    <p className="text-red-700 text-[11px] font-medium">{error}</p>
                   </div>
                 )}
 
                 {/* Form */}
-                <form onSubmit={handleSubmit} className="space-y-3 pb-4">
-                  <h4 className="text-sm font-black text-gray-900 flex items-center gap-1.5">
-                    <MapPin size={14} className="text-orange-500" />
+                <form onSubmit={handleSubmit} className="space-y-2.5 pb-3">
+                  <h4 className="text-xs font-black text-gray-900 flex items-center gap-1.5">
+                    <MapPin size={13} className="text-orange-500" />
                     Delivery Details
                   </h4>
 
@@ -479,7 +479,7 @@ const OrderForm = ({ isOpen, onClose, product }) => {
                     onChange={handleInputChange}
                     required
                     minLength={3}
-                    className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-300 focus:border-orange-500 text-sm"
+                    className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-300 focus:border-orange-500 text-xs"
                     placeholder="Full Name"
                   />
 
@@ -491,7 +491,7 @@ const OrderForm = ({ isOpen, onClose, product }) => {
                     required
                     pattern="[0-9]{10}"
                     inputMode="numeric"
-                    className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-300 focus:border-orange-500 text-sm"
+                    className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-300 focus:border-orange-500 text-xs"
                     placeholder="10-digit Phone Number"
                   />
 
@@ -502,23 +502,23 @@ const OrderForm = ({ isOpen, onClose, product }) => {
                     required
                     minLength={10}
                     rows={2}
-                    className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-300 focus:border-orange-500 resize-none text-sm"
+                    className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-300 focus:border-orange-500 resize-none text-xs"
                     placeholder="Delivery Address"
                   />
 
                   <button
                     type="submit"
                     disabled={isSubmitting || cart.length === 0}
-                    className="w-full bg-gradient-to-r from-orange-500 to-amber-500 text-white font-black py-3.5 rounded-xl shadow-lg disabled:opacity-50 text-sm active:scale-[0.98] transition-transform"
+                    className="w-full bg-gradient-to-r from-orange-500 to-amber-500 text-white font-black py-3 rounded-xl shadow-lg disabled:opacity-50 text-xs active:scale-[0.98] transition-transform"
                   >
                     {isSubmitting ? (
                       <span className="flex items-center justify-center gap-2">
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                         Processing...
                       </span>
                     ) : (
                       <span className="flex items-center justify-center gap-2">
-                        <CheckCircle size={18} />
+                        <CheckCircle size={16} />
                         {cart.length > 0 ? `Confirm Order • ₹${calculateTotal()}` : 'Select Items First'}
                       </span>
                     )}
