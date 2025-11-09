@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Star, Award, Shield, Truck, ArrowRight, Play, ChevronLeft, ChevronRight, BadgeCheck, Sparkles, CheckCircle2 } from 'lucide-react';
+import { Star, Award, Shield, Truck, ArrowRight, Play, ChevronLeft, ChevronRight, CheckCircle } from 'lucide-react';
 import OrderForm from './OrderForm';
 
 const Hero = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [imagesLoaded, setImagesLoaded] = useState(false);
   const [isOrderFormOpen, setIsOrderFormOpen] = useState(false);
+  const [loadingProgress, setLoadingProgress] = useState(0);
   
   const images = [
     'https://radarofc.onrender.com/1.jpg',
@@ -35,24 +36,38 @@ const Hero = () => {
     { number: '10+', label: 'Years Experience' }
   ];
 
+  // ✅ FIXED: Proper image preloading with progress
   useEffect(() => {
-    const preloadImages = async () => {
-      const imagePromises = images.map((src) => {
-        return new Promise((resolve, reject) => {
-          const img = new Image();
-          img.src = src;
-          img.onload = resolve;
-          img.onerror = reject;
-        });
-      });
+    let loadedCount = 0;
+    const totalImages = images.length;
 
-      try {
-        await Promise.all(imagePromises);
-        setImagesLoaded(true);
-      } catch (error) {
-        console.error('Error preloading images:', error);
-        setImagesLoaded(true);
-      }
+    const preloadImages = () => {
+      images.forEach((src, index) => {
+        const img = new Image();
+        img.src = src;
+        
+        img.onload = () => {
+          loadedCount++;
+          const progress = Math.round((loadedCount / totalImages) * 100);
+          setLoadingProgress(progress);
+          
+          if (loadedCount === totalImages) {
+            setTimeout(() => {
+              setImagesLoaded(true);
+            }, 300); // Small delay for smooth transition
+          }
+        };
+        
+        img.onerror = () => {
+          loadedCount++;
+          const progress = Math.round((loadedCount / totalImages) * 100);
+          setLoadingProgress(progress);
+          
+          if (loadedCount === totalImages) {
+            setImagesLoaded(true);
+          }
+        };
+      });
     };
 
     preloadImages();
@@ -98,233 +113,7 @@ const Hero = () => {
         </div>
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 sm:pt-12 pb-16 sm:pb-20">
-          {/* 🔥 PREMIUM 100% REFUND GUARANTEE BADGE - ULTRA EYE-CATCHING */}
-          <motion.div
-            initial={{ opacity: 0, y: -40, scale: 0.8 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{ duration: 0.8, type: "spring", stiffness: 120 }}
-            className="mb-6 sm:mb-10 relative"
-          >
-            {/* Animated Glow Effect */}
-            <motion.div
-              animate={{ 
-                scale: [1, 1.05, 1],
-                opacity: [0.5, 0.8, 0.5]
-              }}
-              transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-              className="absolute inset-0 bg-gradient-to-r from-green-400 via-emerald-500 to-green-400 rounded-3xl blur-2xl opacity-50"
-            />
-
-            <div className="relative max-w-5xl mx-auto">
-              {/* Main Card with Glass Morphism */}
-              <motion.div
-                animate={{ 
-                  boxShadow: [
-                    '0 10px 60px rgba(16, 185, 129, 0.3)',
-                    '0 20px 80px rgba(16, 185, 129, 0.5)',
-                    '0 10px 60px rgba(16, 185, 129, 0.3)'
-                  ]
-                }}
-                transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
-                className="relative"
-              >
-                <div className="bg-gradient-to-br from-green-600 via-emerald-600 to-green-700 rounded-3xl p-[3px] shadow-2xl">
-                  <div className="bg-gradient-to-br from-white via-green-50 to-emerald-50 rounded-3xl px-6 py-6 sm:px-10 sm:py-8 backdrop-blur-xl relative overflow-hidden">
-                    {/* Animated Background Pattern */}
-                    <div className="absolute inset-0 opacity-10">
-                      <div className="absolute top-0 left-0 w-40 h-40 bg-green-500 rounded-full mix-blend-multiply filter blur-3xl animate-blob"></div>
-                      <div className="absolute bottom-0 right-0 w-40 h-40 bg-emerald-500 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-2000"></div>
-                    </div>
-
-                    {/* Content */}
-                    <div className="relative z-10">
-                      {/* Top Badge */}
-                      <motion.div
-                        animate={{ y: [0, -5, 0] }}
-                        transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                        className="flex justify-center mb-4"
-                      >
-                        <div className="inline-flex items-center gap-2 bg-gradient-to-r from-yellow-400 to-orange-400 text-white px-5 py-2 rounded-full text-xs sm:text-sm font-black shadow-lg">
-                          <Sparkles size={16} className="animate-spin-slow" />
-                          <span>RISK-FREE PURCHASE</span>
-                          <Sparkles size={16} className="animate-spin-slow" />
-                        </div>
-                      </motion.div>
-
-                      {/* Main Content Grid */}
-                      <div className="flex flex-col lg:flex-row items-center justify-center gap-6 lg:gap-8">
-                        {/* Shield Icon with Animation */}
-                        <motion.div
-                          animate={{ 
-                            rotate: [0, -5, 5, -5, 0],
-                            scale: [1, 1.05, 1, 1.05, 1]
-                          }}
-                          transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-                          className="flex-shrink-0"
-                        >
-                          <div className="relative">
-                            {/* Pulsing Ring */}
-                            <motion.div
-                              animate={{ 
-                                scale: [1, 1.3, 1],
-                                opacity: [0.7, 0, 0.7]
-                              }}
-                              transition={{ duration: 2, repeat: Infinity, ease: "easeOut" }}
-                              className="absolute inset-0 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full blur-lg"
-                            />
-                            
-                            {/* Main Shield */}
-                            <div className="relative w-20 h-20 sm:w-28 sm:h-28 bg-gradient-to-br from-green-500 via-emerald-500 to-green-600 rounded-full flex items-center justify-center shadow-2xl">
-                              <Shield className="text-white" size={48} strokeWidth={2.5} fill="white" />
-                              
-                              {/* Checkmark Badge */}
-                              <motion.div
-                                animate={{ scale: [1, 1.1, 1] }}
-                                transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
-                                className="absolute -bottom-1 -right-1 w-10 h-10 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center shadow-lg border-4 border-white"
-                              >
-                                <CheckCircle2 size={20} className="text-white" strokeWidth={3} />
-                              </motion.div>
-                            </div>
-                          </div>
-                        </motion.div>
-
-                        {/* Text Content */}
-                        <div className="text-center lg:text-left flex-1">
-                          {/* Main Heading */}
-                          <motion.h2
-                            animate={{ 
-                              backgroundPosition: ['0% 50%', '100% 50%', '0% 50%']
-                            }}
-                            transition={{ duration: 5, repeat: Infinity, ease: "linear" }}
-                            className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-black mb-3 leading-tight"
-                            style={{
-                              background: 'linear-gradient(90deg, #059669, #10b981, #34d399, #10b981, #059669)',
-                              backgroundSize: '200% auto',
-                              WebkitBackgroundClip: 'text',
-                              WebkitTextFillColor: 'transparent',
-                              backgroundClip: 'text'
-                            }}
-                          >
-                            100% MONEY-BACK
-                            <br />
-                            <span className="text-green-700">GUARANTEE</span>
-                          </motion.h2>
-
-                          {/* Subheading */}
-                          <p className="text-base sm:text-lg lg:text-xl font-bold text-gray-800 mb-4">
-                            <span className="inline-flex items-center gap-2 bg-red-100 text-red-700 px-4 py-1.5 rounded-full">
-                              <BadgeCheck size={20} />
-                              Full Refund if Proven Impure
-                            </span>
-                          </p>
-
-                          {/* Features */}
-                          <div className="flex flex-wrap items-center justify-center lg:justify-start gap-3 sm:gap-4">
-                            {[
-                              { icon: CheckCircle2, text: 'No Questions Asked', color: 'green' },
-                              { icon: CheckCircle2, text: 'Lab Tested', color: 'blue' },
-                              { icon: CheckCircle2, text: 'FSSAI Certified', color: 'orange' }
-                            ].map((item, idx) => (
-                              <motion.div
-                                key={idx}
-                                initial={{ opacity: 0, x: -20 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                transition={{ delay: 0.8 + idx * 0.15 }}
-                                className={`flex items-center gap-2 bg-white/80 backdrop-blur-sm px-4 py-2 rounded-full shadow-md border-2 border-${item.color}-200`}
-                              >
-                                <item.icon size={18} className={`text-${item.color}-600`} strokeWidth={2.5} />
-                                <span className="font-bold text-gray-800 text-sm sm:text-base">{item.text}</span>
-                              </motion.div>
-                            ))}
-                          </div>
-                        </div>
-
-                        {/* Right Side Badge */}
-                        <motion.div
-                          animate={{ 
-                            rotate: [0, 360],
-                            scale: [1, 1.1, 1]
-                          }}
-                          transition={{ 
-                            rotate: { duration: 20, repeat: Infinity, ease: "linear" },
-                            scale: { duration: 3, repeat: Infinity, ease: "easeInOut" }
-                          }}
-                          className="hidden lg:block flex-shrink-0"
-                        >
-                          <div className="relative w-24 h-24">
-                            <div className="absolute inset-0 bg-gradient-to-br from-yellow-400 via-orange-400 to-red-500 rounded-full animate-pulse shadow-2xl"></div>
-                            <div className="absolute inset-1 bg-white rounded-full flex flex-col items-center justify-center">
-                              <span className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-green-600 to-emerald-600">100%</span>
-                              <span className="text-xs font-bold text-gray-700">SAFE</span>
-                            </div>
-                          </div>
-                        </motion.div>
-                      </div>
-
-                      {/* Bottom Trust Line */}
-                      <motion.div
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 1 }}
-                        className="mt-6 pt-5 border-t-2 border-green-200 text-center"
-                      >
-                        <p className="text-sm sm:text-base font-bold text-gray-700">
-                          <span className="text-green-700">2,000+ Happy Customers</span> Trust Our Purity Promise
-                        </p>
-                      </motion.div>
-                    </div>
-
-                    {/* Decorative Sparkles */}
-                    <motion.div
-                      animate={{ 
-                        rotate: 360,
-                        scale: [1, 1.2, 1]
-                      }}
-                      transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
-                      className="absolute top-4 right-4 text-yellow-400"
-                    >
-                      <Sparkles size={24} />
-                    </motion.div>
-                    <motion.div
-                      animate={{ 
-                        rotate: -360,
-                        scale: [1, 1.3, 1]
-                      }}
-                      transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
-                      className="absolute bottom-4 left-4 text-yellow-400"
-                    >
-                      <Sparkles size={20} />
-                    </motion.div>
-                  </div>
-                </div>
-
-                {/* Animated Corner Indicators */}
-                <motion.div
-                  animate={{ scale: [1, 1.5, 1], opacity: [1, 0, 1] }}
-                  transition={{ duration: 2, repeat: Infinity }}
-                  className="absolute -top-2 -left-2 w-6 h-6 bg-green-500 rounded-full shadow-lg"
-                />
-                <motion.div
-                  animate={{ scale: [1, 1.5, 1], opacity: [1, 0, 1] }}
-                  transition={{ duration: 2, repeat: Infinity, delay: 0.5 }}
-                  className="absolute -top-2 -right-2 w-6 h-6 bg-yellow-500 rounded-full shadow-lg"
-                />
-                <motion.div
-                  animate={{ scale: [1, 1.5, 1], opacity: [1, 0, 1] }}
-                  transition={{ duration: 2, repeat: Infinity, delay: 1 }}
-                  className="absolute -bottom-2 -left-2 w-6 h-6 bg-emerald-500 rounded-full shadow-lg"
-                />
-                <motion.div
-                  animate={{ scale: [1, 1.5, 1], opacity: [1, 0, 1] }}
-                  transition={{ duration: 2, repeat: Infinity, delay: 1.5 }}
-                  className="absolute -bottom-2 -right-2 w-6 h-6 bg-orange-500 rounded-full shadow-lg"
-                />
-              </motion.div>
-            </div>
-          </motion.div>
-
-          {/* Carousel Section */}
+          {/* Carousel Section - WITH IMPROVED LOADING */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -333,15 +122,33 @@ const Hero = () => {
           >
             <div className="relative max-w-5xl mx-auto">
               <div className="relative h-[300px] sm:h-[380px] md:h-[480px] lg:h-[560px] xl:h-[640px] bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl overflow-hidden">
+                {/* ✅ IMPROVED LOADING STATE with Progress Bar */}
                 {!imagesLoaded && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-amber-100 to-orange-100">
-                    <div className="flex flex-col items-center gap-3">
-                      <div className="w-12 h-12 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
-                      <p className="text-orange-600 font-semibold">Loading Images...</p>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-amber-50 to-orange-50">
+                    <div className="flex flex-col items-center gap-4 w-full max-w-xs px-6">
+                      {/* Spinner */}
+                      <div className="w-16 h-16 border-4 border-orange-200 border-t-orange-500 rounded-full animate-spin"></div>
+                      
+                      {/* Progress Text */}
+                      <div className="text-center">
+                        <p className="text-orange-600 font-bold text-lg mb-2">Loading Images...</p>
+                        <p className="text-orange-500 text-sm font-semibold">{loadingProgress}%</p>
+                      </div>
+                      
+                      {/* Progress Bar */}
+                      <div className="w-full h-2 bg-orange-100 rounded-full overflow-hidden">
+                        <motion.div
+                          initial={{ width: 0 }}
+                          animate={{ width: `${loadingProgress}%` }}
+                          transition={{ duration: 0.3 }}
+                          className="h-full bg-gradient-to-r from-orange-500 to-amber-500 rounded-full"
+                        />
+                      </div>
                     </div>
                   </div>
                 )}
 
+                {/* Carousel Images */}
                 {imagesLoaded && (
                   <AnimatePresence mode="wait" initial={false}>
                     <motion.div
@@ -365,6 +172,7 @@ const Hero = () => {
                   </AnimatePresence>
                 )}
 
+                {/* Navigation Buttons */}
                 <button
                   onClick={prevSlide}
                   disabled={!imagesLoaded}
@@ -383,6 +191,7 @@ const Hero = () => {
                   <ChevronRight size={24} className="text-gray-800" />
                 </button>
 
+                {/* Pagination Dots */}
                 {imagesLoaded && (
                   <div className="absolute bottom-4 sm:bottom-5 left-1/2 -translate-x-1/2 flex gap-2 z-10">
                     {images.map((_, index) => (
@@ -400,6 +209,7 @@ const Hero = () => {
                   </div>
                 )}
 
+                {/* Slide Counter */}
                 {imagesLoaded && (
                   <div className="absolute top-3 sm:top-4 right-3 sm:right-4 bg-black/50 backdrop-blur-sm text-white text-xs sm:text-sm font-semibold px-3 py-1.5 rounded-full z-10">
                     {currentSlide + 1} / {images.length}
@@ -409,17 +219,65 @@ const Hero = () => {
             </div>
           </motion.div>
 
+          {/* 🔥 NEW: SIMPLE & CLEAN 100% REFUND GUARANTEE - BELOW CAROUSEL */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="mb-8 sm:mb-12"
+          >
+            <div className="max-w-5xl mx-auto">
+              <div className="bg-gradient-to-r from-green-600 to-emerald-600 rounded-2xl shadow-xl p-1">
+                <div className="bg-white rounded-xl p-4 sm:p-6">
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                    {/* Left: Icon + Text */}
+                    <div className="flex items-center gap-3 sm:gap-4">
+                      <div className="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center flex-shrink-0 shadow-lg">
+                        <Shield className="text-white" size={28} strokeWidth={2.5} />
+                      </div>
+                      <div className="text-center sm:text-left">
+                        <h3 className="text-lg sm:text-xl lg:text-2xl font-black text-gray-900 mb-0.5">
+                          100% Money-Back Guarantee
+                        </h3>
+                        <p className="text-xs sm:text-sm font-semibold text-gray-700">
+                          Full Refund if Proven Impure - No Questions Asked
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Right: Trust Badges */}
+                    <div className="flex items-center gap-2 sm:gap-3 flex-wrap justify-center">
+                      <div className="flex items-center gap-1.5 bg-green-50 px-3 py-1.5 rounded-full border border-green-200">
+                        <CheckCircle size={14} className="text-green-600" strokeWidth={2.5} />
+                        <span className="text-xs font-bold text-green-700">Lab Tested</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 bg-blue-50 px-3 py-1.5 rounded-full border border-blue-200">
+                        <CheckCircle size={14} className="text-blue-600" strokeWidth={2.5} />
+                        <span className="text-xs font-bold text-blue-700">Certified</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 bg-orange-50 px-3 py-1.5 rounded-full border border-orange-200">
+                        <CheckCircle size={14} className="text-orange-600" strokeWidth={2.5} />
+                        <span className="text-xs font-bold text-orange-700">2k+ Trust Us</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+
           {/* Main Content Grid */}
           <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+            {/* Left Column - Text Content */}
             <motion.div
               initial={{ opacity: 0, x: -30 }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.7, delay: 0.2 }}
+              transition={{ duration: 0.7, delay: 0.3 }}
             >
               <motion.div
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.3 }}
+                transition={{ delay: 0.4 }}
                 className="inline-flex items-center gap-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white px-4 py-2 rounded-full text-sm font-bold mb-5 shadow-lg"
               >
                 <Award size={16} />
@@ -438,6 +296,7 @@ const Hero = () => {
                 <strong className="text-orange-600 font-semibold"> time-honored methods</strong> passed down through generations.
               </p>
               
+              {/* Feature Grid */}
               <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-7">
                 {[
                   { icon: Shield, text: '100% Pure' },
@@ -460,6 +319,7 @@ const Hero = () => {
                 ))}
               </div>
 
+              {/* CTA Buttons */}
               <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                 <motion.button
                   whileHover={{ scale: 1.03 }}
@@ -483,10 +343,11 @@ const Hero = () => {
               </div>
             </motion.div>
 
+            {/* Right Column - Product Card */}
             <motion.div
               initial={{ opacity: 0, x: 30 }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.7, delay: 0.3 }}
+              transition={{ duration: 0.7, delay: 0.4 }}
               className="relative"
             >
               <motion.div
@@ -537,6 +398,7 @@ const Hero = () => {
                 </div>
               </motion.div>
 
+              {/* Decorative Animated Elements */}
               <motion.div
                 animate={{ rotate: 360 }}
                 transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
@@ -550,6 +412,7 @@ const Hero = () => {
             </motion.div>
           </div>
 
+          {/* Stats Section */}
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
@@ -573,6 +436,7 @@ const Hero = () => {
           </motion.div>
         </div>
 
+        {/* Custom Animations CSS */}
         <style jsx>{`
           @keyframes blob {
             0%, 100% { transform: translate(0, 0) scale(1); }
@@ -587,13 +451,6 @@ const Hero = () => {
           }
           .animation-delay-4000 {
             animation-delay: 4s;
-          }
-          @keyframes spin-slow {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-          }
-          .animate-spin-slow {
-            animation: spin-slow 3s linear infinite;
           }
         `}</style>
       </section>
