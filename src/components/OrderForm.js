@@ -1,11 +1,11 @@
 import React, { useState, memo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, User, Phone, MapPin, ShoppingCart, Download, CheckCircle, AlertCircle, Package, Sparkles, TrendingDown } from 'lucide-react';
+import { X, User, Phone, MapPin, ShoppingCart, Download, CheckCircle, AlertCircle, Package, Sparkles } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 
-// ✅ Mobile-First Product Card
+// ✅ Product Card Component
 const ProductCard = memo(({ variant, isSelected, quantity, onToggle }) => {
   const discount = Math.round(((variant.originalPrice - variant.price) / variant.originalPrice) * 100);
   
@@ -15,9 +15,7 @@ const ProductCard = memo(({ variant, isSelected, quantity, onToggle }) => {
       onClick={() => onToggle(variant)}
       whileTap={{ scale: 0.96 }}
       className={`relative w-full rounded-xl overflow-hidden transition-all ${
-        isSelected
-          ? 'ring-3 ring-orange-500 shadow-lg'
-          : 'ring-2 ring-gray-200 hover:ring-orange-300'
+        isSelected ? 'ring-3 ring-orange-500 shadow-lg' : 'ring-2 ring-gray-200'
       }`}
     >
       {discount > 0 && (
@@ -78,7 +76,7 @@ const ProductCard = memo(({ variant, isSelected, quantity, onToggle }) => {
 
 ProductCard.displayName = 'ProductCard';
 
-// ✅ Compact Cart Item
+// ✅ Cart Item Component
 const CartItem = memo(({ item, onUpdateQuantity }) => {
   return (
     <motion.div
@@ -365,12 +363,13 @@ const OrderForm = ({ isOpen, onClose, product }) => {
           animate={{ y: 0 }}
           exit={{ y: "100%" }}
           transition={{ type: "spring", damping: 30, stiffness: 400 }}
-          className="relative bg-white w-full sm:max-w-lg sm:rounded-3xl rounded-t-3xl shadow-2xl flex flex-col max-h-[92vh]"
+          className="relative bg-white w-full sm:max-w-lg sm:rounded-3xl rounded-t-3xl shadow-2xl flex flex-col"
+          style={{ maxHeight: '90vh' }}
         >
           {!isSuccess ? (
             <>
-              {/* ✅ COMPACT HEADER WITH VISIBLE CLOSE BUTTON */}
-              <div className="bg-gradient-to-r from-orange-500 to-amber-500 px-4 py-3 flex items-center justify-between flex-shrink-0 rounded-t-3xl">
+              {/* ✅ STICKY FIXED HEADER - Always Visible */}
+              <div className="sticky top-0 z-50 bg-gradient-to-r from-orange-500 to-amber-500 px-4 py-3.5 flex items-center justify-between rounded-t-3xl shadow-lg">
                 <div className="flex items-center gap-2.5">
                   <div className="w-9 h-9 bg-white/20 rounded-xl flex items-center justify-center">
                     <ShoppingCart size={18} className="text-white" strokeWidth={2.5} />
@@ -385,17 +384,17 @@ const OrderForm = ({ isOpen, onClose, product }) => {
                   </div>
                 </div>
                 
-                {/* ✅ HIGHLY VISIBLE CLOSE BUTTON */}
+                {/* ✅ ALWAYS VISIBLE CLOSE BUTTON */}
                 <button
                   onClick={handleClose}
-                  className="w-9 h-9 bg-white/30 rounded-xl hover:bg-white/40 transition-colors flex items-center justify-center flex-shrink-0"
+                  className="w-10 h-10 bg-white/90 rounded-xl hover:bg-white transition-colors flex items-center justify-center flex-shrink-0 shadow-md"
                 >
-                  <X size={20} className="text-white" strokeWidth={3} />
+                  <X size={22} className="text-orange-600" strokeWidth={3} />
                 </button>
               </div>
 
-              {/* ✅ OPTIMIZED SCROLL AREA */}
-              <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 overscroll-contain" style={{ WebkitOverflowScrolling: 'touch' }}>
+              {/* ✅ SCROLLABLE CONTENT AREA */}
+              <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4" style={{ WebkitOverflowScrolling: 'touch' }}>
                 
                 {/* Products */}
                 <div>
@@ -467,7 +466,7 @@ const OrderForm = ({ isOpen, onClose, product }) => {
                 )}
 
                 {/* Form */}
-                <form onSubmit={handleSubmit} className="space-y-3">
+                <form onSubmit={handleSubmit} className="space-y-3 pb-4">
                   <h4 className="text-sm font-black text-gray-900 flex items-center gap-1.5">
                     <MapPin size={14} className="text-orange-500" />
                     Delivery Details
@@ -510,7 +509,7 @@ const OrderForm = ({ isOpen, onClose, product }) => {
                   <button
                     type="submit"
                     disabled={isSubmitting || cart.length === 0}
-                    className="w-full bg-gradient-to-r from-orange-500 to-amber-500 text-white font-black py-3 rounded-xl shadow-lg disabled:opacity-50 text-sm active:scale-[0.98] transition-transform"
+                    className="w-full bg-gradient-to-r from-orange-500 to-amber-500 text-white font-black py-3.5 rounded-xl shadow-lg disabled:opacity-50 text-sm active:scale-[0.98] transition-transform"
                   >
                     {isSubmitting ? (
                       <span className="flex items-center justify-center gap-2">
@@ -520,7 +519,7 @@ const OrderForm = ({ isOpen, onClose, product }) => {
                     ) : (
                       <span className="flex items-center justify-center gap-2">
                         <CheckCircle size={18} />
-                        {cart.length > 0 ? `Confirm • ₹${calculateTotal()}` : 'Select Items'}
+                        {cart.length > 0 ? `Confirm Order • ₹${calculateTotal()}` : 'Select Items First'}
                       </span>
                     )}
                   </button>
