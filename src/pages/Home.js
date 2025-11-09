@@ -1,14 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Hero from '../components/Hero';
 import ProductCard from '../components/ProductCard';
 import Reviews from '../components/Reviews';
 import { products } from '../data/products';
 import { Truck, Shield, Award, Clock } from 'lucide-react';
-import { MessageCircle } from 'lucide-react';
 
 const Home = () => {
   const [isDragging, setIsDragging] = useState(false);
+  const [constraints, setConstraints] = useState({ top: 0, left: 0, right: 0, bottom: 0 });
   
   const features = [
     {
@@ -32,6 +32,22 @@ const Home = () => {
       description: 'Made using time-tested traditional methods for authentic taste'
     }
   ];
+
+  // Update constraints dynamically for full screen dragging
+  useEffect(() => {
+    const updateConstraints = () => {
+      setConstraints({
+        top: 0,
+        left: 0,
+        right: window.innerWidth - 70,
+        bottom: window.innerHeight - 70,
+      });
+    };
+
+    updateConstraints();
+    window.addEventListener('resize', updateConstraints);
+    return () => window.removeEventListener('resize', updateConstraints);
+  }, []);
 
   const handleWhatsAppClick = () => {
     // Only open WhatsApp if not dragging
@@ -57,17 +73,12 @@ const Home = () => {
         </div>
       </div>
 
-      {/* ✅ Draggable Floating WhatsApp Button */}
+      {/* ✅ Draggable Floating WhatsApp Button - Full Screen Drag */}
       <motion.div
         drag
-        dragMomemtum={false}
+        dragMomentum={false}
         dragElastic={0}
-        dragConstraints={{
-          top: 0,
-          left: 0,
-          right: window.innerWidth - 70,
-          bottom: window.innerHeight - 70,
-        }}
+        dragConstraints={constraints}
         onDragStart={() => setIsDragging(true)}
         onDragEnd={() => setTimeout(() => setIsDragging(false), 100)}
         onClick={handleWhatsAppClick}
@@ -77,14 +88,23 @@ const Home = () => {
         style={{ touchAction: 'none' }}
       >
         <div className="relative">
-          {/* WhatsApp Button */}
-          <div className="w-16 h-16 bg-green-500 hover:bg-green-600 rounded-full flex items-center justify-center shadow-2xl transition-colors">
+          {/* WhatsApp Button with Original Logo */}
+          <div className="w-16 h-16 bg-[#25D366] hover:bg-[#20BA5A] rounded-full flex items-center justify-center shadow-2xl transition-colors">
+            {/* Official WhatsApp Logo SVG */}
             <svg
-              viewBox="0 0 32 32"
+              viewBox="0 0 175.216 175.552"
               className="w-10 h-10 fill-white"
               xmlns="http://www.w3.org/2000/svg"
             >
-              <path d="M16 0c-8.837 0-16 7.163-16 16 0 2.825 0.737 5.607 2.137 8.048l-2.137 7.952 7.933-2.127c2.42 1.37 5.173 2.127 8.067 2.127 8.837 0 16-7.163 16-16s-7.163-16-16-16zM16 29.467c-2.482 0-4.908-0.646-7.07-1.87l-0.507-0.292-5.247 1.408 1.417-5.267-0.315-0.533c-1.318-2.204-2.011-4.695-2.011-7.245 0-7.72 6.28-14 14-14s14 6.28 14 14-6.28 14-14 14zM21.803 18.56c-0.213-0.107-1.265-0.623-1.46-0.695s-0.338-0.107-0.481 0.107c-0.142 0.213-0.551 0.695-0.676 0.838s-0.249 0.16-0.462 0.053c-0.213-0.107-0.899-0.331-1.713-1.057-0.633-0.565-1.061-1.263-1.185-1.476s-0.013-0.329 0.094-0.436c0.096-0.095 0.213-0.249 0.32-0.374s0.142-0.213 0.213-0.356c0.071-0.142 0.036-0.267-0.018-0.374s-0.481-1.16-0.659-1.587c-0.174-0.418-0.351-0.361-0.481-0.368-0.124-0.006-0.267-0.008-0.409-0.008s-0.374 0.053-0.57 0.267c-0.196 0.213-0.748 0.731-0.748 1.782s0.765 2.067 0.872 2.209c0.107 0.142 1.508 2.304 3.655 3.229 0.511 0.221 0.91 0.353 1.22 0.451 0.513 0.163 0.98 0.14 1.349 0.085 0.411-0.061 1.265-0.518 1.444-1.018s0.178-0.929 0.125-1.018c-0.053-0.089-0.196-0.142-0.409-0.249z" />
+              <defs>
+                <linearGradient id="whatsappGradient" x1="85.915" y1="32.567" x2="85.915" y2="137.092" gradientUnits="userSpaceOnUse">
+                  <stop offset="0" stopColor="#57d163"/>
+                  <stop offset="1" stopColor="#23b33a"/>
+                </linearGradient>
+              </defs>
+              <path fill="#fff" d="M87.184 25.227c-33.733 0-61.166 27.423-61.178 61.13a60.98 60.98 0 0 0 9.349 32.535l1.455 2.312-6.179 22.559 23.146-6.069 2.235 1.324c9.387 5.571 20.15 8.518 31.126 8.524h.023c33.707 0 61.14-27.426 61.153-61.135a60.75 60.75 0 0 0-17.895-43.251 60.75 60.75 0 0 0-43.235-17.929z"/>
+              <path fill="url(#whatsappGradient)" d="M87.184 29.164c30.843 0 55.936 25.068 55.949 55.88a55.88 55.88 0 0 1-16.735 39.867 55.88 55.88 0 0 1-39.194 16.27h-.018c-10.029-.005-19.909-2.694-28.651-7.806l-3.346-1.994-19.488 5.11 5.2-19.002-2.194-3.486c-5.805-9.224-8.872-19.868-8.863-30.798.011-30.843 25.11-55.91 55.954-55.91l.018.001z"/>
+              <path fill="#fff" fillRule="evenodd" d="M68.772 55.603c-1.378-3.061-2.828-3.123-4.137-3.176l-3.524-.043c-1.226 0-3.218.46-4.902 2.3s-6.435 6.287-6.435 15.332 6.588 17.785 7.506 19.013 12.718 20.381 31.405 27.75c15.529 6.124 18.689 4.906 22.061 4.6s10.877-4.447 12.408-8.74 1.532-7.971 1.073-8.74-1.685-1.226-3.525-2.146-10.877-5.367-12.562-5.981-2.91-.919-4.137.921-4.746 5.979-5.819 7.206-2.144 1.381-3.984.462-7.76-2.861-14.784-9.124c-5.465-4.873-9.154-10.891-10.228-12.73s-.114-2.835.808-3.751c.825-.824 1.838-2.147 2.759-3.22s1.224-1.84 1.836-3.065.307-2.301-.153-3.22-4.032-10.011-5.666-13.647"/>
             </svg>
           </div>
           
@@ -99,7 +119,7 @@ const Home = () => {
               repeat: Infinity,
               ease: "easeInOut",
             }}
-            className="absolute inset-0 bg-green-400 rounded-full -z-10"
+            className="absolute inset-0 bg-[#25D366] rounded-full -z-10"
           />
         </div>
       </motion.div>
