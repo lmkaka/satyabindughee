@@ -55,8 +55,8 @@ const OrderForm = ({ isOpen, onClose, product }) => {
       id: 5,
       name: 'Premium Pure Ghee',
       weight: '5kg',
-      price: 4499,
-      originalPrice: 5499,
+      price: 4799,
+      originalPrice: 5299,
       image: 'https://radarofc.onrender.com/sb1.jpg'
     }
   ];
