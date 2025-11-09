@@ -217,9 +217,7 @@ const Hero = () => {
                     {/* Trust Badges - Horizontal Scroll on Mobile */}
                     <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0 sm:grid sm:grid-cols-3 sm:gap-3">
                       {[
-                        { icon: BadgeCheck, text: 'Lab Tested' },
-                        { icon: Shield, text: 'FSSAI Certified' },
-                        { icon: Star, text: '2000+ Happy' }
+                        { icon: BadgeCheck, text: 'Lab Tested' }
                       ].map((item, idx) => (
                         <div
                           key={idx}
