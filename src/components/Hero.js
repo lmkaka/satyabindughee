@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Star, Award, Shield, Truck, ArrowRight, Play, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Star, Award, Shield, Truck, ArrowRight, Play, ChevronLeft, ChevronRight, BadgeCheck, ShieldCheck, RefreshCw } from 'lucide-react';
 import OrderForm from './OrderForm';
 
 const Hero = () => {
@@ -91,6 +91,7 @@ const Hero = () => {
   return (
     <>
       <section className="relative overflow-hidden bg-gradient-to-br from-amber-50 via-orange-50 to-red-50 min-h-screen">
+        {/* Animated Background Blobs */}
         <div className="absolute inset-0 opacity-30">
           <div className="absolute top-20 right-10 w-72 h-72 bg-orange-300 rounded-full mix-blend-multiply filter blur-3xl animate-blob"></div>
           <div className="absolute top-40 left-10 w-72 h-72 bg-amber-300 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-2000"></div>
@@ -98,6 +99,106 @@ const Hero = () => {
         </div>
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 sm:pt-12 pb-16 sm:pb-20">
+          {/* ✨ NEW: 100% Refund Guarantee Badge - Center of Attention */}
+          <motion.div
+            initial={{ opacity: 0, y: -30, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.6, type: "spring", stiffness: 100 }}
+            className="mb-6 sm:mb-8"
+          >
+            <motion.div
+              animate={{ 
+                boxShadow: [
+                  '0 0 0 0 rgba(249, 115, 22, 0)',
+                  '0 0 0 20px rgba(249, 115, 22, 0)',
+                  '0 0 0 0 rgba(249, 115, 22, 0)'
+                ]
+              }}
+              transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+              className="relative max-w-4xl mx-auto"
+            >
+              <div className="bg-gradient-to-r from-orange-600 via-red-600 to-orange-600 bg-[length:200%_100%] animate-gradient-x rounded-2xl p-1 shadow-2xl">
+                <div className="bg-white rounded-xl px-6 py-4 sm:px-8 sm:py-5">
+                  <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6">
+                    {/* Animated Shield Icon */}
+                    <motion.div
+                      animate={{ 
+                        rotate: [0, -10, 10, -10, 0],
+                        scale: [1, 1.1, 1, 1.1, 1]
+                      }}
+                      transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                      className="flex-shrink-0"
+                    >
+                      <div className="relative">
+                        <div className="absolute inset-0 bg-gradient-to-r from-orange-500 to-red-500 rounded-full blur-lg opacity-50 animate-pulse"></div>
+                        <div className="relative w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-orange-500 via-red-500 to-orange-600 rounded-full flex items-center justify-center shadow-xl">
+                          <ShieldCheck className="text-white" size={36} strokeWidth={2.5} />
+                        </div>
+                      </div>
+                    </motion.div>
+
+                    {/* Main Text */}
+                    <div className="text-center sm:text-left">
+                      <motion.h2
+                        animate={{ scale: [1, 1.02, 1] }}
+                        transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                        className="text-2xl sm:text-3xl lg:text-4xl font-black mb-1"
+                      >
+                        <span className="bg-gradient-to-r from-orange-600 via-red-600 to-orange-600 bg-clip-text text-transparent">
+                          100% MONEY BACK GUARANTEE
+                        </span>
+                      </motion.h2>
+                      <p className="text-gray-700 font-bold text-sm sm:text-base lg:text-lg">
+                        <span className="text-red-600">Full Refund</span> if Proven Impure - No Questions Asked!
+                      </p>
+                    </div>
+
+                    {/* Badge Check Icon */}
+                    <motion.div
+                      animate={{ 
+                        rotate: [0, 360],
+                        scale: [1, 1.2, 1]
+                      }}
+                      transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
+                      className="flex-shrink-0 hidden sm:block"
+                    >
+                      <BadgeCheck className="text-orange-600" size={48} strokeWidth={2.5} />
+                    </motion.div>
+                  </div>
+
+                  {/* Trust Indicators */}
+                  <div className="mt-4 pt-4 border-t border-gray-200 flex flex-wrap items-center justify-center gap-4 sm:gap-6">
+                    <div className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+                      <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                        <BadgeCheck size={18} className="text-green-600" />
+                      </div>
+                      <span>Lab Tested</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+                      <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                        <ShieldCheck size={18} className="text-blue-600" />
+                      </div>
+                      <span>FSSAI Certified</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+                      <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
+                        <RefreshCw size={18} className="text-orange-600" />
+                      </div>
+                      <span>Easy Returns</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Decorative Corner Elements */}
+              <div className="absolute -top-2 -left-2 w-4 h-4 bg-orange-500 rounded-full animate-ping"></div>
+              <div className="absolute -top-2 -right-2 w-4 h-4 bg-red-500 rounded-full animate-ping animation-delay-1000"></div>
+              <div className="absolute -bottom-2 -left-2 w-4 h-4 bg-orange-500 rounded-full animate-ping animation-delay-2000"></div>
+              <div className="absolute -bottom-2 -right-2 w-4 h-4 bg-red-500 rounded-full animate-ping"></div>
+            </motion.div>
+          </motion.div>
+
+          {/* Carousel Section - INCREASED HEIGHT FOR PC */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -105,7 +206,8 @@ const Hero = () => {
             className="mb-8 sm:mb-12"
           >
             <div className="relative max-w-5xl mx-auto">
-              <div className="relative h-[280px] sm:h-[340px] md:h-[400px] lg:h-[450px] bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl overflow-hidden">
+              {/* ✅ FIXED HEIGHT: Responsive for Mobile & PC */}
+              <div className="relative h-[300px] sm:h-[380px] md:h-[480px] lg:h-[560px] xl:h-[640px] bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl overflow-hidden">
                 {!imagesLoaded && (
                   <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-amber-100 to-orange-100">
                     <div className="flex flex-col items-center gap-3">
@@ -138,34 +240,36 @@ const Hero = () => {
                   </AnimatePresence>
                 )}
 
+                {/* Navigation Buttons */}
                 <button
                   onClick={prevSlide}
                   disabled={!imagesLoaded}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/90 hover:bg-white rounded-full shadow-lg flex items-center justify-center backdrop-blur-sm transition-all hover:scale-110 active:scale-95 z-10 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 w-10 h-10 sm:w-12 sm:h-12 bg-white/90 hover:bg-white rounded-full shadow-lg flex items-center justify-center backdrop-blur-sm transition-all hover:scale-110 active:scale-95 z-10 disabled:opacity-50 disabled:cursor-not-allowed"
                   aria-label="Previous slide"
                 >
-                  <ChevronLeft size={20} className="text-gray-800" />
+                  <ChevronLeft size={24} className="text-gray-800" />
                 </button>
                 
                 <button
                   onClick={nextSlide}
                   disabled={!imagesLoaded}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/90 hover:bg-white rounded-full shadow-lg flex items-center justify-center backdrop-blur-sm transition-all hover:scale-110 active:scale-95 z-10 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="absolute right-3 sm:right-4 top-1/2 -translate-y-1/2 w-10 h-10 sm:w-12 sm:h-12 bg-white/90 hover:bg-white rounded-full shadow-lg flex items-center justify-center backdrop-blur-sm transition-all hover:scale-110 active:scale-95 z-10 disabled:opacity-50 disabled:cursor-not-allowed"
                   aria-label="Next slide"
                 >
-                  <ChevronRight size={20} className="text-gray-800" />
+                  <ChevronRight size={24} className="text-gray-800" />
                 </button>
 
+                {/* Pagination Dots */}
                 {imagesLoaded && (
-                  <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-2 z-10">
+                  <div className="absolute bottom-4 sm:bottom-5 left-1/2 -translate-x-1/2 flex gap-2 z-10">
                     {images.map((_, index) => (
                       <button
                         key={index}
                         onClick={() => setCurrentSlide(index)}
                         className={`transition-all rounded-full ${
                           index === currentSlide 
-                            ? 'w-8 h-2 bg-orange-500' 
-                            : 'w-2 h-2 bg-white/60 hover:bg-white/80'
+                            ? 'w-8 sm:w-10 h-2.5 bg-orange-500 shadow-lg' 
+                            : 'w-2.5 h-2.5 bg-white/60 hover:bg-white/80'
                         }`}
                         aria-label={`Go to slide ${index + 1}`}
                       />
@@ -173,8 +277,9 @@ const Hero = () => {
                   </div>
                 )}
 
+                {/* Slide Counter */}
                 {imagesLoaded && (
-                  <div className="absolute top-3 right-3 bg-black/50 backdrop-blur-sm text-white text-xs font-semibold px-3 py-1.5 rounded-full z-10">
+                  <div className="absolute top-3 sm:top-4 right-3 sm:right-4 bg-black/50 backdrop-blur-sm text-white text-xs sm:text-sm font-semibold px-3 py-1.5 rounded-full z-10">
                     {currentSlide + 1} / {images.length}
                   </div>
                 )}
@@ -182,7 +287,9 @@ const Hero = () => {
             </div>
           </motion.div>
 
+          {/* Main Content Grid */}
           <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+            {/* Left Column - Text Content */}
             <motion.div
               initial={{ opacity: 0, x: -30 }}
               animate={{ opacity: 1, x: 0 }}
@@ -210,6 +317,7 @@ const Hero = () => {
                 <strong className="text-orange-600 font-semibold"> time-honored methods</strong> passed down through generations.
               </p>
               
+              {/* Feature Grid */}
               <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-7">
                 {[
                   { icon: Shield, text: '100% Pure' },
@@ -232,6 +340,7 @@ const Hero = () => {
                 ))}
               </div>
 
+              {/* CTA Buttons */}
               <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                 <motion.button
                   whileHover={{ scale: 1.03 }}
@@ -255,6 +364,7 @@ const Hero = () => {
               </div>
             </motion.div>
 
+            {/* Right Column - Product Card */}
             <motion.div
               initial={{ opacity: 0, x: 30 }}
               animate={{ opacity: 1, x: 0 }}
@@ -309,6 +419,7 @@ const Hero = () => {
                 </div>
               </motion.div>
 
+              {/* Decorative Animated Elements */}
               <motion.div
                 animate={{ rotate: 360 }}
                 transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
@@ -322,6 +433,7 @@ const Hero = () => {
             </motion.div>
           </div>
 
+          {/* Stats Section */}
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
@@ -345,6 +457,7 @@ const Hero = () => {
           </motion.div>
         </div>
 
+        {/* Custom Animations CSS */}
         <style jsx>{`
           @keyframes blob {
             0%, 100% { transform: translate(0, 0) scale(1); }
@@ -354,11 +467,25 @@ const Hero = () => {
           .animate-blob {
             animation: blob 7s infinite;
           }
+          .animation-delay-1000 {
+            animation-delay: 1s;
+          }
           .animation-delay-2000 {
             animation-delay: 2s;
           }
           .animation-delay-4000 {
             animation-delay: 4s;
+          }
+          @keyframes gradient-x {
+            0%, 100% {
+              background-position: 0% 50%;
+            }
+            50% {
+              background-position: 100% 50%;
+            }
+          }
+          .animate-gradient-x {
+            animation: gradient-x 3s ease infinite;
           }
         `}</style>
       </section>
