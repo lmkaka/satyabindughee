@@ -177,146 +177,99 @@ const Hero = () => {
             </div>
           </div>
 
-          {/* 🔥 REDESIGNED: Beautiful Guarantee Section */}
-          <div className="mb-8 sm:mb-12">
+          {/* 🔥 MOBILE-FIRST: Guarantee Section */}
+          <div className="mb-6 sm:mb-10">
             <div className="max-w-5xl mx-auto">
-              {/* Main Guarantee Card */}
-              <div className="relative bg-gradient-to-br from-green-500 via-emerald-500 to-green-600 rounded-3xl shadow-2xl overflow-hidden">
-                {/* Animated Background Pattern */}
-                <div className="absolute inset-0 opacity-10">
-                  <div className="absolute top-0 right-0 w-64 h-64 bg-white rounded-full blur-3xl transform translate-x-32 -translate-y-32"></div>
-                  <div className="absolute bottom-0 left-0 w-64 h-64 bg-white rounded-full blur-3xl transform -translate-x-32 translate-y-32"></div>
+              {/* Main Card */}
+              <div className="relative bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl sm:rounded-3xl shadow-xl overflow-hidden">
+                {/* Subtle Background */}
+                <div className="absolute inset-0 opacity-5">
+                  <div className="absolute top-0 right-0 w-40 h-40 bg-white rounded-full blur-2xl"></div>
+                  <div className="absolute bottom-0 left-0 w-40 h-40 bg-white rounded-full blur-2xl"></div>
                 </div>
 
-                <div className="relative p-5 sm:p-8">
-                  {/* Top Badge */}
-                  <div className="flex justify-center mb-4">
-                    <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-md text-white px-4 py-2 rounded-full text-xs sm:text-sm font-bold shadow-lg border border-white/30">
-                      <BadgeCheck size={16} strokeWidth={2.5} />
-                      CUSTOMER PROTECTION GUARANTEE
-                    </div>
-                  </div>
-
-                  {/* Main Content */}
-                  <div className="flex flex-col sm:flex-row items-center gap-5 sm:gap-6">
-                    {/* Left: Shield Icon */}
-                    <div className="flex-shrink-0">
-                      <div className="relative">
-                        {/* Pulse Ring Animation */}
-                        <div className="absolute inset-0 bg-white/30 rounded-full animate-ping"></div>
-                        
-                        {/* Main Shield */}
-                        <div className="relative w-20 h-20 sm:w-24 sm:h-24 bg-white rounded-2xl flex items-center justify-center shadow-2xl transform hover:scale-105 transition-transform">
-                          <Shield className="text-green-600" size={44} strokeWidth={2.5} />
+                <div className="relative p-4 sm:p-6">
+                  {/* Mobile: Single Column Layout */}
+                  <div className="space-y-4">
+                    {/* Icon + Text Row */}
+                    <div className="flex items-start gap-3">
+                      {/* Compact Shield */}
+                      <div className="flex-shrink-0">
+                        <div className="relative w-14 h-14 sm:w-16 sm:h-16 bg-white rounded-xl flex items-center justify-center shadow-lg">
+                          <Shield className="text-green-600" size={28} strokeWidth={2.5} />
+                          <div className="absolute -top-1 -right-1 bg-yellow-400 text-xs font-black px-1.5 py-0.5 rounded-full shadow text-green-900">
+                            100%
+                          </div>
                         </div>
+                      </div>
 
-                        {/* 100% Badge */}
-                        <div className="absolute -top-2 -right-2 bg-gradient-to-br from-yellow-400 to-orange-500 text-white text-xs font-black px-2.5 py-1 rounded-full shadow-lg border-2 border-white">
-                          100%
-                        </div>
+                      {/* Text Content */}
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-lg sm:text-xl font-black text-white mb-1 leading-tight">
+                          Money-Back Guarantee
+                        </h3>
+                        <p className="text-white/95 text-xs sm:text-sm font-semibold leading-snug">
+                          <span className="text-yellow-300">Full refund</span> if proven impure. No questions asked.
+                        </p>
                       </div>
                     </div>
 
-                    {/* Center: Main Text */}
-                    <div className="flex-1 text-center sm:text-left">
-                      <h3 className="text-2xl sm:text-3xl font-black text-white mb-2 leading-tight">
-                        Money-Back Guarantee
-                      </h3>
-                      <p className="text-white/95 text-sm sm:text-base font-semibold leading-relaxed">
-                        <span className="text-yellow-300 font-black">Full Refund</span> if our ghee is proven impure by any certified lab.
-                        <br className="hidden sm:block" />
-                        <span className="text-white/90">No questions asked, no hassle.</span>
-                      </p>
-                    </div>
-
-                    {/* Right: CTA Button (Desktop) */}
-                    <div className="hidden sm:block">
-                      <button
-                        onClick={() => setIsOrderFormOpen(true)}
-                        className="bg-white text-green-600 px-6 py-3 rounded-xl font-black text-sm hover:shadow-2xl hover:scale-105 transition-all flex items-center gap-2 whitespace-nowrap"
-                      >
-                        Order Now
-                        <ArrowRight size={18} strokeWidth={3} />
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Trust Badges Row */}
-                  <div className="mt-6 pt-6 border-t border-white/20">
-                    <div className="grid grid-cols-3 gap-3 sm:gap-4">
+                    {/* Trust Badges - Horizontal Scroll on Mobile */}
+                    <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0 sm:grid sm:grid-cols-3 sm:gap-3">
                       {[
-                        { 
-                          icon: BadgeCheck, 
-                          title: 'Lab Tested', 
-                          subtitle: 'Certified Pure'
-                        },
-                        { 
-                          icon: Shield, 
-                          title: 'FSSAI Approved', 
-                          subtitle: 'Licensed'
-                        },
-                        { 
-                          icon: Star, 
-                          title: '2000+ Trust', 
-                          subtitle: '4.9★ Rating'
-                        }
+                        { icon: BadgeCheck, text: 'Lab Tested' },
+                        { icon: Shield, text: 'FSSAI Certified' },
+                        { icon: Star, text: '2000+ Happy' }
                       ].map((item, idx) => (
                         <div
                           key={idx}
-                          className="bg-white/10 backdrop-blur-sm rounded-xl p-3 text-center hover:bg-white/20 transition-all"
+                          className="flex-shrink-0 bg-white/15 backdrop-blur-sm rounded-lg px-3 py-2 flex items-center gap-2 min-w-[130px] sm:min-w-0 sm:flex-col sm:text-center sm:py-3"
                         >
-                          <div className="flex justify-center mb-2">
-                            <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
-                              <item.icon className="text-white" size={16} strokeWidth={2.5} />
-                            </div>
+                          <div className="w-7 h-7 bg-white/20 rounded-md flex items-center justify-center flex-shrink-0">
+                            <item.icon className="text-white" size={14} strokeWidth={2.5} />
                           </div>
-                          <p className="text-white font-black text-xs sm:text-sm mb-0.5">
-                            {item.title}
-                          </p>
-                          <p className="text-white/80 text-[10px] sm:text-xs font-medium">
-                            {item.subtitle}
+                          <p className="text-white font-bold text-xs whitespace-nowrap">
+                            {item.text}
                           </p>
                         </div>
                       ))}
                     </div>
-                  </div>
 
-                  {/* Mobile CTA Button */}
-                  <div className="sm:hidden mt-5">
+                    {/* CTA Button - Full Width on Mobile */}
                     <button
                       onClick={() => setIsOrderFormOpen(true)}
-                      className="w-full bg-white text-green-600 px-6 py-3.5 rounded-xl font-black text-base hover:shadow-2xl active:scale-95 transition-all flex items-center justify-center gap-2"
+                      className="w-full bg-white text-green-600 py-3 sm:py-3.5 rounded-xl font-black text-sm sm:text-base hover:shadow-xl active:scale-95 transition-all flex items-center justify-center gap-2"
                     >
-                      Order Now with Confidence
-                      <ArrowRight size={20} strokeWidth={3} />
+                      Order with Confidence
+                      <ArrowRight size={18} strokeWidth={3} />
                     </button>
                   </div>
                 </div>
               </div>
 
-              {/* Bottom Info Cards */}
-              <div className="grid grid-cols-2 gap-3 sm:gap-4 mt-4">
-                <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl p-4 border-2 border-blue-200">
-                  <div className="flex items-center gap-2.5 mb-2">
-                    <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
-                      <Truck className="text-white" size={16} strokeWidth={2.5} />
+              {/* Bottom Mini Cards - Compact on Mobile */}
+              <div className="grid grid-cols-2 gap-2 sm:gap-3 mt-3 sm:mt-4">
+                <div className="bg-blue-50 rounded-xl p-3 border border-blue-200">
+                  <div className="flex items-center gap-2 mb-1">
+                    <div className="w-6 h-6 bg-blue-500 rounded-md flex items-center justify-center flex-shrink-0">
+                      <Truck className="text-white" size={12} strokeWidth={2.5} />
                     </div>
-                    <h4 className="font-black text-blue-900 text-sm">Free Delivery</h4>
+                    <h4 className="font-black text-blue-900 text-xs">Free Delivery</h4>
                   </div>
-                  <p className="text-blue-700 text-xs font-semibold">
-                    Same-day delivery across Ranchi
+                  <p className="text-blue-700 text-[10px] font-semibold">
+                    Same-day in Ranchi
                   </p>
                 </div>
 
-                <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-2xl p-4 border-2 border-orange-200">
-                  <div className="flex items-center gap-2.5 mb-2">
-                    <div className="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center">
-                      <Award className="text-white" size={16} strokeWidth={2.5} />
+                <div className="bg-orange-50 rounded-xl p-3 border border-orange-200">
+                  <div className="flex items-center gap-2 mb-1">
+                    <div className="w-6 h-6 bg-orange-500 rounded-md flex items-center justify-center flex-shrink-0">
+                      <Award className="text-white" size={12} strokeWidth={2.5} />
                     </div>
-                    <h4 className="font-black text-orange-900 text-sm">Premium Quality</h4>
+                    <h4 className="font-black text-orange-900 text-xs">Premium Quality</h4>
                   </div>
-                  <p className="text-orange-700 text-xs font-semibold">
-                    Made with traditional methods
+                  <p className="text-orange-700 text-[10px] font-semibold">
+                    Traditional methods
                   </p>
                 </div>
               </div>
