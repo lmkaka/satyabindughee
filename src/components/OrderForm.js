@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, User, Phone, MapPin, ShoppingCart, Trash2, Plus, Minus, Download, CheckCircle } from 'lucide-react';
 import { supabase } from '../supabaseClient';
@@ -12,14 +12,12 @@ const OrderForm = ({ isOpen, onClose, product }) => {
     address: ''
   });
 
-  // Cart state for multiple items
   const [cart, setCart] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState(null);
-  const [completedOrder, setCompletedOrder] = useState(null); // Store order for invoice
+  const [completedOrder, setCompletedOrder] = useState(null);
 
-  // All product variants including 5kg
   const productVariants = [
     {
       id: 1,
@@ -63,39 +61,31 @@ const OrderForm = ({ isOpen, onClose, product }) => {
     }
   ];
 
-  // ❌ REMOVED: Auto-select on open - Let user select manually
-  // User will manually add items to cart
-
-  // Add item to cart
   const addToCart = (variant) => {
     const existingItem = cart.find(item => item.id === variant.id);
     
     if (existingItem) {
-      // If item exists, increase quantity
       setCart(cart.map(item =>
         item.id === variant.id
           ? { ...item, quantity: Math.min(item.quantity + 1, 10) }
           : item
       ));
     } else {
-      // Add new item with quantity 1
       setCart([...cart, { ...variant, quantity: 1 }]);
     }
   };
 
-  // Remove item from cart
   const removeFromCart = (variantId) => {
     setCart(cart.filter(item => item.id !== variantId));
   };
 
-  // Update quantity
   const updateQuantity = (variantId, newQuantity) => {
     if (newQuantity < 1) {
       removeFromCart(variantId);
       return;
     }
     
-    if (newQuantity > 10) return; // Max 10 per item
+    if (newQuantity > 10) return;
     
     setCart(cart.map(item =>
       item.id === variantId
@@ -104,12 +94,10 @@ const OrderForm = ({ isOpen, onClose, product }) => {
     ));
   };
 
-  // Calculate total
   const calculateTotal = () => {
     return cart.reduce((total, item) => total + (item.price * item.quantity), 0);
   };
 
-  // ✅ PDF Invoice Generation (Same as AdminPanel)
   const downloadInvoice = () => {
     if (!completedOrder) return;
 
@@ -117,7 +105,6 @@ const OrderForm = ({ isOpen, onClose, product }) => {
       const doc = new jsPDF('p', 'mm', 'a4');
       const pageWidth = doc.internal.pageSize.getWidth();
 
-      // Header
       doc.setFillColor(255, 140, 0);
       doc.rect(0, 0, pageWidth, 40, 'F');
 
@@ -138,7 +125,6 @@ const OrderForm = ({ isOpen, onClose, product }) => {
 
       let yPos = 52;
 
-      // Bill To Section
       doc.setFillColor(245, 245, 245);
       doc.rect(15, yPos, 90, 40, 'F');
 
@@ -155,7 +141,6 @@ const OrderForm = ({ isOpen, onClose, product }) => {
       const addressLines = doc.splitTextToSize(completedOrder.address, 80);
       doc.text(addressLines, 20, yPos + 30);
 
-      // Status Section
       doc.setFillColor(245, 245, 245);
       doc.rect(110, yPos, 85, 20, 'F');
 
@@ -168,7 +153,6 @@ const OrderForm = ({ isOpen, onClose, product }) => {
 
       yPos = 105;
 
-      // Product Table Header
       doc.setFillColor(255, 140, 0);
       doc.rect(15, yPos, pageWidth - 30, 12, 'F');
 
@@ -182,7 +166,6 @@ const OrderForm = ({ isOpen, onClose, product }) => {
 
       yPos += 15;
 
-      // Product Items
       completedOrder.items.forEach((item, index) => {
         if (index % 2 === 0) {
           doc.setFillColor(250, 250, 250);
@@ -203,7 +186,6 @@ const OrderForm = ({ isOpen, onClose, product }) => {
 
       yPos += 10;
 
-      // Totals
       doc.setDrawColor(255, 140, 0);
       doc.setLineWidth(0.5);
       doc.line(120, yPos, pageWidth - 15, yPos);
@@ -229,7 +211,6 @@ const OrderForm = ({ isOpen, onClose, product }) => {
       doc.text('GRAND TOTAL:', 125, yPos);
       doc.text(`Rs. ${completedOrder.total}`, 170, yPos);
 
-      // Footer
       yPos = 260;
       doc.setFontSize(9);
       doc.setTextColor(100, 100, 100);
@@ -241,12 +222,10 @@ const OrderForm = ({ isOpen, onClose, product }) => {
       doc.setFontSize(8);
       doc.text('For any queries, contact: support@sbghee.com', pageWidth / 2, yPos, { align: 'center' });
 
-      // Border
       doc.setDrawColor(255, 140, 0);
       doc.setLineWidth(0.5);
       doc.rect(10, 10, pageWidth - 20, 277);
 
-      // Download PDF
       doc.save(`SBGhee_Invoice_${completedOrder.id.toString().slice(-6)}.pdf`);
     } catch (error) {
       console.error('Invoice generation error:', error);
@@ -265,25 +244,32 @@ const OrderForm = ({ isOpen, onClose, product }) => {
     setIsSubmitting(true);
     setError(null);
 
-    // Create order object with all cart items
+    const productSummary = cart.length === 1 
+      ? cart[0].weight
+      : `${cart.length} items (${cart.map(item => `${item.weight}×${item.quantity}`).join(', ')})`;
+
     const order = {
       name: formData.name,
       phone: formData.phone,
       address: formData.address,
-      product: cart.map(item => ({
+      product: {
+        name: 'Premium Pure Ghee',
+        weight: productSummary,
+        price: Math.round(calculateTotal() / cart.reduce((sum, item) => sum + item.quantity, 0))
+      },
+      quantity: cart.reduce((sum, item) => sum + item.quantity, 0),
+      total: calculateTotal(),
+      status: 'pending',
+      order_date: new Date().toISOString(),
+      cart_items: JSON.stringify(cart.map(item => ({
         name: item.name,
         weight: item.weight,
         price: item.price,
         quantity: item.quantity
-      })),
-      quantity: cart.reduce((sum, item) => sum + item.quantity, 0),
-      total: calculateTotal(),
-      status: 'pending',
-      order_date: new Date().toISOString()
+      })))
     };
 
     try {
-      // Save to Supabase
       const { data, error: supabaseError } = await supabase
         .from('orders')
         .insert([order])
@@ -296,7 +282,6 @@ const OrderForm = ({ isOpen, onClose, product }) => {
 
       console.log('Order saved to Supabase!', data);
 
-      // Backup to localStorage
       const existingOrders = JSON.parse(localStorage.getItem('sbghee-orders') || '[]');
       existingOrders.push({ 
         id: data[0].id, 
@@ -305,7 +290,6 @@ const OrderForm = ({ isOpen, onClose, product }) => {
       });
       localStorage.setItem('sbghee-orders', JSON.stringify(existingOrders));
 
-      // Store completed order for invoice
       setCompletedOrder({
         id: data[0].id,
         name: formData.name,
@@ -331,7 +315,6 @@ const OrderForm = ({ isOpen, onClose, product }) => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  // Reset on close
   const handleClose = () => {
     setFormData({ name: '', phone: '', address: '' });
     setCart([]);
@@ -362,7 +345,6 @@ const OrderForm = ({ isOpen, onClose, product }) => {
           >
             {!isSuccess ? (
               <>
-                {/* Header */}
                 <div className="bg-gradient-to-r from-orange-500 to-amber-500 text-white p-5 flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
@@ -384,7 +366,6 @@ const OrderForm = ({ isOpen, onClose, product }) => {
                 </div>
 
                 <div className="flex-1 overflow-y-auto p-5">
-                  {/* Product Variants - User Must Select */}
                   <div className="mb-5">
                     <h4 className="text-sm font-bold text-gray-700 mb-3">Select Products</h4>
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -432,7 +413,6 @@ const OrderForm = ({ isOpen, onClose, product }) => {
                     </div>
                   </div>
 
-                  {/* Cart Items */}
                   {cart.length > 0 && (
                     <div className="mb-5">
                       <h4 className="text-sm font-bold text-gray-700 mb-3">Your Cart</h4>
@@ -484,7 +464,6 @@ const OrderForm = ({ isOpen, onClose, product }) => {
                     </div>
                   )}
 
-                  {/* Total Summary */}
                   {cart.length > 0 && (
                     <div className="bg-gradient-to-br from-orange-50 to-amber-50 rounded-lg p-4 mb-5 border-2 border-orange-200">
                       <div className="flex justify-between items-center">
@@ -499,14 +478,12 @@ const OrderForm = ({ isOpen, onClose, product }) => {
                     </div>
                   )}
 
-                  {/* Error Message */}
                   {error && (
                     <div className="bg-red-50 border-2 border-red-200 text-red-700 px-3 py-2 rounded-lg mb-4 text-sm font-semibold">
                       {error}
                     </div>
                   )}
 
-                  {/* Form */}
                   <form onSubmit={handleSubmit} className="space-y-3">
                     <div>
                       <label className="flex items-center gap-2 text-xs font-bold text-gray-700 mb-1">
@@ -580,7 +557,6 @@ const OrderForm = ({ isOpen, onClose, product }) => {
                 </div>
               </>
             ) : (
-              // ✅ Success Screen with Download Invoice + Close buttons
               <div className="p-8 text-center">
                 <motion.div
                   initial={{ scale: 0 }}
@@ -616,7 +592,6 @@ const OrderForm = ({ isOpen, onClose, product }) => {
                   </div>
                 </div>
 
-                {/* ✅ Action Buttons */}
                 <div className="grid grid-cols-2 gap-3">
                   <motion.button
                     whileHover={{ scale: 1.02 }}
