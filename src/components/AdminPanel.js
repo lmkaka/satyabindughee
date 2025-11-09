@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Package, User, Phone, MapPin, Eye, Download, Trash2, FileText,
   ClipboardList, Clock, CheckCircle, IndianRupee, RefreshCw,
-  MessageCircle, Mail, Reply, Lock, LogOut, X
+  MessageCircle, Mail, Reply, Lock, LogOut, X, Shield
 } from 'lucide-react';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
@@ -65,6 +65,7 @@ const AdminPanel = () => {
   const [loginPassword, setLoginPassword] = useState('');
   const [loginError, setLoginError] = useState('');
   const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   // Data States
   const [orders, setOrders] = useState([]);
@@ -83,7 +84,7 @@ const AdminPanel = () => {
     }
   }, []);
 
-  // Load data after login
+  // Load data after login - REMOVE LOCAL STORAGE DEPENDENCY
   useEffect(() => {
     if (isAuthenticated) {
       loadOrders();
@@ -128,118 +129,190 @@ const AdminPanel = () => {
   const handleLogout = () => {
     localStorage.removeItem('sbghee-admin-logged-in');
     localStorage.removeItem('sbghee-admin-username');
+    // Clear cached data
+    localStorage.removeItem('sbghee-orders');
+    localStorage.removeItem('sbghee-messages');
     setIsAuthenticated(false);
     setOrders([]);
     setMessages([]);
   };
 
+  // FIXED: Load orders directly from Supabase without localStorage fallback
   const loadOrders = async () => {
     setIsLoading(true);
     setError(null);
     try {
       const { data, error: supabaseError } = await supabase
-        .from('orders').select('*').order('created_at', { ascending: false });
-      if (supabaseError) throw supabaseError;
+        .from('orders')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (supabaseError) {
+        console.error('Supabase Error:', supabaseError);
+        throw supabaseError;
+      }
+      
+      console.log('Loaded orders:', data);
       setOrders(data || []);
-      localStorage.setItem('sbghee-orders', JSON.stringify(data || []));
     } catch (err) {
-      setError('Failed to load orders');
-      const savedOrders = JSON.parse(localStorage.getItem('sbghee-orders') || '[]');
-      setOrders(savedOrders);
+      console.error('Failed to load orders:', err);
+      setError('Failed to load orders from database');
+      setOrders([]);
     } finally {
       setIsLoading(false);
     }
   };
 
+  // FIXED: Load messages directly from Supabase without localStorage fallback
   const loadMessages = async () => {
     setIsLoading(true);
     setError(null);
     try {
       const { data, error: supabaseError } = await supabase
-        .from('messages').select('*').order('created_at', { ascending: false });
-      if (supabaseError) throw supabaseError;
+        .from('messages')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (supabaseError) {
+        console.error('Supabase Error:', supabaseError);
+        throw supabaseError;
+      }
+      
+      console.log('Loaded messages:', data);
       setMessages(data || []);
-      localStorage.setItem('sbghee-messages', JSON.stringify(data || []));
     } catch (err) {
-      setError('Failed to load messages');
-      const savedMessages = JSON.parse(localStorage.getItem('sbghee-messages') || '[]');
-      setMessages(savedMessages);
+      console.error('Failed to load messages:', err);
+      setError('Failed to load messages from database');
+      setMessages([]);
     } finally {
       setIsLoading(false);
     }
   };
 
+  // FIXED: Update order status with proper reload
   const updateOrderStatus = async (orderId, newStatus) => {
     try {
-      const { error: supabaseError } = await supabase
+      console.log('Updating order:', orderId, 'to status:', newStatus);
+      
+      const { data, error: supabaseError } = await supabase
         .from('orders')
         .update({ status: newStatus })
-        .eq('id', orderId);
+        .eq('id', orderId)
+        .select();
 
-      if (supabaseError) throw supabaseError;
+      if (supabaseError) {
+        console.error('Update error:', supabaseError);
+        throw supabaseError;
+      }
 
-      const updatedOrders = orders.map(order =>
-        order.id === orderId ? { ...order, status: newStatus } : order
-      );
-      setOrders(updatedOrders);
-      localStorage.setItem('sbghee-orders', JSON.stringify(updatedOrders));
+      console.log('Update successful:', data);
+      
+      // Reload fresh data from database
+      await loadOrders();
+      
+      // Show success message
+      alert('Order status updated successfully!');
     } catch (err) {
-      alert('Failed to update order status');
+      console.error('Failed to update order status:', err);
+      alert('Failed to update order status: ' + err.message);
     }
   };
 
+  // FIXED: Delete order with proper reload
   const deleteOrder = async (orderId) => {
-    if (!window.confirm('Are you sure you want to delete this order?')) return;
+    if (!window.confirm('Are you sure you want to delete this order? This action cannot be undone.')) {
+      return;
+    }
+    
     try {
+      console.log('Deleting order:', orderId);
+      
       const { error: supabaseError } = await supabase
         .from('orders')
         .delete()
         .eq('id', orderId);
 
-      if (supabaseError) throw supabaseError;
+      if (supabaseError) {
+        console.error('Delete error:', supabaseError);
+        throw supabaseError;
+      }
 
-      const updatedOrders = orders.filter(order => order.id !== orderId);
-      setOrders(updatedOrders);
-      localStorage.setItem('sbghee-orders', JSON.stringify(updatedOrders));
+      console.log('Delete successful');
+      
+      // Reload fresh data from database
+      await loadOrders();
+      
+      // Close modal if the deleted order was selected
+      if (selectedOrder && selectedOrder.id === orderId) {
+        setSelectedOrder(null);
+      }
+      
+      // Show success message
+      alert('Order deleted successfully!');
     } catch (err) {
-      alert('Failed to delete order');
+      console.error('Failed to delete order:', err);
+      alert('Failed to delete order: ' + err.message);
     }
   };
 
+  // FIXED: Update message status with proper reload
   const updateMessageStatus = async (messageId, newStatus) => {
     try {
-      const { error: supabaseError } = await supabase
+      console.log('Updating message:', messageId, 'to status:', newStatus);
+      
+      const { data, error: supabaseError } = await supabase
         .from('messages')
         .update({ status: newStatus })
-        .eq('id', messageId);
+        .eq('id', messageId)
+        .select();
 
-      if (supabaseError) throw supabaseError;
+      if (supabaseError) {
+        console.error('Update error:', supabaseError);
+        throw supabaseError;
+      }
 
-      const updatedMessages = messages.map(message =>
-        message.id === messageId ? { ...message, status: newStatus } : message
-      );
-      setMessages(updatedMessages);
-      localStorage.setItem('sbghee-messages', JSON.stringify(updatedMessages));
+      console.log('Update successful:', data);
+      
+      // Reload fresh data from database
+      await loadMessages();
+      
+      // Show success message
+      alert('Message status updated successfully!');
     } catch (err) {
-      alert('Failed to update message status');
+      console.error('Failed to update message status:', err);
+      alert('Failed to update message status: ' + err.message);
     }
   };
 
+  // FIXED: Delete message with proper reload
   const deleteMessage = async (messageId) => {
-    if (!window.confirm('Are you sure you want to delete this message?')) return;
+    if (!window.confirm('Are you sure you want to delete this message? This action cannot be undone.')) {
+      return;
+    }
+    
     try {
+      console.log('Deleting message:', messageId);
+      
       const { error: supabaseError } = await supabase
         .from('messages')
         .delete()
         .eq('id', messageId);
 
-      if (supabaseError) throw supabaseError;
+      if (supabaseError) {
+        console.error('Delete error:', supabaseError);
+        throw supabaseError;
+      }
 
-      const updatedMessages = messages.filter(message => message.id !== messageId);
-      setMessages(updatedMessages);
-      localStorage.setItem('sbghee-messages', JSON.stringify(updatedMessages));
+      console.log('Delete successful');
+      
+      // Reload fresh data from database
+      await loadMessages();
+      
+      // Show success message
+      alert('Message deleted successfully!');
     } catch (err) {
-      alert('Failed to delete message');
+      console.error('Failed to delete message:', err);
+      alert('Failed to delete message: ' + err.message);
     }
   };
 
@@ -594,98 +667,197 @@ const AdminPanel = () => {
     }
   };
 
-  // LOGIN SCREEN
+  // IMPROVED LOGIN SCREEN with modern UI
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-red-50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-orange-400 via-amber-500 to-yellow-400 flex items-center justify-center p-4 relative overflow-hidden">
+        {/* Animated background patterns */}
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute top-20 left-20 w-72 h-72 bg-white rounded-full mix-blend-multiply filter blur-xl animate-blob"></div>
+          <div className="absolute top-40 right-20 w-72 h-72 bg-white rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-2000"></div>
+          <div className="absolute bottom-20 left-40 w-72 h-72 bg-white rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-4000"></div>
+        </div>
+
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="w-full max-w-md"
+          initial={{ opacity: 0, scale: 0.95, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          transition={{ duration: 0.5, ease: "easeOut" }}
+          className="w-full max-w-md relative z-10"
         >
-          <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
-            <div className="bg-gradient-to-r from-orange-500 to-amber-500 p-8 text-center">
-              <Lock className="w-16 h-16 text-white mx-auto mb-4" />
-              <h1 className="text-3xl font-bold text-white mb-2">SBGhee Admin</h1>
-              <p className="text-white/90 text-sm">Secure Admin Panel Login</p>
+          {/* Main Card */}
+          <div className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl overflow-hidden border border-white/20">
+            {/* Header Section */}
+            <div className="relative bg-gradient-to-br from-orange-500 via-amber-500 to-yellow-500 p-10 text-center">
+              {/* Decorative circles */}
+              <div className="absolute top-0 left-0 w-40 h-40 bg-white/10 rounded-full -translate-x-1/2 -translate-y-1/2"></div>
+              <div className="absolute bottom-0 right-0 w-32 h-32 bg-white/10 rounded-full translate-x-1/2 translate-y-1/2"></div>
+              
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
+                className="relative"
+              >
+                <div className="w-20 h-20 bg-white/20 backdrop-blur-sm rounded-2xl mx-auto mb-4 flex items-center justify-center transform rotate-6 hover:rotate-0 transition-transform duration-300">
+                  <Shield className="w-12 h-12 text-white" strokeWidth={2.5} />
+                </div>
+                <h1 className="text-4xl font-black text-white mb-2 tracking-tight drop-shadow-lg">
+                  SBGhee Admin
+                </h1>
+                <p className="text-white/90 text-sm font-medium tracking-wide">
+                  Secure Access Portal
+                </p>
+              </motion.div>
             </div>
 
-            <form onSubmit={handleLogin} className="p-8">
-              {loginError && (
-                <motion.div
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  className="bg-red-50 border-l-4 border-red-500 p-4 mb-6 rounded"
-                >
-                  <p className="text-red-700 text-sm font-medium">{loginError}</p>
-                </motion.div>
-              )}
+            {/* Form Section */}
+            <form onSubmit={handleLogin} className="p-8 space-y-6">
+              {/* Error Alert */}
+              <AnimatePresence>
+                {loginError && (
+                  <motion.div
+                    initial={{ opacity: 0, x: -20, scale: 0.95 }}
+                    animate={{ opacity: 1, x: 0, scale: 1 }}
+                    exit={{ opacity: 0, x: 20, scale: 0.95 }}
+                    className="bg-red-50 border-l-4 border-red-500 p-4 rounded-lg shadow-sm"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="flex-shrink-0">
+                        <svg className="w-5 h-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd"/>
+                        </svg>
+                      </div>
+                      <p className="text-red-700 text-sm font-semibold">{loginError}</p>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
-              <div className="space-y-5">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    <User size={16} className="inline mr-2 text-orange-500" />
-                    Username
-                  </label>
-                  <input
-                    type="text"
-                    value={loginUsername}
-                    onChange={(e) => setLoginUsername(e.target.value)}
-                    placeholder="Enter username"
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-orange-500 focus:outline-none transition-colors"
-                    required
-                    autoFocus
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    <Lock size={16} className="inline mr-2 text-orange-500" />
-                    Password
-                  </label>
-                  <input
-                    type="password"
-                    value={loginPassword}
-                    onChange={(e) => setLoginPassword(e.target.value)}
-                    placeholder="Enter password"
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-orange-500 focus:outline-none transition-colors"
-                    required
-                  />
-                </div>
-
-                <motion.button
-                  type="submit"
-                  disabled={isLoggingIn}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  className={`w-full py-4 rounded-lg font-bold text-white shadow-lg transition-all ${
-                    isLoggingIn
-                      ? 'bg-gray-400 cursor-not-allowed'
-                      : 'bg-gradient-to-r from-orange-500 to-amber-500 hover:shadow-xl'
-                  }`}
-                >
-                  {isLoggingIn ? (
-                    <span className="flex items-center justify-center gap-2">
-                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                      Logging in...
-                    </span>
-                  ) : (
-                    'Login'
-                  )}
-                </motion.button>
+              {/* Username Input */}
+              <div className="space-y-2">
+                <label className="block text-sm font-bold text-gray-700 flex items-center gap-2">
+                  <User size={16} className="text-orange-500" />
+                  Username
+                </label>
+                <motion.input
+                  whileFocus={{ scale: 1.01 }}
+                  type="text"
+                  value={loginUsername}
+                  onChange={(e) => setLoginUsername(e.target.value)}
+                  placeholder="Enter your username"
+                  className="w-full px-4 py-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl focus:border-orange-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-orange-100 transition-all duration-200 font-medium"
+                  required
+                  autoFocus
+                  autoComplete="username"
+                />
               </div>
 
-              <div className="mt-6 pt-6 border-t border-gray-200">
-      
+              {/* Password Input */}
+              <div className="space-y-2">
+                <label className="block text-sm font-bold text-gray-700 flex items-center gap-2">
+                  <Lock size={16} className="text-orange-500" />
+                  Password
+                </label>
+                <div className="relative">
+                  <motion.input
+                    whileFocus={{ scale: 1.01 }}
+                    type={showPassword ? "text" : "password"}
+                    value={loginPassword}
+                    onChange={(e) => setLoginPassword(e.target.value)}
+                    placeholder="Enter your password"
+                    className="w-full px-4 py-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl focus:border-orange-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-orange-100 transition-all duration-200 font-medium pr-12"
+                    required
+                    autoComplete="current-password"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                  >
+                    {showPassword ? (
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                      </svg>
+                    ) : (
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                      </svg>
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              {/* Submit Button */}
+              <motion.button
+                type="submit"
+                disabled={isLoggingIn}
+                whileHover={{ scale: isLoggingIn ? 1 : 1.02 }}
+                whileTap={{ scale: isLoggingIn ? 1 : 0.98 }}
+                className={`w-full py-4 rounded-xl font-bold text-white shadow-lg transition-all duration-200 relative overflow-hidden ${
+                  isLoggingIn
+                    ? 'bg-gray-400 cursor-not-allowed'
+                    : 'bg-gradient-to-r from-orange-500 via-amber-500 to-yellow-500 hover:shadow-xl hover:shadow-orange-500/50'
+                }`}
+              >
+                {isLoggingIn ? (
+                  <span className="flex items-center justify-center gap-3">
+                    <div className="w-5 h-5 border-3 border-white border-t-transparent rounded-full animate-spin"></div>
+                    <span className="text-base">Authenticating...</span>
+                  </span>
+                ) : (
+                  <span className="flex items-center justify-center gap-2 text-base">
+                    <Lock size={18} />
+                    Sign In Securely
+                  </span>
+                )}
+              </motion.button>
+
+              {/* Security Notice */}
+              <div className="pt-4 border-t border-gray-200">
+                <div className="flex items-start gap-3 p-3 bg-blue-50 rounded-lg">
+                  <Shield size={18} className="text-blue-500 flex-shrink-0 mt-0.5" />
+                  <p className="text-xs text-blue-700 leading-relaxed">
+                    <span className="font-bold">Secure Connection:</span> Your credentials are encrypted and protected. Only authorized personnel can access this portal.
+                  </p>
+                </div>
               </div>
             </form>
           </div>
+
+          {/* Footer Text */}
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.6 }}
+            className="text-center mt-6 text-white/90 text-sm font-medium drop-shadow-lg"
+          >
+            © 2024 SBGhee. All rights reserved.
+          </motion.p>
         </motion.div>
+
+        {/* Custom CSS for animations */}
+        <style jsx>{`
+          @keyframes blob {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(30px, -50px) scale(1.1); }
+            66% { transform: translate(-20px, 20px) scale(0.9); }
+          }
+          .animate-blob {
+            animation: blob 7s infinite;
+          }
+          .animation-delay-2000 {
+            animation-delay: 2s;
+          }
+          .animation-delay-4000 {
+            animation-delay: 4s;
+          }
+        `}</style>
       </div>
     );
   }
 
-  // ADMIN PANEL (After Login)
+  // ADMIN PANEL (After Login) - Rest remains same
   const filteredOrders = orders.filter(order => filterStatus === 'all' || order.status === filterStatus);
   const adminUsername = localStorage.getItem('sbghee-admin-username') || 'Admin';
 
@@ -724,9 +896,12 @@ const AdminPanel = () => {
 
       {/* Floating Refresh FAB Button */}
       <motion.button
-        whileHover={{ scale: 1.1 }}
+        whileHover={{ scale: 1.1, rotate: 180 }}
         whileTap={{ scale: 0.9 }}
-        onClick={() => { loadOrders(); loadMessages(); }}
+        onClick={() => { 
+          loadOrders(); 
+          loadMessages(); 
+        }}
         className="fixed bottom-6 right-6 md:bottom-8 md:right-8 w-14 h-14 md:w-16 md:h-16 bg-gradient-to-r from-orange-500 to-amber-500 rounded-full shadow-2xl flex items-center justify-center z-50 hover:shadow-orange-500/50 transition-all"
         title="Refresh Data"
       >
@@ -735,7 +910,7 @@ const AdminPanel = () => {
 
       {/* Error Banner */}
       {error && (
-        <div className="bg-red-50 border-l-4 border-red-500 p-3 mx-4 mt-4">
+        <div className="bg-red-50 border-l-4 border-red-500 p-3 mx-4 mt-4 rounded-lg">
           <p className="text-red-700 text-sm font-medium">{error}</p>
         </div>
       )}
@@ -748,7 +923,7 @@ const AdminPanel = () => {
             className={`flex-1 py-3 px-4 rounded-lg font-semibold text-sm transition-all ${
               activeTab === 'orders'
                 ? 'bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-md'
-                : 'text-gray-600'
+                : 'text-gray-600 hover:bg-gray-50'
             }`}
           >
             <Package size={18} className="inline mr-2" />
@@ -759,7 +934,7 @@ const AdminPanel = () => {
             className={`flex-1 py-3 px-4 rounded-lg font-semibold text-sm transition-all ${
               activeTab === 'messages'
                 ? 'bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-md'
-                : 'text-gray-600'
+                : 'text-gray-600 hover:bg-gray-50'
             }`}
           >
             <MessageCircle size={18} className="inline mr-2" />
@@ -772,13 +947,19 @@ const AdminPanel = () => {
       <div className="px-4 pb-4">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
           {stats.map((stat, i) => (
-            <div key={i} className={`bg-white rounded-xl p-4 shadow-md`}>
+            <motion.div 
+              key={i} 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.1 }}
+              className={`bg-white rounded-xl p-4 shadow-md hover:shadow-lg transition-shadow`}
+            >
               <div className={`w-10 h-10 bg-${stat.color}-100 rounded-lg flex items-center justify-center mb-3`}>
                 <stat.icon className={`text-${stat.color}-600`} size={20} />
               </div>
               <p className="text-2xl md:text-3xl font-bold text-gray-900">{stat.value}</p>
               <p className="text-xs md:text-sm text-gray-600 font-medium mt-1">{stat.label}</p>
-            </div>
+            </motion.div>
           ))}
         </div>
       </div>
@@ -791,7 +972,7 @@ const AdminPanel = () => {
               <select
                 value={filterStatus}
                 onChange={(e) => setFilterStatus(e.target.value)}
-                className="flex-1 px-4 py-3 border-2 rounded-lg font-medium text-sm"
+                className="flex-1 px-4 py-3 border-2 rounded-lg font-medium text-sm focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-100"
               >
                 <option value="all">All Orders</option>
                 <option value="pending">Pending</option>
@@ -801,37 +982,50 @@ const AdminPanel = () => {
               </select>
               <button
                 onClick={exportOrdersToPDF}
-                className="bg-gradient-to-r from-orange-500 to-amber-500 text-white px-4 py-3 rounded-lg font-semibold flex items-center justify-center gap-2 shadow-lg active:scale-95"
+                className="bg-gradient-to-r from-orange-500 to-amber-500 text-white px-4 py-3 rounded-lg font-semibold flex items-center justify-center gap-2 shadow-lg hover:shadow-xl active:scale-95 transition-all"
               >
                 <Download size={18} />
                 <span className="text-sm">Export PDF</span>
               </button>
             </div>
           </div>
+          
           {isLoading ? (
             <div className="bg-white rounded-xl shadow-lg p-8 text-center">
               <div className="w-10 h-10 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
-              <p className="text-gray-600 text-sm">Loading...</p>
+              <p className="text-gray-600 text-sm">Loading orders...</p>
             </div>
           ) : filteredOrders.length === 0 ? (
             <div className="bg-white rounded-xl shadow-lg p-8 text-center">
               <Package className="text-gray-300 mx-auto mb-3" size={48} />
-              <p className="text-gray-500">No orders found</p>
+              <p className="text-gray-500 font-medium">No orders found</p>
+              <p className="text-gray-400 text-sm mt-1">Orders will appear here once customers place them</p>
             </div>
           ) : (
-            filteredOrders.map((order) => (
-              <div key={order.id} className="bg-white rounded-xl shadow-lg p-4">
+            filteredOrders.map((order, index) => (
+              <motion.div 
+                key={order.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.05 }}
+                className="bg-white rounded-xl shadow-lg p-4 hover:shadow-xl transition-shadow"
+              >
                 <div className="flex justify-between items-start mb-3">
                   <div>
                     <h3 className="font-bold text-lg">#{order.id.toString().slice(-6)}</h3>
                     <p className="text-xs text-gray-500">
-                      {new Date(order.order_date || order.created_at).toLocaleDateString()}
+                      {new Date(order.order_date || order.created_at).toLocaleDateString('en-IN', {
+                        day: 'numeric',
+                        month: 'short',
+                        year: 'numeric'
+                      })}
                     </p>
                   </div>
                   <span className={`px-3 py-1 rounded-full text-xs font-bold ${getStatusColor(order.status)}`}>
                     {order.status.toUpperCase()}
                   </span>
                 </div>
+                
                 <div className="space-y-2 mb-3">
                   <div className="flex items-center gap-2 text-sm">
                     <User size={16} className="text-gray-400" />
@@ -850,30 +1044,31 @@ const AdminPanel = () => {
                     <span className="font-bold">₹{order.total} (Qty: {order.quantity})</span>
                   </div>
                 </div>
+                
                 <div className="grid grid-cols-3 gap-2">
                   <button
                     onClick={() => setSelectedOrder(order)}
-                    className="bg-blue-500 text-white py-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-1 active:scale-95"
+                    className="bg-blue-500 hover:bg-blue-600 text-white py-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-1 active:scale-95 transition-all"
                   >
                     <Eye size={14} />
                     View
                   </button>
                   <button
                     onClick={() => exportSingleOrderPDF(order)}
-                    className="bg-green-500 text-white py-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-1 active:scale-95"
+                    className="bg-green-500 hover:bg-green-600 text-white py-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-1 active:scale-95 transition-all"
                   >
                     <Download size={14} />
                     PDF
                   </button>
                   <button
                     onClick={() => deleteOrder(order.id)}
-                    className="bg-red-500 text-white py-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-1 active:scale-95"
+                    className="bg-red-500 hover:bg-red-600 text-white py-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-1 active:scale-95 transition-all"
                   >
                     <Trash2 size={14} />
                     Delete
                   </button>
                 </div>
-              </div>
+              </motion.div>
             ))
           )}
         </div>
@@ -886,36 +1081,49 @@ const AdminPanel = () => {
             <h3 className="font-bold">Customer Messages</h3>
             <button
               onClick={exportMessagesToPDF}
-              className="bg-gradient-to-r from-orange-500 to-amber-500 text-white px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 active:scale-95"
+              className="bg-gradient-to-r from-orange-500 to-amber-500 text-white px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 active:scale-95 hover:shadow-lg transition-all"
             >
               <Download size={16} />
               Export
             </button>
           </div>
+          
           {isLoading ? (
             <div className="bg-white rounded-xl shadow-lg p-8 text-center">
               <div className="w-10 h-10 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
-              <p className="text-gray-600 text-sm">Loading...</p>
+              <p className="text-gray-600 text-sm">Loading messages...</p>
             </div>
           ) : messages.length === 0 ? (
             <div className="bg-white rounded-xl shadow-lg p-8 text-center">
               <MessageCircle className="text-gray-300 mx-auto mb-3" size={48} />
-              <p className="text-gray-500">No messages found</p>
+              <p className="text-gray-500 font-medium">No messages found</p>
+              <p className="text-gray-400 text-sm mt-1">Customer messages will appear here</p>
             </div>
           ) : (
-            messages.map((message) => (
-              <div key={message.id} className="bg-white rounded-xl shadow-lg p-4">
+            messages.map((message, index) => (
+              <motion.div 
+                key={message.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.05 }}
+                className="bg-white rounded-xl shadow-lg p-4 hover:shadow-xl transition-shadow"
+              >
                 <div className="flex justify-between items-start mb-3">
                   <div>
                     <h3 className="font-bold">#{message.id.toString().slice(-6)}</h3>
                     <p className="text-xs text-gray-500">
-                      {new Date(message.created_at || message.timestamp).toLocaleDateString()}
+                      {new Date(message.created_at || message.timestamp).toLocaleDateString('en-IN', {
+                        day: 'numeric',
+                        month: 'short',
+                        year: 'numeric'
+                      })}
                     </p>
                   </div>
                   <span className={`px-3 py-1 rounded-full text-xs font-bold ${getMessageStatusColor(message.status)}`}>
                     {message.status.toUpperCase()}
                   </span>
                 </div>
+                
                 <div className="space-y-2 mb-3">
                   <div className="flex items-center gap-2 text-sm">
                     <User size={16} className="text-gray-400" />
@@ -936,35 +1144,38 @@ const AdminPanel = () => {
                     <span className="font-medium">{message.subject}</span>
                   </div>
                 </div>
+                
                 <div className="bg-gray-50 p-3 rounded-lg mb-3">
                   <p className="text-sm text-gray-700 line-clamp-2">{message.message}</p>
                 </div>
+                
                 <select
                   value={message.status}
                   onChange={(e) => updateMessageStatus(message.id, e.target.value)}
-                  className="w-full px-3 py-2 border-2 rounded-lg text-sm font-medium mb-2"
+                  className="w-full px-3 py-2 border-2 rounded-lg text-sm font-medium mb-2 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-100"
                 >
                   <option value="unread">Unread</option>
                   <option value="read">Read</option>
                   <option value="replied">Replied</option>
                 </select>
+                
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     onClick={() => window.location.href = `mailto:${message.email}`}
-                    className="bg-blue-500 text-white py-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-1 active:scale-95"
+                    className="bg-blue-500 hover:bg-blue-600 text-white py-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-1 active:scale-95 transition-all"
                   >
                     <Reply size={14} />
                     Reply
                   </button>
                   <button
                     onClick={() => deleteMessage(message.id)}
-                    className="bg-red-500 text-white py-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-1 active:scale-95"
+                    className="bg-red-500 hover:bg-red-600 text-white py-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-1 active:scale-95 transition-all"
                   >
                     <Trash2 size={14} />
                     Delete
                   </button>
                 </div>
-              </div>
+              </motion.div>
             ))
           )}
         </div>
@@ -988,43 +1199,54 @@ const AdminPanel = () => {
                   </div>
                   <button
                     onClick={() => setSelectedOrder(null)}
-                    className="text-gray-400"
+                    className="text-gray-400 hover:text-gray-600 transition-colors"
                   >
                     <X size={24} />
                   </button>
                 </div>
+                
                 <div className="space-y-4">
                   <div>
                     <p className="text-xs text-gray-500 font-semibold mb-1">Customer</p>
                     <p className="font-bold">{selectedOrder.name}</p>
                   </div>
+                  
                   <div>
                     <p className="text-xs text-gray-500 font-semibold mb-1">Phone</p>
                     <p className="font-bold">{selectedOrder.phone}</p>
                   </div>
+                  
                   <div>
                     <p className="text-xs text-gray-500 font-semibold mb-1">Product</p>
                     <p className="font-bold">{selectedOrder.product.name} - {selectedOrder.product.weight}</p>
                   </div>
+                  
+                  <div>
+                    <p className="text-xs text-gray-500 font-semibold mb-1">Quantity</p>
+                    <p className="font-bold">{selectedOrder.quantity}</p>
+                  </div>
+                  
                   <div>
                     <p className="text-xs text-gray-500 font-semibold mb-1">Total</p>
                     <p className="text-2xl font-bold text-orange-600">₹{selectedOrder.total}</p>
                   </div>
+                  
                   <div>
                     <p className="text-xs text-gray-500 font-semibold mb-1">Address</p>
                     <div className="bg-gray-50 p-3 rounded-lg">
                       <p className="text-sm">{selectedOrder.address}</p>
                     </div>
                   </div>
+                  
                   <div>
-                    <p className="text-xs text-gray-500 font-semibold mb-2">Status</p>
+                    <p className="text-xs text-gray-500 font-semibold mb-2">Change Status</p>
                     <select
                       value={selectedOrder.status}
                       onChange={(e) => {
                         updateOrderStatus(selectedOrder.id, e.target.value);
                         setSelectedOrder({ ...selectedOrder, status: e.target.value });
                       }}
-                      className="w-full px-4 py-3 border-2 rounded-lg font-medium"
+                      className="w-full px-4 py-3 border-2 rounded-lg font-medium focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-100"
                     >
                       <option value="pending">Pending</option>
                       <option value="confirmed">Confirmed</option>
@@ -1032,6 +1254,7 @@ const AdminPanel = () => {
                       <option value="cancelled">Cancelled</option>
                     </select>
                   </div>
+                  
                   <div className="flex gap-3 pt-4">
                     <motion.button
                       whileHover={{ scale: 1.02 }}
