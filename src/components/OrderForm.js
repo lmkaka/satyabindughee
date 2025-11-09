@@ -542,7 +542,8 @@ const OrderForm = ({ isOpen, onClose, product }) => {
                     ) : (
                       <span className="flex items-center justify-center gap-1.5">
                         <CheckCircle size={14} />
-                        {cart.length > 0 ? `Confirm Order • ₹{calculateTotal()}` : 'Select Items First'}
+                       {cart.length > 0 ? `Confirm Order • ₹${calculateTotal()}` : 'Select Items First'}
+
                       </span>
                     )}
                   </button>
