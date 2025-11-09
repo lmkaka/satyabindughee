@@ -177,45 +177,147 @@ const Hero = () => {
             </div>
           </div>
 
-          {/* 🔥 NEW: Eye-Catching Mobile-Friendly Refund Badge */}
+          {/* 🔥 REDESIGNED: Beautiful Guarantee Section */}
           <div className="mb-8 sm:mb-12">
             <div className="max-w-5xl mx-auto">
-              <div className="bg-gradient-to-r from-green-500 to-emerald-600 rounded-2xl shadow-2xl p-[2px]">
-                <div className="bg-white rounded-2xl p-4 sm:p-6">
-                  {/* Mobile Layout */}
-                  <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-                    {/* Icon + Text */}
-                    <div className="flex items-center gap-3 sm:gap-4">
-                      <div className="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center shadow-lg flex-shrink-0">
-                        <Shield className="text-white" size={28} strokeWidth={2.5} />
-                      </div>
-                      <div className="text-center sm:text-left">
-                        <h3 className="text-lg sm:text-xl font-black text-gray-900 mb-0.5">
-                          100% Money-Back Guarantee
-                        </h3>
-                        <p className="text-xs sm:text-sm font-bold text-red-600">
-                          Full Refund if Proven Impure • No Questions
-                        </p>
+              {/* Main Guarantee Card */}
+              <div className="relative bg-gradient-to-br from-green-500 via-emerald-500 to-green-600 rounded-3xl shadow-2xl overflow-hidden">
+                {/* Animated Background Pattern */}
+                <div className="absolute inset-0 opacity-10">
+                  <div className="absolute top-0 right-0 w-64 h-64 bg-white rounded-full blur-3xl transform translate-x-32 -translate-y-32"></div>
+                  <div className="absolute bottom-0 left-0 w-64 h-64 bg-white rounded-full blur-3xl transform -translate-x-32 translate-y-32"></div>
+                </div>
+
+                <div className="relative p-5 sm:p-8">
+                  {/* Top Badge */}
+                  <div className="flex justify-center mb-4">
+                    <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-md text-white px-4 py-2 rounded-full text-xs sm:text-sm font-bold shadow-lg border border-white/30">
+                      <BadgeCheck size={16} strokeWidth={2.5} />
+                      CUSTOMER PROTECTION GUARANTEE
+                    </div>
+                  </div>
+
+                  {/* Main Content */}
+                  <div className="flex flex-col sm:flex-row items-center gap-5 sm:gap-6">
+                    {/* Left: Shield Icon */}
+                    <div className="flex-shrink-0">
+                      <div className="relative">
+                        {/* Pulse Ring Animation */}
+                        <div className="absolute inset-0 bg-white/30 rounded-full animate-ping"></div>
+                        
+                        {/* Main Shield */}
+                        <div className="relative w-20 h-20 sm:w-24 sm:h-24 bg-white rounded-2xl flex items-center justify-center shadow-2xl transform hover:scale-105 transition-transform">
+                          <Shield className="text-green-600" size={44} strokeWidth={2.5} />
+                        </div>
+
+                        {/* 100% Badge */}
+                        <div className="absolute -top-2 -right-2 bg-gradient-to-br from-yellow-400 to-orange-500 text-white text-xs font-black px-2.5 py-1 rounded-full shadow-lg border-2 border-white">
+                          100%
+                        </div>
                       </div>
                     </div>
 
-                    {/* Trust Badges */}
-                    <div className="flex items-center gap-2 flex-wrap justify-center">
+                    {/* Center: Main Text */}
+                    <div className="flex-1 text-center sm:text-left">
+                      <h3 className="text-2xl sm:text-3xl font-black text-white mb-2 leading-tight">
+                        Money-Back Guarantee
+                      </h3>
+                      <p className="text-white/95 text-sm sm:text-base font-semibold leading-relaxed">
+                        <span className="text-yellow-300 font-black">Full Refund</span> if our ghee is proven impure by any certified lab.
+                        <br className="hidden sm:block" />
+                        <span className="text-white/90">No questions asked, no hassle.</span>
+                      </p>
+                    </div>
+
+                    {/* Right: CTA Button (Desktop) */}
+                    <div className="hidden sm:block">
+                      <button
+                        onClick={() => setIsOrderFormOpen(true)}
+                        className="bg-white text-green-600 px-6 py-3 rounded-xl font-black text-sm hover:shadow-2xl hover:scale-105 transition-all flex items-center gap-2 whitespace-nowrap"
+                      >
+                        Order Now
+                        <ArrowRight size={18} strokeWidth={3} />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Trust Badges Row */}
+                  <div className="mt-6 pt-6 border-t border-white/20">
+                    <div className="grid grid-cols-3 gap-3 sm:gap-4">
                       {[
-                        { icon: BadgeCheck, text: 'Lab Tested', bg: 'bg-green-50', text_color: 'text-green-700', border: 'border-green-200' },
-                        { icon: BadgeCheck, text: 'Certified', bg: 'bg-blue-50', text_color: 'text-blue-700', border: 'border-blue-200' },
-                        { icon: BadgeCheck, text: '2k+ Trust', bg: 'bg-orange-50', text_color: 'text-orange-700', border: 'border-orange-200' }
+                        { 
+                          icon: BadgeCheck, 
+                          title: 'Lab Tested', 
+                          subtitle: 'Certified Pure'
+                        },
+                        { 
+                          icon: Shield, 
+                          title: 'FSSAI Approved', 
+                          subtitle: 'Licensed'
+                        },
+                        { 
+                          icon: Star, 
+                          title: '2000+ Trust', 
+                          subtitle: '4.9★ Rating'
+                        }
                       ].map((item, idx) => (
                         <div
                           key={idx}
-                          className={`flex items-center gap-1.5 ${item.bg} px-2.5 sm:px-3 py-1.5 rounded-lg border-2 ${item.border}`}
+                          className="bg-white/10 backdrop-blur-sm rounded-xl p-3 text-center hover:bg-white/20 transition-all"
                         >
-                          <item.icon size={14} className={item.text_color} strokeWidth={2.5} />
-                          <span className={`text-xs font-bold ${item.text_color}`}>{item.text}</span>
+                          <div className="flex justify-center mb-2">
+                            <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
+                              <item.icon className="text-white" size={16} strokeWidth={2.5} />
+                            </div>
+                          </div>
+                          <p className="text-white font-black text-xs sm:text-sm mb-0.5">
+                            {item.title}
+                          </p>
+                          <p className="text-white/80 text-[10px] sm:text-xs font-medium">
+                            {item.subtitle}
+                          </p>
                         </div>
                       ))}
                     </div>
                   </div>
+
+                  {/* Mobile CTA Button */}
+                  <div className="sm:hidden mt-5">
+                    <button
+                      onClick={() => setIsOrderFormOpen(true)}
+                      className="w-full bg-white text-green-600 px-6 py-3.5 rounded-xl font-black text-base hover:shadow-2xl active:scale-95 transition-all flex items-center justify-center gap-2"
+                    >
+                      Order Now with Confidence
+                      <ArrowRight size={20} strokeWidth={3} />
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Bottom Info Cards */}
+              <div className="grid grid-cols-2 gap-3 sm:gap-4 mt-4">
+                <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl p-4 border-2 border-blue-200">
+                  <div className="flex items-center gap-2.5 mb-2">
+                    <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
+                      <Truck className="text-white" size={16} strokeWidth={2.5} />
+                    </div>
+                    <h4 className="font-black text-blue-900 text-sm">Free Delivery</h4>
+                  </div>
+                  <p className="text-blue-700 text-xs font-semibold">
+                    Same-day delivery across Ranchi
+                  </p>
+                </div>
+
+                <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-2xl p-4 border-2 border-orange-200">
+                  <div className="flex items-center gap-2.5 mb-2">
+                    <div className="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center">
+                      <Award className="text-white" size={16} strokeWidth={2.5} />
+                    </div>
+                    <h4 className="font-black text-orange-900 text-sm">Premium Quality</h4>
+                  </div>
+                  <p className="text-orange-700 text-xs font-semibold">
+                    Made with traditional methods
+                  </p>
                 </div>
               </div>
             </div>
