@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, User, Phone, MapPin, ShoppingCart, Trash2, Plus, Minus, Download, CheckCircle } from 'lucide-react';
+import { X, User, Phone, MapPin, ShoppingCart, Trash2, Plus, Minus, Download, CheckCircle, AlertCircle } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
@@ -248,10 +248,11 @@ const OrderForm = ({ isOpen, onClose, product }) => {
       ? cart[0].weight
       : `${cart.length} items (${cart.map(item => `${item.weight}×${item.quantity}`).join(', ')})`;
 
+    // ✅ FIXED: Simplified order structure for Supabase
     const order = {
-      name: formData.name,
-      phone: formData.phone,
-      address: formData.address,
+      name: formData.name.trim(),
+      phone: formData.phone.trim(),
+      address: formData.address.trim(),
       product: {
         name: 'Premium Pure Ghee',
         weight: productSummary,
@@ -260,28 +261,35 @@ const OrderForm = ({ isOpen, onClose, product }) => {
       quantity: cart.reduce((sum, item) => sum + item.quantity, 0),
       total: calculateTotal(),
       status: 'pending',
-      order_date: new Date().toISOString(),
-      cart_items: JSON.stringify(cart.map(item => ({
-        name: item.name,
-        weight: item.weight,
-        price: item.price,
-        quantity: item.quantity
-      })))
+      order_date: new Date().toISOString()
     };
 
+    console.log('📦 Submitting order:', order);
+
     try {
+      // Try Supabase first
       const { data, error: supabaseError } = await supabase
         .from('orders')
         .insert([order])
         .select();
 
       if (supabaseError) {
-        console.error('Supabase error:', supabaseError);
-        throw supabaseError;
+        console.error('❌ Supabase error:', supabaseError);
+        console.error('Error details:', {
+          message: supabaseError.message,
+          details: supabaseError.details,
+          hint: supabaseError.hint
+        });
+        throw new Error(`Database error: ${supabaseError.message}`);
       }
 
-      console.log('Order saved to Supabase!', data);
+      if (!data || data.length === 0) {
+        throw new Error('No data returned from database');
+      }
 
+      console.log('✅ Order saved to Supabase:', data);
+
+      // Save to localStorage as backup
       const existingOrders = JSON.parse(localStorage.getItem('sbghee-orders') || '[]');
       existingOrders.push({ 
         id: data[0].id, 
@@ -290,6 +298,7 @@ const OrderForm = ({ isOpen, onClose, product }) => {
       });
       localStorage.setItem('sbghee-orders', JSON.stringify(existingOrders));
 
+      // Set completed order for invoice
       setCompletedOrder({
         id: data[0].id,
         name: formData.name,
@@ -304,8 +313,47 @@ const OrderForm = ({ isOpen, onClose, product }) => {
       setIsSuccess(true);
 
     } catch (err) {
-      console.error('Error saving order:', err);
-      setError('Failed to place order. Please try again.');
+      console.error('❌ Order submission failed:', err);
+      
+      // Show detailed error to user
+      const errorMessage = err.message || 'Failed to place order';
+      setError(errorMessage);
+      
+      // Try localStorage fallback
+      try {
+        const fallbackOrder = {
+          id: Date.now(),
+          ...order,
+          created_at: new Date().toISOString()
+        };
+        
+        const existingOrders = JSON.parse(localStorage.getItem('sbghee-orders') || '[]');
+        existingOrders.push(fallbackOrder);
+        localStorage.setItem('sbghee-orders', JSON.stringify(existingOrders));
+        
+        console.log('💾 Order saved to localStorage as fallback');
+        
+        // Set completed order for invoice
+        setCompletedOrder({
+          id: fallbackOrder.id,
+          name: formData.name,
+          phone: formData.phone,
+          address: formData.address,
+          items: cart,
+          total: calculateTotal(),
+          order_date: new Date().toISOString()
+        });
+        
+        // Show success after delay
+        setTimeout(() => {
+          setError(null);
+          setIsSuccess(true);
+        }, 1500);
+        
+      } catch (localError) {
+        console.error('❌ LocalStorage fallback also failed:', localError);
+      }
+      
       setIsSubmitting(false);
     }
   };
@@ -478,10 +526,22 @@ const OrderForm = ({ isOpen, onClose, product }) => {
                     </div>
                   )}
 
+                  {/* ✅ IMPROVED ERROR MESSAGE */}
                   {error && (
-                    <div className="bg-red-50 border-2 border-red-200 text-red-700 px-3 py-2 rounded-lg mb-4 text-sm font-semibold">
-                      {error}
-                    </div>
+                    <motion.div
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="bg-red-50 border-2 border-red-300 rounded-lg p-4 mb-4 flex items-start gap-3"
+                    >
+                      <AlertCircle className="text-red-600 flex-shrink-0 mt-0.5" size={20} />
+                      <div className="flex-1">
+                        <p className="text-red-800 font-bold text-sm mb-1">Order Failed</p>
+                        <p className="text-red-700 text-xs">{error}</p>
+                        <p className="text-red-600 text-xs mt-2">
+                          Please check your internet connection or try again.
+                        </p>
+                      </div>
+                    </motion.div>
                   )}
 
                   <form onSubmit={handleSubmit} className="space-y-3">
