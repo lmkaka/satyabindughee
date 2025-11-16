@@ -1,363 +1,11 @@
-// AdminPanel.jsx – SBGhee Admin Panel (COMPLETE, READY TO PASTE)
-import React, { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import {
-  Package, User, Phone, MapPin, Eye, Download, Trash2, FileText, ClipboardList, Clock, CheckCircle,
-  IndianRupee, RefreshCw, MessageCircle, Mail, Reply, Lock, LogOut, X, Shield, Users, UserPlus, Edit2, Search, Calendar, AlertCircle
-} from "lucide-react";
-import jsPDF from "jspdf";
-import "jspdf-autotable";
-import supabase from "../supabaseClient";
-import ProductManagement from "./ProductManagement";
-
-// --- Helper Functions ---
-const sanitizeText = (text) => !text ? "" : String(text)
-  .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-  .replace(/[^\x20-\x7E]/g, "")
-  .replace(/Rs\./g, "")
-  .trim;
-const formatCurrency = (amount) => "₹" + (parseFloat(amount) || 0).toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 0 });
-const getStatusColorRGB = (status) => ({
-  PENDING: [255,193,7], CONFIRMED: [30,144,255], DELIVERED: [46,201,113], CANCELLED:[232,64,64]
-})[String(status).toUpperCase()] || [150,150,150];
-const getStatusColor = (status) => ({
-  pending: "bg-yellow-100 text-yellow-800",
-  confirmed: "bg-blue-100 text-blue-800",
-  delivered: "bg-green-100 text-green-800",
-  cancelled: "bg-red-100 text-red-800"
-})[status] || "bg-gray-100 text-gray-800";
-const getMessageStatusColor = (status) => ({
-  unread: "bg-red-100 text-red-800",
-  read: "bg-blue-100 text-blue-800",
-  replied: "bg-green-100 text-green-800"
-})[status] || "bg-gray-100 text-gray-800";
-
-// --- Main Component ---
-const AdminPanel = () => {
-
-  // --- States ---
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [loginUsername, setLoginUsername] = useState("");
-  const [loginPassword, setLoginPassword] = useState("");
-  const [loginError, setLoginError] = useState("");
-  const [isLoggingIn, setIsLoggingIn] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-
-  const [orders, setOrders] = useState([]);
-  const [messages, setMessages] = useState([]);
-  const [users, setUsers] = useState([]);
-  const [products, setProducts] = useState([]);
-  const [selectedOrder, setSelectedOrder] = useState(null);
-  const [selectedUser, setSelectedUser] = useState(null);
-  const [showUsersModal, setShowUsersModal] = useState(false);
-
-  const [filterStatus, setFilterStatus] = useState("all");
-  const [activeTab, setActiveTab] = useState("orders");
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [searchQuery, setSearchQuery] = useState("");
-
-  // --- Persisted Login ---
-  useEffect(() => {
-    const savedLogin = localStorage.getItem("sbghee-admin-logged-in");
-    if (savedLogin === "true") setIsAuthenticated(true);
-  }, []);
-
-  // --- Load All Data After Auth ---
-  useEffect(() => {
-    if (isAuthenticated) {
-      loadOrders();
-      loadMessages();
-      loadUsers();
-      loadProducts();
-    }
-  }, [isAuthenticated]);
-
-  // --- Auth Handlers ---
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    setLoginError("");
-    setIsLoggingIn(true);
-    try {
-      const { data, error: supabaseError } = await supabase
-        .from("adminlogin")
-        .select()
-        .eq("username", loginUsername.trim())
-        .eq("password", loginPassword)
-        .single();
-      if (supabaseError || !data) {
-        setLoginError("Invalid username or password");
-        setIsLoggingIn(false);
-        return;
-      }
-      localStorage.setItem("sbghee-admin-logged-in", "true");
-      localStorage.setItem("sbghee-admin-username", loginUsername);
-      setIsAuthenticated(true);
-      setLoginUsername("");
-      setLoginPassword("");
-    } catch (err) {
-      setLoginError("Login failed. Please try again.");
-    } finally {
-      setIsLoggingIn(false);
-    }
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem("sbghee-admin-logged-in");
-    localStorage.removeItem("sbghee-admin-username");
-    setIsAuthenticated(false);
-    setOrders([]);
-    setMessages([]);
-    setUsers([]);
-    setProducts([]);
-  };
-
-  // --- CRUD (Supabase) ---
-  const loadOrders = async () => {
-    setIsLoading(true); setError(null);
-    try {
-      const { data, error: supabaseError } = await supabase
-        .from("orders").select().order("createdat", { ascending: false });
-      if (supabaseError) throw supabaseError;
-      setOrders(data || []);
-    } catch (err) {
-      setError("Failed to load orders from database");
-      setOrders([]);
-    } finally { setIsLoading(false); }
-  };
-
-  const loadMessages = async () => {
-    setIsLoading(true); setError(null);
-    try {
-      const { data, error: supabaseError } = await supabase
-        .from("messages").select().order("createdat", { ascending: false });
-      if (supabaseError) throw supabaseError;
-      setMessages(data || []);
-    } catch (err) {
-      setError("Failed to load messages from database");
-      setMessages([]);
-    } finally { setIsLoading(false); }
-  };
-
-  const loadUsers = async () => {
-    try {
-      const { data, error: supabaseError } = await supabase
-        .from("userprofiles").select().order("createdat", { ascending: false });
-      if (supabaseError) throw supabaseError;
-      setUsers(data || []);
-    } catch (err) {
-      setUsers([]);
-    }
-  };
-
-  const loadProducts = async () => {
-    try {
-      const { data, error: supabaseError } = await supabase
-        .from("products").select().order("createdat", { ascending: false });
-      if (supabaseError) throw supabaseError;
-      setProducts(data || []);
-    } catch (err) {
-      setProducts([]);
-    }
-  };
-
-  const updateOrderStatus = async (orderId, newStatus) => {
-    try {
-      await supabase.from("orders").update({ status: newStatus }).eq("id", orderId);
-      await loadOrders();
-      alert("Order status updated successfully!");
-    } catch (err) {
-      alert("Failed to update order status: " + err.message);
-    }
-  };
-
-  const deleteOrder = async (orderId) => {
-    if (!window.confirm("Are you sure you want to delete this order? This action cannot be undone.")) return;
-    try {
-      await supabase.from("orders").delete().eq("id", orderId);
-      await loadOrders();
-      setSelectedOrder(selectedOrder?.id === orderId ? null : selectedOrder);
-      alert("Order deleted successfully!");
-    } catch (err) {
-      alert("Failed to delete order: " + err.message);
-    }
-  };
-
-  const updateMessageStatus = async (messageId, newStatus) => {
-    try {
-      await supabase.from("messages").update({ status: newStatus }).eq("id", messageId);
-      await loadMessages();
-      alert("Message status updated successfully!");
-    } catch (err) {
-      alert("Failed to update message status: " + err.message);
-    }
-  };
-
-  const deleteMessage = async (messageId) => {
-    if (!window.confirm("Are you sure you want to delete this message? This action cannot be undone.")) return;
-    try {
-      await supabase.from("messages").delete().eq("id", messageId);
-      await loadMessages();
-      alert("Message deleted successfully!");
-    } catch (err) {
-      alert("Failed to delete message: " + err.message);
-    }
-  };
-
-  // --- PDF Exports (Trimmed, see original for full formatting) ---
-  const exportOrdersToPDF = async () => {
-    try {
-      const doc = new jsPDF("p", "mm", "a4");
-      // ...leave in all PDF formatting, branding, and table code from your original for full reporting
-      doc.save(`SBGheeOrders_${new Date().toISOString().slice(0, 10)}.pdf`);
-    } catch (error) {
-      alert("Failed to generate PDF. Please try again.");
-    }
-  };
-
-  const exportSingleOrderPDF = async (order) => {
-    try {
-      const doc = new jsPDF("p", "mm", "a4");
-      // ...full invoice export code goes here
-      doc.save(`SBGheeInvoice_${String(order.id).slice(-6)}.pdf`);
-    } catch (error) {
-      alert("Failed to generate invoice. Please try again.");
-    }
-  };
-
-  const exportMessagesToPDF = async () => {
-    try {
-      const doc = new jsPDF("p", "mm", "a4");
-      // ...full messages log export goes here
-      doc.save(`SBGheeMessages_${new Date().toISOString().slice(0, 10)}.pdf`);
-    } catch (error) {
-      alert("Failed to generate messages PDF. Please try again.");
-    }
-  };
-
-  // --- Animated, Professional Login UI ---
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-orange-400 via-amber-500 to-yellow-400 flex items-center justify-center p-4 relative overflow-hidden">
-        {/* Animated Blobs */}
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-20 left-20 w-72 h-72 bg-white rounded-full mix-blend-multiply filter blur-xl animate-blob" />
-          <div className="absolute top-40 right-20 w-72 h-72 bg-white rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-2000" />
-          <div className="absolute bottom-20 left-40 w-72 h-72 bg-white rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-4000" />
-        </div>
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95, y: 20 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          transition={{ duration: 0.5, ease: "easeOut" }}
-          className="w-full max-w-md relative z-10"
-        >
-          <div className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl overflow-hidden border border-white/20">
-            {/* Header */}
-            <div className="relative bg-gradient-to-br from-orange-500 via-amber-500 to-yellow-500 p-10 text-center">
-              <div className="absolute top-0 left-0 w-40 h-40 bg-white/10 rounded-full -translate-x-12 -translate-y-12" />
-              <div className="absolute bottom-0 right-0 w-32 h-32 bg-white/10 rounded-full translate-x-12 translate-y-12" />
-              <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.2, type: "spring", stiffness: 200 }} className="relative">
-                <div className="w-20 h-20 bg-white/20 backdrop-blur-sm rounded-2xl mx-auto mb-4 flex items-center justify-center transform rotate-6 hover:rotate-0 transition-transform duration-300">
-                  <Shield className="w-12 h-12 text-white" strokeWidth={2.5} />
-                </div>
-                <h1 className="text-4xl font-black text-white mb-2 tracking-tight drop-shadow-lg">SBGhee Admin</h1>
-                <p className="text-white/90 text-sm font-medium tracking-wide">Secure Access Portal</p>
-              </motion.div>
-            </div>
-            {/* Form */}
-            <form onSubmit={handleLogin} className="p-8 space-y-6">
-              <AnimatePresence>
-                {loginError && (
-                  <motion.div initial={{ opacity: 0, x: -20, scale: 0.95 }} animate={{ opacity: 1, x: 0, scale: 1 }} exit={{ opacity: 0, x: 20, scale: 0.95 }} className="bg-red-50 border-l-4 border-red-500 p-4 rounded-lg shadow-sm">
-                    <div className="flex items-center gap-3">
-                      <div className="flex-shrink-0"><AlertCircle className="w-5 h-5 text-red-500" /></div>
-                      <p className="text-red-700 text-sm font-semibold">{loginError}</p>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-              <div className="space-y-2">
-                <label className="block text-sm font-bold text-gray-700 flex items-center gap-2"><User size={16} className="text-orange-500" />Username</label>
-                <motion.input whileFocus={{ scale: 1.01 }} type="text" value={loginUsername} onChange={e => setLoginUsername(e.target.value)} placeholder="Enter your username" className="w-full px-4 py-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl focus:border-orange-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-orange-100 transition-all duration-200 font-medium" required autoFocus autoComplete="username" />
-              </div>
-              <div className="space-y-2">
-                <label className="block text-sm font-bold text-gray-700 flex items-center gap-2"><Lock size={16} className="text-orange-500" />Password</label>
-                <div className="relative">
-                  <motion.input whileFocus={{ scale: 1.01 }} type={showPassword ? "text" : "password"} value={loginPassword} onChange={e => setLoginPassword(e.target.value)} placeholder="Enter your password" className="w-full px-4 py-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl focus:border-orange-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-orange-100 transition-all duration-200 font-medium pr-12" required autoComplete="current-password" />
-                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors">
-                    {showPassword ? (
-                      <Eye className="w-5 h-5" />
-                    ) : (
-                      <Eye className="w-5 h-5" />
-                    )}
-                  </button>
-                </div>
-              </div>
-              <motion.button type="submit" disabled={isLoggingIn} whileHover={{ scale: isLoggingIn ? 1 : 1.02 }} whileTap={{ scale: isLoggingIn ? 1 : 0.98 }} className={`w-full py-4 rounded-xl font-bold text-white shadow-lg transition-all duration-200 relative overflow-hidden ${isLoggingIn ? "bg-gray-400 cursor-not-allowed" : "bg-gradient-to-r from-orange-500 via-amber-500 to-yellow-500 hover:shadow-xl hover:shadow-orange-500/50"}`}>
-                {isLoggingIn ?
-                  <span className="flex items-center justify-center gap-3">
-                    <div className="w-5 h-5 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
-                    <span className="text-base">Authenticating...</span>
-                  </span> :
-                  <span className="flex items-center justify-center gap-2 text-base"><Lock size={18} />Sign In Securely</span>
-                }
-              </motion.button>
-            </form>
-            <div className="pt-4 border-t border-gray-200">
-              <div className="flex items-start gap-3 p-3 bg-blue-50 rounded-lg">
-                <Shield size={18} className="text-blue-500 flex-shrink-0 mt-0.5" />
-                <p className="text-xs text-blue-700"> <span className="font-bold">Secure Connection: </span>Your credentials are encrypted and protected. Only authorized personnel can access this portal.</p>
-              </div>
-            </div>
-            <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }} className="text-center mt-6 text-white/90 text-sm font-medium drop-shadow-lg">© {new Date().getFullYear()} SBGhee. All rights reserved.</motion.p>
-          </div>
-        </motion.div>
-        <style jsx>{`
-          @keyframes blob { 0%,100%{transform:translate(0,0) scale(1);} 33%{transform:translate(30px,-50px) scale(1.1);} 66%{transform:translate(-20px,20px) scale(0.9);} }
-          .animate-blob { animation: blob 7s infinite; }
-          .animation-delay-2000 { animation-delay: 2s; }
-          .animation-delay-4000 { animation-delay: 4s; }
-        `}</style>
-      </div>
-    );
-  }
-
-
-  // --- Main Admin Panel ---
-  // For brevity, paste all the JSX logic for header, tab switcher, stats, modals, Orders, Messages, Users, Products tabs, view and CRUD details from your code or the original `paste.txt`. 
-  // Follow the structure from the search results; use your own styling as in the snippets above for each tab/block/modal. 
-  // Everything from tab navigation, search, grid, CRUD, PDF, detail view, and modals is supported and included.
-
-  return (
-    /* PLACE HERE: Full main panel JSX, all tabs, modals, stat cards, refresh FAB, etc as in paste.txt.
-      E.g. 
-      - Sticky header with logout,
-      - Floating refresh button,
-      - Animated error banner,
-      - Orders/Users/Messages/Products tab switch,
-      - Stats grid,
-      - All grids/lists/cards for all entities (with actions/view/modals),
-      - All modal views (order details, user details, all-users modal, etc.),
-      - Product management panel UI,
-      - All responsive/touch/mobile styles,
-      - All logic and event handlers.
-    */
-    <div>{/* ... paste main JSX as per above ... */}</div>
-  );
-};
-
-export default AdminPanel;
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Package, User, Phone, MapPin, Eye, Download, Trash2, FileText,
   ClipboardList, Clock, CheckCircle, IndianRupee, RefreshCw,
-  MessageCircle, Mail, Reply, Lock, LogOut, X, Shield,
-  Users, UserPlus, Edit2, Search, Calendar, AlertCircle  // âœ… ADD THESE
+  MessageCircle, Mail, Reply, Lock, LogOut, X, Shield
 } from 'lucide-react';
 import jsPDF from 'jspdf';
-// Add this import after other imports
-import ProductManagement from './ProductManagement';
 import 'jspdf-autotable';
 import { supabase } from '../supabaseClient';
 
@@ -368,8 +16,8 @@ const sanitizeText = (text = '') => {
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
     .replace(/[^\x20-\x7E]/g, '')
-    .replace(/[Â°Âºâ„¢Â®Â©]/g, '')
-    .replace(/â‚¹/g, 'Rs.')
+    .replace(/[°º™®©]/g, '')
+    .replace(/₹/g, 'Rs.')
     .replace(/\s+/g, ' ')
     .trim();
 };
@@ -427,12 +75,6 @@ const AdminPanel = () => {
   const [activeTab, setActiveTab] = useState('orders');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
-const [users, setUsers] = useState([]);
-const [products, setProducts] = useState([]);
-const [selectedUser, setSelectedUser] = useState(null);
-const [showUsersModal, setShowUsersModal] = useState(false);
-const [searchQuery, setSearchQuery] = useState('');
-
 
   // Check saved login
   useEffect(() => {
@@ -447,8 +89,6 @@ const [searchQuery, setSearchQuery] = useState('');
     if (isAuthenticated) {
       loadOrders();
       loadMessages();
-       loadUsers();     // âœ… ADD THIS
-    loadProducts();  // âœ… ADD THIS
     }
   }, [isAuthenticated]);
 
@@ -548,40 +188,6 @@ const [searchQuery, setSearchQuery] = useState('');
       setIsLoading(false);
     }
   };
-  // After your loadMessages function, ADD THESE:
-
-// Load users
-const loadUsers = async () => {
-  try {
-    const { data, error: supabaseError } = await supabase
-      .from('user_profiles')
-      .select('*')
-      .order('created_at', { ascending: false });
-    
-    if (supabaseError) throw supabaseError;
-    setUsers(data || []);
-  } catch (err) {
-    console.error('Failed to load users:', err);
-    setUsers([]);
-  }
-};
-
-// Load products
-const loadProducts = async () => {
-  try {
-    const { data, error: supabaseError } = await supabase
-      .from('products')
-      .select('*')
-      .order('created_at', { ascending: false });
-    
-    if (supabaseError) throw supabaseError;
-    setProducts(data || []);
-  } catch (err) {
-    console.error('Failed to load products:', err);
-    setProducts([]);
-  }
-};
-
 
   // FIXED: Update order status with proper reload
   const updateOrderStatus = async (orderId, newStatus) => {
@@ -1226,7 +832,7 @@ const loadProducts = async () => {
             transition={{ delay: 0.6 }}
             className="text-center mt-6 text-white/90 text-sm font-medium drop-shadow-lg"
           >
-            Â© 2024 SBGhee. All rights reserved.
+            © 2024 SBGhee. All rights reserved.
           </motion.p>
         </motion.div>
 
@@ -1259,7 +865,7 @@ const loadProducts = async () => {
     { label: 'Orders', value: orders.length, icon: ClipboardList, color: 'blue' },
     { label: 'Pending', value: orders.filter(o => o.status === 'pending').length, icon: Clock, color: 'yellow' },
     { label: 'Completed', value: orders.filter(o => o.status === 'delivered').length, icon: CheckCircle, color: 'green' },
-    { label: 'Revenue', value: `â‚¹${orders.reduce((sum, o) => sum + (parseFloat(o.total) || 0), 0)}`, icon: IndianRupee, color: 'purple' }
+    { label: 'Revenue', value: `₹${orders.reduce((sum, o) => sum + (parseFloat(o.total) || 0), 0)}`, icon: IndianRupee, color: 'purple' }
   ] : [
     { label: 'Messages', value: messages.length, icon: MessageCircle, color: 'blue' },
     { label: 'Unread', value: messages.filter(m => m.status === 'unread').length, icon: Mail, color: 'red' },
@@ -1295,8 +901,6 @@ const loadProducts = async () => {
         onClick={() => { 
           loadOrders(); 
           loadMessages(); 
-          loadUsers();     // âœ… ADD THIS
-  loadProducts();  // âœ… ADD THIS
         }}
         className="fixed bottom-6 right-6 md:bottom-8 md:right-8 w-14 h-14 md:w-16 md:h-16 bg-gradient-to-r from-orange-500 to-amber-500 rounded-full shadow-2xl flex items-center justify-center z-50 hover:shadow-orange-500/50 transition-all"
         title="Refresh Data"
@@ -1333,34 +937,9 @@ const loadProducts = async () => {
                 : 'text-gray-600 hover:bg-gray-50'
             }`}
           >
-            
             <MessageCircle size={18} className="inline mr-2" />
             Messages ({messages.length})
           </button>
-            {/* âœ… ADD THESE TWO NEW BUTTONS: */}
-<button
-  onClick={() => setActiveTab('users')}
-  className={`flex-1 min-w-[120px] py-3 px-4 rounded-lg font-semibold text-sm transition-all whitespace-nowrap ${
-    activeTab === 'users'
-      ? 'bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-md'
-      : 'text-gray-600 hover:bg-gray-50'
-  }`}
->
-  <Users size={18} className="inline mr-2" />
-  Users ({users.length})
-</button>
-
-<button
-  onClick={() => setActiveTab('products')}
-  className={`flex-1 min-w-[120px] py-3 px-4 rounded-lg font-semibold text-sm transition-all whitespace-nowrap ${
-    activeTab === 'products'
-      ? 'bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-md'
-      : 'text-gray-600 hover:bg-gray-50'
-  }`}
->
-  <Package size={18} className="inline mr-2" />
-  Products
-</button>
         </div>
       </div>
 
@@ -1462,7 +1041,7 @@ const loadProducts = async () => {
                   </div>
                   <div className="flex items-center gap-2 text-sm">
                     <IndianRupee size={16} className="text-gray-400" />
-                    <span className="font-bold">â‚¹{order.total} (Qty: {order.quantity})</span>
+                    <span className="font-bold">₹{order.total} (Qty: {order.quantity})</span>
                   </div>
                 </div>
                 
@@ -1508,131 +1087,6 @@ const loadProducts = async () => {
               Export
             </button>
           </div>
-       {/* âœ… ADD THIS ENTIRE USERS TAB: */}
-{activeTab === 'users' && (
-  <div className="px-4 space-y-4">
-    {/* Users Header */}
-    <div className="bg-white rounded-2xl shadow-lg p-4">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h3 className="text-xl font-black text-gray-900 flex items-center gap-2">
-            <Users size={24} className="text-purple-600" />
-            Registered Users
-          </h3>
-          <p className="text-sm text-gray-600 mt-1">
-            Total: <span className="font-bold text-purple-600">{users.length}</span> users
-          </p>
-        </div>
-
-        <button
-          onClick={() => setShowUsersModal(true)}
-          className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white px-5 py-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 shadow-lg transition active:scale-95"
-        >
-          <Eye size={16} strokeWidth={2.5} />
-          View All ({users.length})
-        </button>
-      </div>
-
-      {/* Search Bar */}
-      <div className="relative mt-4">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-        <input
-          type="text"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Search users by name, phone, or email..."
-          className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-400 focus:border-purple-400 outline-none transition text-sm"
-        />
-      </div>
-    </div>
-
-    {/* Users Grid */}
-    {isLoading ? (
-      <div className="bg-white rounded-2xl shadow-lg p-12 text-center">
-        <div className="w-12 h-12 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-        <p className="text-gray-600 font-semibold">Loading users...</p>
-      </div>
-    ) : users.filter(user =>
-        user.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        user.phone?.includes(searchQuery) ||
-        user.email?.toLowerCase().includes(searchQuery.toLowerCase())
-      ).length === 0 ? (
-      <div className="bg-white rounded-2xl shadow-lg p-12 text-center">
-        <Users className="text-gray-300 mx-auto mb-4" size={64} />
-        <h3 className="text-lg font-bold text-gray-900 mb-2">
-          {searchQuery ? 'No users found' : 'No users registered yet'}
-        </h3>
-      </div>
-    ) : (
-      <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-        {users.filter(user =>
-          user.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          user.phone?.includes(searchQuery) ||
-          user.email?.toLowerCase().includes(searchQuery.toLowerCase())
-        ).slice(0, 12).map((user, index) => (
-          <motion.div
-            key={user.id}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.05 }}
-            className="bg-white rounded-2xl shadow-lg p-4 hover:shadow-xl transition-all border-2 border-gray-100 hover:border-purple-200"
-          >
-            <div className="flex items-center gap-3 mb-3">
-              {user.avatar_url ? (
-                <img 
-                  src={user.avatar_url} 
-                  alt={user.name} 
-                  className="w-14 h-14 rounded-full border-2 border-purple-200 shadow-md"
-                />
-              ) : (
-                <div className="w-14 h-14 bg-gradient-to-br from-purple-400 to-indigo-500 rounded-full flex items-center justify-center shadow-md">
-                  <User className="text-white" size={28} strokeWidth={2.5} />
-                </div>
-              )}
-              <div className="flex-1 min-w-0">
-                <p className="font-black text-sm text-gray-900 truncate">{user.name}</p>
-                <p className="text-xs text-gray-600 font-semibold">{user.phone}</p>
-              </div>
-            </div>
-
-            <div className="space-y-1.5 text-xs mb-3">
-              <div className="flex items-center gap-2 text-gray-600">
-                <Mail size={12} className="text-gray-400 flex-shrink-0" />
-                <span className="truncate">{user.email || 'No email'}</span>
-              </div>
-              <div className="flex items-start gap-2 text-gray-600">
-                <MapPin size={12} className="text-gray-400 flex-shrink-0 mt-0.5" />
-                <span className="line-clamp-2">{user.address || 'No address'}</span>
-              </div>
-            </div>
-
-            <div className="pt-3 border-t-2 border-gray-100 flex items-center justify-between">
-              <div className="flex items-center gap-1.5 text-[10px] text-gray-500">
-                <Calendar size={10} />
-                {new Date(user.created_at).toLocaleDateString('en-IN')}
-              </div>
-              <button
-                onClick={() => setSelectedUser(user)}
-                className="text-purple-600 hover:text-purple-700 font-black text-xs flex items-center gap-1"
-              >
-                View
-                <Eye size={12} />
-              </button>
-            </div>
-          </motion.div>
-        ))}
-      </div>
-    )}
-  </div>
-)}
-{/* âœ… ADD THIS PRODUCTS TAB: */}
-{activeTab === 'products' && (
-  <div className="px-4">
-    <ProductManagement />
-  </div>
-)}
-
-
           
           {isLoading ? (
             <div className="bg-white rounded-xl shadow-lg p-8 text-center">
@@ -1727,7 +1181,7 @@ const loadProducts = async () => {
         </div>
       )}
 
-           {/* Modal for Order Details */}
+      {/* Modal for Order Details */}
       <AnimatePresence>
         {selectedOrder && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -1774,7 +1228,7 @@ const loadProducts = async () => {
                   
                   <div>
                     <p className="text-xs text-gray-500 font-semibold mb-1">Total</p>
-                    <p className="text-2xl font-bold text-orange-600">â‚¹{selectedOrder.total}</p>
+                    <p className="text-2xl font-bold text-orange-600">₹{selectedOrder.total}</p>
                   </div>
                   
                   <div>
@@ -1826,147 +1280,6 @@ const loadProducts = async () => {
           </div>
         )}
       </AnimatePresence>
-
-      {/* All Users Modal */}
-      <AnimatePresence>
-        {showUsersModal && (
-          <div className="fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center z-50 p-4">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.9 }}
-              className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col"
-            >
-              <div className="sticky top-0 bg-gradient-to-r from-purple-500 to-indigo-600 p-5 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <Users className="text-white" size={24} />
-                  <div>
-                    <h3 className="text-2xl font-black text-white">All Users</h3>
-                    <p className="text-sm text-white/90">{users.length} total users</p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => setShowUsersModal(false)}
-                  className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center"
-                >
-                  <X className="text-white" size={22} />
-                </button>
-              </div>
-
-              <div className="flex-1 overflow-y-auto p-6">
-                <div className="space-y-3">
-                  {users.map((user) => (
-                    <div key={user.id} className="bg-gray-50 rounded-xl p-4 hover:bg-purple-50 transition border-2 border-gray-200">
-                      <div className="flex items-start gap-4">
-                        <div className="w-16 h-16 bg-gradient-to-br from-purple-400 to-indigo-500 rounded-full flex items-center justify-center flex-shrink-0">
-                          <User className="text-white" size={32} />
-                        </div>
-                        <div className="flex-1">
-                          <h4 className="font-black text-lg">{user.name}</h4>
-                          <div className="grid sm:grid-cols-2 gap-2 mt-2 text-sm">
-                            <div className="flex items-center gap-2">
-                              <Phone size={14} className="text-gray-400" />
-                              <span>{user.phone}</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Mail size={14} className="text-gray-400" />
-                              <span className="truncate">{user.email || 'N/A'}</span>
-                            </div>
-                          </div>
-                          <div className="flex items-start gap-2 mt-2 text-sm">
-                            <MapPin size={14} className="text-gray-400 mt-0.5" />
-                            <span>{user.address || 'No address'}</span>
-                          </div>
-                        </div>
-                        <button
-                          onClick={() => {
-                            setSelectedUser(user);
-                            setShowUsersModal(false);
-                          }}
-                          className="bg-purple-100 hover:bg-purple-200 text-purple-700 px-4 py-2 rounded-xl font-bold text-xs"
-                        >
-                          Details
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
-      {/* User Details Modal */}
-      <AnimatePresence>
-        {selectedUser && (
-          <div className="fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center z-50 p-4">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.9 }}
-              className="bg-white rounded-2xl shadow-2xl w-full max-w-lg"
-            >
-              <div className="bg-gradient-to-r from-purple-500 to-indigo-600 p-6 rounded-t-2xl">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-2xl font-black text-white">User Details</h3>
-                  <button
-                    onClick={() => setSelectedUser(null)}
-                    className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center"
-                  >
-                    <X className="text-white" size={20} />
-                  </button>
-                </div>
-                <div className="flex items-center gap-4">
-                  <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center border-4 border-white">
-                    <User className="text-white" size={36} />
-                  </div>
-                  <div>
-                    <h4 className="text-2xl font-black text-white">{selectedUser.name}</h4>
-                    <p className="text-white/90 text-sm">ID: #{selectedUser.id.toString().slice(-8)}</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="p-6 space-y-5">
-                <div>
-                  <p className="text-xs text-gray-500 font-bold uppercase mb-1">Phone</p>
-                  <p className="font-black text-lg">{selectedUser.phone}</p>
-                </div>
-
-                <div>
-                  <p className="text-xs text-gray-500 font-bold uppercase mb-1">Email</p>
-                  <p className="font-bold">{selectedUser.email || 'Not provided'}</p>
-                </div>
-
-                <div>
-                  <p className="text-xs text-gray-500 font-bold uppercase mb-1">Address</p>
-                  <div className="bg-gray-50 p-4 rounded-xl border-2 border-gray-200">
-                    <p className="text-sm">{selectedUser.address || 'No address'}</p>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3 pt-4">
-                  <a
-                    href={`tel:${selectedUser.phone}`}
-                    className="bg-green-500 hover:bg-green-600 text-white py-3 rounded-xl font-black text-sm flex items-center justify-center gap-2"
-                  >
-                    <Phone size={18} />
-                    Call
-                  </a>
-                  <button
-                    onClick={() => setSelectedUser(null)}
-                    className="bg-gray-100 hover:bg-gray-200 text-gray-700 py-3 rounded-xl font-black text-sm"
-                  >
-                    Close
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
     </div>
   );
 };
