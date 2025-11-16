@@ -1,8 +1,9 @@
 import React, { useState, useEffect, memo, useCallback } from 'react';
-import { Star, Award, Shield, Truck, ArrowRight, Play, ChevronLeft, ChevronRight, BadgeCheck } from 'lucide-react';
+import { Star, Award, Shield, Truck, ArrowRight, Play, ChevronLeft, ChevronRight, BadgeCheck, MapPin, Phone, User } from 'lucide-react';
+import { useAuth } from '../App'; // Import useAuth hook
 import OrderForm from './OrderForm';
 
-// ✅ Memoized Slide Component for Performance
+// ✅ Memoized Slide Component
 const Slide = memo(({ src, alt }) => (
   <div className="absolute inset-0">
     <img
@@ -17,6 +18,7 @@ const Slide = memo(({ src, alt }) => (
 Slide.displayName = 'Slide';
 
 const Hero = () => {
+  const { user } = useAuth(); // Get logged-in user
   const [currentSlide, setCurrentSlide] = useState(0);
   const [imagesLoaded, setImagesLoaded] = useState(false);
   const [isOrderFormOpen, setIsOrderFormOpen] = useState(false);
@@ -48,6 +50,11 @@ const Hero = () => {
     { number: '100%', label: 'Pure & Natural' },
     { number: '10+', label: 'Years Experience' }
   ];
+
+  // Get user info from profiles or metadata
+  const userName = user?.user_metadata?.name || user?.user_metadata?.full_name || '';
+  const userPhone = user?.user_metadata?.phone || '';
+  const userAddress = user?.user_metadata?.address || '';
 
   // ✅ Optimized Image Preloading
   useEffect(() => {
@@ -104,7 +111,7 @@ const Hero = () => {
   return (
     <>
       <section className="relative overflow-hidden bg-gradient-to-br from-amber-50 via-orange-50 to-red-50 min-h-screen">
-        {/* Simplified Background - No Heavy Animations */}
+        {/* Background */}
         <div className="absolute inset-0 opacity-20 pointer-events-none">
           <div className="absolute top-20 right-10 w-72 h-72 bg-orange-300 rounded-full blur-3xl"></div>
           <div className="absolute top-40 left-10 w-72 h-72 bg-amber-300 rounded-full blur-3xl"></div>
@@ -112,7 +119,76 @@ const Hero = () => {
         </div>
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-10 pb-12 sm:pb-16">
-          {/* Carousel Section - Optimized */}
+          
+          {/* 🔥 BLINKIT-STYLE USER INFO BAR - Only if logged in */}
+          {user && (userName || userPhone || userAddress) && (
+            <div className="mb-6 animate-fadeIn">
+              <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-lg border border-orange-100 p-4 sm:p-5">
+                <div className="flex items-start gap-3 sm:gap-4">
+                  {/* User Avatar/Icon */}
+                  <div className="flex-shrink-0">
+                    {user.user_metadata?.avatar_url ? (
+                      <img 
+                        src={user.user_metadata.avatar_url} 
+                        alt="User" 
+                        className="w-12 h-12 sm:w-14 sm:h-14 rounded-full border-2 border-orange-300 shadow-md"
+                      />
+                    ) : (
+                      <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center shadow-md">
+                        <User className="text-white" size={24} strokeWidth={2.5} />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* User Info */}
+                  <div className="flex-1 min-w-0">
+                    {/* Welcome Message */}
+                    <div className="mb-2">
+                      <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-0.5">
+                        Welcome, <span className="text-orange-600">{userName || 'Valued Customer'}</span>! 👋
+                      </h3>
+                      <p className="text-xs sm:text-sm text-gray-600 font-medium">
+                        Premium ghee delivered with care
+                      </p>
+                    </div>
+
+                    {/* Info Grid - Mobile Responsive */}
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      {/* Phone Number */}
+                      {userPhone && (
+                        <div className="flex items-center gap-2 bg-blue-50 px-3 py-2 rounded-lg border border-blue-100">
+                          <div className="w-6 h-6 bg-blue-500 rounded-md flex items-center justify-center flex-shrink-0">
+                            <Phone className="text-white" size={12} strokeWidth={2.5} />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-[10px] font-semibold text-blue-700 uppercase tracking-wide">Phone</p>
+                            <p className="text-xs font-bold text-blue-900 truncate">+91 {userPhone}</p>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Delivery Address */}
+                      {userAddress && (
+                        <div className="flex items-center gap-2 bg-green-50 px-3 py-2 rounded-lg border border-green-100 sm:col-span-2">
+                          <div className="w-6 h-6 bg-green-500 rounded-md flex items-center justify-center flex-shrink-0">
+                            <MapPin className="text-white" size={12} strokeWidth={2.5} />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-[10px] font-semibold text-green-700 uppercase tracking-wide">Delivering to</p>
+                            <p className="text-xs font-bold text-green-900 line-clamp-1">
+                              {userAddress}
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Carousel Section */}
           <div className="mb-6 sm:mb-10">
             <div className="relative max-w-5xl mx-auto">
               <div className="relative h-[280px] sm:h-[360px] md:h-[450px] lg:h-[520px] xl:h-[600px] bg-gradient-to-br from-orange-100 to-amber-100 rounded-2xl shadow-xl overflow-hidden">
@@ -177,103 +253,94 @@ const Hero = () => {
             </div>
           </div>
 
-      {/* 🔥 MOBILE-FIRST: Guarantee Section */}
-<div className="mb-6 sm:mb-10">
-  <div className="max-w-5xl mx-auto">
-    {/* Main Card */}
-    <div className="relative bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl sm:rounded-3xl shadow-xl overflow-hidden">
-      {/* Subtle Background */}
-      <div className="absolute inset-0 opacity-5">
-        <div className="absolute top-0 right-0 w-40 h-40 bg-white rounded-full blur-2xl"></div>
-        <div className="absolute bottom-0 left-0 w-40 h-40 bg-white rounded-full blur-2xl"></div>
-      </div>
+          {/* Guarantee Section */}
+          <div className="mb-6 sm:mb-10">
+            <div className="max-w-5xl mx-auto">
+              <div className="relative bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl sm:rounded-3xl shadow-xl overflow-hidden">
+                <div className="absolute inset-0 opacity-5">
+                  <div className="absolute top-0 right-0 w-40 h-40 bg-white rounded-full blur-2xl"></div>
+                  <div className="absolute bottom-0 left-0 w-40 h-40 bg-white rounded-full blur-2xl"></div>
+                </div>
 
-      <div className="relative p-4 sm:p-6">
-        {/* Mobile: Single Column Layout */}
-        <div className="space-y-4">
-          {/* Icon + Text Row */}
-          <div className="flex items-start gap-3">
-            {/* Compact Shield */}
-            <div className="flex-shrink-0">
-              <div className="relative w-14 h-14 sm:w-16 sm:h-16 bg-white rounded-xl flex items-center justify-center shadow-lg">
-                <Shield className="text-green-600" size={28} strokeWidth={2.5} />
-                <div className="absolute -top-1 -right-1 bg-yellow-400 text-xs font-black px-1.5 py-0.5 rounded-full shadow text-green-900">
-                  100%
+                <div className="relative p-4 sm:p-6">
+                  <div className="space-y-4">
+                    <div className="flex items-start gap-3">
+                      <div className="flex-shrink-0">
+                        <div className="relative w-14 h-14 sm:w-16 sm:h-16 bg-white rounded-xl flex items-center justify-center shadow-lg">
+                          <Shield className="text-green-600" size={28} strokeWidth={2.5} />
+                          <div className="absolute -top-1 -right-1 bg-yellow-400 text-xs font-black px-1.5 py-0.5 rounded-full shadow text-green-900">
+                            100%
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-lg sm:text-xl font-black text-white mb-1 leading-tight">
+                          Money-Back Guarantee
+                        </h3>
+                        <p className="text-white/95 text-xs sm:text-sm font-semibold leading-snug">
+                          <span className="text-yellow-300">Full refund</span> if proven impure. No questions asked.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 sm:flex sm:justify-center sm:gap-4">
+                      {[
+                        { icon: BadgeCheck, text: 'Lab Tested' },
+                        { icon: Shield, text: 'FSSAI Certified' }
+                      ].map((item, idx) => (
+                        <div
+                          key={idx}
+                          className="bg-white/15 backdrop-blur-sm rounded-lg px-3 py-2.5 flex items-center gap-2 sm:min-w-[160px] sm:flex-col sm:text-center sm:py-4"
+                        >
+                          <div className="w-7 h-7 sm:w-10 sm:h-10 bg-white/20 rounded-md flex items-center justify-center flex-shrink-0">
+                            <item.icon className="text-white" size={14} strokeWidth={2.5} />
+                          </div>
+                          <p className="text-white font-bold text-xs sm:text-sm">
+                            {item.text}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+
+                    <button
+                      onClick={() => setIsOrderFormOpen(true)}
+                      className="w-full bg-white text-green-600 py-3 sm:py-3.5 rounded-xl font-black text-sm sm:text-base hover:shadow-xl active:scale-95 transition-all flex items-center justify-center gap-2"
+                    >
+                      Order with Confidence
+                      <ArrowRight size={18} strokeWidth={3} />
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 sm:gap-3 mt-3 sm:mt-4">
+                <div className="bg-blue-50 rounded-xl p-3 border border-blue-200">
+                  <div className="flex items-center gap-2 mb-1">
+                    <div className="w-6 h-6 bg-blue-500 rounded-md flex items-center justify-center flex-shrink-0">
+                      <Truck className="text-white" size={12} strokeWidth={2.5} />
+                    </div>
+                    <h4 className="font-black text-blue-900 text-xs">Free Delivery</h4>
+                  </div>
+                  <p className="text-blue-700 text-[10px] font-semibold">
+                    Same-day in Ranchi
+                  </p>
+                </div>
+
+                <div className="bg-orange-50 rounded-xl p-3 border border-orange-200">
+                  <div className="flex items-center gap-2 mb-1">
+                    <div className="w-6 h-6 bg-orange-500 rounded-md flex items-center justify-center flex-shrink-0">
+                      <Award className="text-white" size={12} strokeWidth={2.5} />
+                    </div>
+                    <h4 className="font-black text-orange-900 text-xs">Premium Quality</h4>
+                  </div>
+                  <p className="text-orange-700 text-[10px] font-semibold">
+                    Traditional methods
+                  </p>
                 </div>
               </div>
             </div>
-
-            {/* Text Content */}
-            <div className="flex-1 min-w-0">
-              <h3 className="text-lg sm:text-xl font-black text-white mb-1 leading-tight">
-                Money-Back Guarantee
-              </h3>
-              <p className="text-white/95 text-xs sm:text-sm font-semibold leading-snug">
-                <span className="text-yellow-300">Full refund</span> if proven impure. No questions asked.
-              </p>
-            </div>
           </div>
-
-          {/* Trust Badges - 2 Column Grid on Mobile, Centered on Desktop */}
-          <div className="grid grid-cols-2 gap-2 sm:flex sm:justify-center sm:gap-4">
-            {[
-              { icon: BadgeCheck, text: 'Lab Tested' },
-              { icon: Shield, text: 'FSSAI Certified' }
-            ].map((item, idx) => (
-              <div
-                key={idx}
-                className="bg-white/15 backdrop-blur-sm rounded-lg px-3 py-2.5 flex items-center gap-2 sm:min-w-[160px] sm:flex-col sm:text-center sm:py-4"
-              >
-                <div className="w-7 h-7 sm:w-10 sm:h-10 bg-white/20 rounded-md flex items-center justify-center flex-shrink-0">
-                  <item.icon className="text-white" size={14} strokeWidth={2.5} />
-                </div>
-                <p className="text-white font-bold text-xs sm:text-sm">
-                  {item.text}
-                </p>
-              </div>
-            ))}
-          </div>
-
-          {/* CTA Button - Full Width on Mobile */}
-          <button
-            onClick={() => setIsOrderFormOpen(true)}
-            className="w-full bg-white text-green-600 py-3 sm:py-3.5 rounded-xl font-black text-sm sm:text-base hover:shadow-xl active:scale-95 transition-all flex items-center justify-center gap-2"
-          >
-            Order with Confidence
-            <ArrowRight size={18} strokeWidth={3} />
-          </button>
-        </div>
-      </div>
-    </div>
-
-    {/* Bottom Mini Cards - Compact on Mobile */}
-    <div className="grid grid-cols-2 gap-2 sm:gap-3 mt-3 sm:mt-4">
-      <div className="bg-blue-50 rounded-xl p-3 border border-blue-200">
-        <div className="flex items-center gap-2 mb-1">
-          <div className="w-6 h-6 bg-blue-500 rounded-md flex items-center justify-center flex-shrink-0">
-            <Truck className="text-white" size={12} strokeWidth={2.5} />
-          </div>
-          <h4 className="font-black text-blue-900 text-xs">Free Delivery</h4>
-        </div>
-        <p className="text-blue-700 text-[10px] font-semibold">
-          Same-day in Ranchi
-        </p>
-      </div>
-
-      <div className="bg-orange-50 rounded-xl p-3 border border-orange-200">
-        <div className="flex items-center gap-2 mb-1">
-          <div className="w-6 h-6 bg-orange-500 rounded-md flex items-center justify-center flex-shrink-0">
-            <Award className="text-white" size={12} strokeWidth={2.5} />
-          </div>
-          <h4 className="font-black text-orange-900 text-xs">Premium Quality</h4>
-        </div>
-        <p className="text-orange-700 text-[10px] font-semibold">
-          Traditional methods
-        </p>
-      </div>
-    </div>
-  </div>
-</div>
 
           {/* Main Content Grid */}
           <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
