@@ -120,73 +120,139 @@ const Hero = () => {
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-10 pb-12 sm:pb-16">
           
-          {/* 🔥 BLINKIT-STYLE USER INFO BAR - Only if logged in */}
-          {user && (userName || userPhone || userAddress) && (
-            <div className="mb-6 animate-fadeIn">
-              <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-lg border border-orange-100 p-4 sm:p-5">
-                <div className="flex items-start gap-3 sm:gap-4">
-                  {/* User Avatar/Icon */}
-                  <div className="flex-shrink-0">
-                    {user.user_metadata?.avatar_url ? (
-                      <img 
-                        src={user.user_metadata.avatar_url} 
-                        alt="User" 
-                        className="w-12 h-12 sm:w-14 sm:h-14 rounded-full border-2 border-orange-300 shadow-md"
-                      />
-                    ) : (
-                      <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center shadow-md">
-                        <User className="text-white" size={24} strokeWidth={2.5} />
-                      </div>
-                    )}
-                  </div>
-
-                  {/* User Info */}
-                  <div className="flex-1 min-w-0">
-                    {/* Welcome Message */}
-                    <div className="mb-2">
-                      <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-0.5">
-                        Welcome, <span className="text-orange-600">{userName || 'Valued Customer'}</span>! 👋
-                      </h3>
-                      <p className="text-xs sm:text-sm text-gray-600 font-medium">
-                        Premium ghee delivered with care
-                      </p>
-                    </div>
-
-                    {/* Info Grid - Mobile Responsive */}
-                    <div className="grid gap-2 sm:grid-cols-2">
-                      {/* Phone Number */}
-                      {userPhone && (
-                        <div className="flex items-center gap-2 bg-blue-50 px-3 py-2 rounded-lg border border-blue-100">
-                          <div className="w-6 h-6 bg-blue-500 rounded-md flex items-center justify-center flex-shrink-0">
-                            <Phone className="text-white" size={12} strokeWidth={2.5} />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-[10px] font-semibold text-blue-700 uppercase tracking-wide">Phone</p>
-                            <p className="text-xs font-bold text-blue-900 truncate">+91 {userPhone}</p>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Delivery Address */}
-                      {userAddress && (
-                        <div className="flex items-center gap-2 bg-green-50 px-3 py-2 rounded-lg border border-green-100 sm:col-span-2">
-                          <div className="w-6 h-6 bg-green-500 rounded-md flex items-center justify-center flex-shrink-0">
-                            <MapPin className="text-white" size={12} strokeWidth={2.5} />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-[10px] font-semibold text-green-700 uppercase tracking-wide">Delivering to</p>
-                            <p className="text-xs font-bold text-green-900 line-clamp-1">
-                              {userAddress}
-                            </p>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
+     {/* 🔥 PREMIUM BLINKIT-STYLE USER HEADER - Only if logged in */}
+{user && (userName || userPhone || userAddress) && (
+  <div className="mb-6 animate-slideDown">
+    {/* Main Container - Gradient Background */}
+    <div className="bg-gradient-to-r from-purple-600 via-pink-600 to-red-600 rounded-2xl shadow-2xl overflow-hidden">
+      <div className="bg-white/10 backdrop-blur-xl p-4 sm:p-5">
+        <div className="flex items-start gap-3 sm:gap-4">
+          {/* User Avatar - Large & Prominent */}
+          <div className="flex-shrink-0 relative">
+            {user.user_metadata?.avatar_url ? (
+              <div className="relative">
+                <img 
+                  src={user.user_metadata.avatar_url} 
+                  alt="User" 
+                  className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl border-4 border-white/30 shadow-2xl"
+                />
+                <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-400 rounded-full border-3 border-white flex items-center justify-center">
+                  <div className="w-2 h-2 bg-white rounded-full"></div>
                 </div>
               </div>
+            ) : (
+              <div className="relative">
+                <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-br from-yellow-400 via-orange-500 to-red-500 flex items-center justify-center shadow-2xl border-4 border-white/30">
+                  <User className="text-white" size={32} strokeWidth={2.5} />
+                </div>
+                <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-400 rounded-full border-3 border-white flex items-center justify-center">
+                  <div className="w-2 h-2 bg-white rounded-full"></div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* User Info - Rich Content */}
+          <div className="flex-1 min-w-0">
+            {/* Welcome Text - Large & Bold */}
+            <div className="mb-3">
+              <div className="flex items-center gap-2 mb-1">
+                <h2 className="text-xl sm:text-2xl font-black text-white leading-tight">
+                  Hey, {userName || 'There'}! 👋
+                </h2>
+              </div>
+              <p className="text-white/90 text-sm sm:text-base font-semibold flex items-center gap-2">
+                <span className="inline-block w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
+                Ready to order premium ghee
+              </p>
             </div>
-          )}
+
+            {/* Info Cards - Compact & Modern */}
+            <div className="space-y-2">
+              {/* Phone Number Card */}
+              {userPhone && (
+                <div className="flex items-center gap-2.5 bg-white/20 backdrop-blur-md rounded-xl px-3 py-2.5 border border-white/30">
+                  <div className="w-8 h-8 bg-white/30 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <Phone className="text-white" size={16} strokeWidth={2.5} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-white/70 text-[10px] font-bold uppercase tracking-wider">Contact</p>
+                    <p className="text-white text-sm font-black">+91 {userPhone}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Delivery Address Card */}
+              {userAddress && (
+                <div className="flex items-center gap-2.5 bg-white/20 backdrop-blur-md rounded-xl px-3 py-2.5 border border-white/30">
+                  <div className="w-8 h-8 bg-white/30 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <MapPin className="text-white" size={16} strokeWidth={2.5} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-white/70 text-[10px] font-bold uppercase tracking-wider">Delivering to</p>
+                    <p className="text-white text-sm font-black line-clamp-1">
+                      {userAddress.length > 40 ? userAddress.substring(0, 40) + '...' : userAddress}
+                    </p>
+                  </div>
+                  <button className="px-3 py-1.5 bg-white/20 hover:bg-white/30 rounded-lg text-white text-xs font-bold transition-all">
+                    Change
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Bottom Action Bar */}
+        <div className="mt-4 pt-4 border-t border-white/20 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+              <span className="text-white/90 text-xs font-bold">Account Active</span>
+            </div>
+            <div className="h-4 w-px bg-white/30"></div>
+            <span className="text-white/70 text-xs font-semibold">Premium Member</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="flex -space-x-2">
+              <div className="w-7 h-7 bg-yellow-400 rounded-full border-2 border-white flex items-center justify-center">
+                <Star className="text-yellow-800" size={12} fill="currentColor" />
+              </div>
+              <div className="w-7 h-7 bg-green-400 rounded-full border-2 border-white flex items-center justify-center">
+                <Shield className="text-green-800" size={12} />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {/* Quick Actions - Below Main Card */}
+    <div className="grid grid-cols-3 gap-2 mt-3">
+      <button className="bg-white rounded-xl p-3 shadow-lg hover:shadow-xl transition-all group">
+        <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center mx-auto mb-2 group-hover:scale-110 transition-transform">
+          <Truck className="text-white" size={18} strokeWidth={2.5} />
+        </div>
+        <p className="text-xs font-black text-gray-800">Track Order</p>
+      </button>
+      
+      <button className="bg-white rounded-xl p-3 shadow-lg hover:shadow-xl transition-all group">
+        <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg flex items-center justify-center mx-auto mb-2 group-hover:scale-110 transition-transform">
+          <Star className="text-white" size={18} strokeWidth={2.5} />
+        </div>
+        <p className="text-xs font-black text-gray-800">Rewards</p>
+      </button>
+      
+      <button className="bg-white rounded-xl p-3 shadow-lg hover:shadow-xl transition-all group">
+        <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg flex items-center justify-center mx-auto mb-2 group-hover:scale-110 transition-transform">
+          <Award className="text-white" size={18} strokeWidth={2.5} />
+        </div>
+        <p className="text-xs font-black text-gray-800">Offers</p>
+      </button>
+    </div>
+  </div>
+)}
+
 
           {/* Carousel Section */}
           <div className="mb-6 sm:mb-10">
