@@ -343,80 +343,84 @@ const Hero = () => {
         </div>
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-10 pb-12 sm:pb-16">
-        {/* 🔥 PROFESSIONAL BLINKIT-STYLE DELIVERY BAR */}
+  {/* 🔥 MOBILE-FIRST BLINKIT-STYLE DELIVERY BAR */}
 {user && (userName || userPhone || userAddress) && (
-  <div className="mb-6 animate-slideDown">
-    {/* Welcome Message Bar */}
-    <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-      {/* Top Section - Welcome */}
-      <div className="bg-gradient-to-r from-amber-50 to-orange-50 px-4 sm:px-5 py-3 border-b border-orange-100">
-        <div className="flex items-center gap-3">
-          {/* Avatar */}
+  <div className="mb-4 sm:mb-6 animate-slideDown">
+    <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+      
+      {/* Top Section - Compact Welcome */}
+      <div className="bg-gradient-to-r from-amber-50 to-orange-50 px-3 sm:px-5 py-3 sm:py-3.5 border-b border-orange-100">
+        <div className="flex items-center gap-2.5 sm:gap-3">
+          {/* Avatar - Smaller on mobile */}
           <div className="relative flex-shrink-0">
             {user.user_metadata?.avatar_url ? (
               <img 
                 src={user.user_metadata.avatar_url} 
                 alt="User" 
-                className="w-12 h-12 rounded-full border-2 border-orange-300 shadow-md"
+                className="w-10 h-10 sm:w-12 sm:h-12 rounded-full border-2 border-orange-300 shadow-md"
               />
             ) : (
-              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center shadow-md">
-                <User className="text-white" size={20} strokeWidth={2.5} />
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center shadow-md">
+                <User className="text-white" size={18} strokeWidth={2.5} />
               </div>
             )}
             {/* Online indicator */}
-            <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-green-500 border-2 border-white rounded-full"></div>
+            <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 sm:w-4 sm:h-4 bg-green-500 border-2 border-white rounded-full"></div>
           </div>
 
-          {/* Welcome Text */}
+          {/* Welcome Text - Responsive */}
           <div className="flex-1 min-w-0">
-            <p className="text-xs text-gray-500 font-medium">Welcome back</p>
-            <h3 className="text-base sm:text-lg font-bold text-gray-900 truncate">
+            <p className="text-[10px] sm:text-xs text-gray-500 font-medium">Welcome back</p>
+            <h3 className="text-sm sm:text-base font-bold text-gray-900 truncate leading-tight">
               {userName || 'Guest User'}
             </h3>
           </div>
 
-          {/* Edit Button */}
+          {/* Edit Button - Compact on mobile */}
           <button
             onClick={() => setIsEditProfileOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-2 bg-white hover:bg-gray-50 border border-gray-200 rounded-xl text-sm font-semibold text-gray-700 transition-all shadow-sm"
+            className="flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 sm:py-2 bg-white hover:bg-gray-50 active:bg-gray-100 border border-gray-200 rounded-lg sm:rounded-xl text-xs sm:text-sm font-semibold text-gray-700 transition-all shadow-sm touch-manipulation"
           >
-            <Edit2 size={14} />
-            <span className="hidden sm:inline">Edit</span>
+            <Edit2 size={12} className="sm:w-3.5 sm:h-3.5" />
+            <span className="hidden xs:inline">Edit</span>
           </button>
         </div>
       </div>
 
-      {/* Bottom Section - Delivery Info */}
-      <div className="px-4 sm:px-5 py-4 bg-white">
-        <div className="grid sm:grid-cols-2 gap-3">
-          {/* Delivery Address */}
+      {/* Bottom Section - Mobile Stack, Desktop Grid */}
+      <div className="px-3 sm:px-5 py-3 sm:py-4 bg-white space-y-3 sm:space-y-0">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          
+          {/* Delivery Address - Full width on mobile */}
           {userAddress && (
-            <div className="flex items-start gap-3 group cursor-pointer" onClick={() => setIsEditProfileOpen(true)}>
-              <div className="w-10 h-10 bg-green-50 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:bg-green-100 transition-colors">
-                <MapPin className="text-green-600" size={18} strokeWidth={2.5} />
+            <div 
+              className="flex items-start gap-2.5 sm:gap-3 group cursor-pointer active:bg-gray-50 p-2 -m-2 rounded-lg transition-colors" 
+              onClick={() => setIsEditProfileOpen(true)}
+            >
+              <div className="w-9 h-9 sm:w-10 sm:h-10 bg-green-50 rounded-lg sm:rounded-xl flex items-center justify-center flex-shrink-0 group-hover:bg-green-100 group-active:bg-green-200 transition-colors">
+                <MapPin className="text-green-600" size={16} strokeWidth={2.5} />
               </div>
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
-                  <p className="text-xs font-bold text-green-700 uppercase tracking-wide">Delivering to</p>
-                  <ChevronRight size={12} className="text-gray-400 group-hover:text-green-600 transition-colors" />
+                <div className="flex items-center gap-1.5 mb-0.5">
+                  <p className="text-[10px] sm:text-xs font-bold text-green-700 uppercase tracking-wide">Delivering to</p>
+                  <ChevronRight size={10} className="text-gray-400 group-hover:text-green-600 transition-colors" />
                 </div>
-                <p className="text-sm font-semibold text-gray-900 line-clamp-2 leading-snug">
+                <p className="text-xs sm:text-sm font-semibold text-gray-900 line-clamp-2 leading-snug">
                   {userAddress}
                 </p>
               </div>
             </div>
           )}
 
-          {/* Contact Number */}
+          {/* Contact Number - Full width on mobile */}
           {userPhone && (
-            <div className="flex items-start gap-3">
-              <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center flex-shrink-0">
-                <Phone className="text-blue-600" size={18} strokeWidth={2.5} />
+            <div className="flex items-start gap-2.5 sm:gap-3 p-2 -m-2 rounded-lg">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 bg-blue-50 rounded-lg sm:rounded-xl flex items-center justify-center flex-shrink-0">
+                <Phone className="text-blue-600" size={16} strokeWidth={2.5} />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-xs font-bold text-blue-700 uppercase tracking-wide mb-1">Contact Number</p>
-                <p className="text-sm font-semibold text-gray-900">
+                <p className="text-[10px] sm:text-xs font-bold text-blue-700 uppercase tracking-wide mb-0.5">Contact Number</p>
+                <p className="text-xs sm:text-sm font-semibold text-gray-900">
                   +91 {userPhone}
                 </p>
               </div>
@@ -424,28 +428,29 @@ const Hero = () => {
           )}
         </div>
 
-        {/* Quick Stats Bar */}
-        <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between text-xs">
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-1.5">
-              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-              <span className="text-gray-600 font-medium">Active Now</span>
+        {/* Quick Stats Bar - Mobile optimized */}
+        <div className="mt-3 pt-3 border-t border-gray-100 flex items-center justify-between text-[10px] sm:text-xs">
+          <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+            <div className="flex items-center gap-1 sm:gap-1.5">
+              <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-green-500 rounded-full animate-pulse"></div>
+              <span className="text-gray-600 font-medium whitespace-nowrap">Active Now</span>
             </div>
             <div className="h-3 w-px bg-gray-200"></div>
-            <div className="flex items-center gap-1.5">
-              <Shield className="text-blue-500" size={12} />
-              <span className="text-gray-600 font-medium">Verified</span>
+            <div className="flex items-center gap-1 sm:gap-1.5">
+              <Shield className="text-blue-500" size={11} />
+              <span className="text-gray-600 font-medium whitespace-nowrap">Verified</span>
             </div>
           </div>
           <div className="flex items-center gap-1 text-amber-600">
-            <Star className="text-amber-500 fill-amber-500" size={12} />
-            <span className="font-bold">Premium Member</span>
+            <Star className="text-amber-500 fill-amber-500" size={11} />
+            <span className="font-bold whitespace-nowrap">Premium</span>
           </div>
         </div>
       </div>
     </div>
   </div>
 )}
+
 
           {/* Carousel Section */}
           <div className="mb-6 sm:mb-10">
