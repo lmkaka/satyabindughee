@@ -1,5 +1,4 @@
 import React, { useState, useMemo } from 'react';
-import { motion } from 'framer-motion';
 import { ShoppingCart, Check, Shield, Award, Sparkles, Zap, PackageCheck } from 'lucide-react';
 import OrderForm from './OrderForm';
 import GoogleAuth from './GoogleAuth';
@@ -48,7 +47,6 @@ const ProductCard = ({ product, user }) => {
   }
 
   const {
-    id,
     name = 'Premium Ghee',
     weight = '250gms',
     price = 0,
@@ -61,21 +59,19 @@ const ProductCard = ({ product, user }) => {
   const inStock = is_active !== false;
   const displayBenefits = (benefits && benefits.length > 0) ? benefits : defaultBenefits;
 
-  // ✅ Handle Order Click - Only opens modal on button click
-  const handleOrderClick = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    
+  // ✅ Handle Order Button Click - ONLY triggers on button click
+  const handleOrderClick = () => {
     if (!user) {
+      // Not logged in - Open GoogleAuth
       setIsAuthOpen(true);
     } else {
+      // Logged in - Open OrderForm
       setIsOrderFormOpen(true);
     }
   };
 
   return (
     <>
-      {/* ✅ Remove whileHover animation to prevent accidental triggers */}
       <div className="bg-white rounded-xl shadow-lg overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
         {/* Image Container */}
         <div className="relative">
@@ -84,16 +80,7 @@ const ProductCard = ({ product, user }) => {
               src={decodedImage}
               alt={`${name} ${weight}`}
               className="max-w-full max-h-full object-contain rounded-lg"
-              style={{
-                objectFit: 'contain',
-                objectPosition: 'center',
-                width: 'auto',
-                height: 'auto',
-                maxWidth: '100%',
-                maxHeight: '100%'
-              }}
               onError={(e) => {
-                console.log('Image failed to load, using fallback');
                 e.target.src = 'https://radarofc.onrender.com/IMG_20251106_204751_845-modified.png';
               }}
             />
@@ -174,7 +161,7 @@ const ProductCard = ({ product, user }) => {
             </div>
           </div>
 
-          {/* ✅ ORDER NOW BUTTON - Only triggers on explicit click */}
+          {/* ✅ ORDER NOW BUTTON - Checks login on click */}
           <button
             onClick={handleOrderClick}
             disabled={!inStock}
@@ -196,13 +183,13 @@ const ProductCard = ({ product, user }) => {
         </div>
       </div>
 
-      {/* ✅ Google Auth Modal - Only opens on button click */}
+      {/* ✅ GoogleAuth Modal - Opens if NOT logged in */}
       <GoogleAuth 
         isOpen={isAuthOpen} 
         onClose={() => setIsAuthOpen(false)} 
       />
 
-      {/* ✅ Order Form Modal - Only opens on button click */}
+      {/* ✅ OrderForm Modal - Opens if logged in */}
       <OrderForm
         isOpen={isOrderFormOpen}
         onClose={() => setIsOrderFormOpen(false)}
