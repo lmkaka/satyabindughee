@@ -74,7 +74,9 @@ const UserProfile = ({ user, onProfileComplete }) => {
     }
 
     try {
-      // Save to profiles table (PRIMARY STORAGE)
+      console.log('Saving profile...');
+      
+      // Save to profiles table (PRIMARY STORAGE) - WITHOUT avatar_url
       const { error: profileError } = await supabase
         .from('profiles')
         .upsert({
@@ -83,17 +85,21 @@ const UserProfile = ({ user, onProfileComplete }) => {
           email: userEmail,
           phone: formData.phone,
           address: formData.address,
-          avatar_url: userAvatar,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         }, {
           onConflict: 'user_id'
         });
 
-      if (profileError) throw profileError;
+      if (profileError) {
+        console.error('Profile Error:', profileError);
+        throw profileError;
+      }
+
+      console.log('✅ Profile saved to database!');
 
       // Update auth metadata (for quick access)
-      await supabase.auth.updateUser({
+      const { error: authError } = await supabase.auth.updateUser({
         data: {
           name: formData.name,
           phone: formData.phone,
@@ -102,7 +108,11 @@ const UserProfile = ({ user, onProfileComplete }) => {
         }
       });
 
-      console.log('✅ Profile saved to database successfully!');
+      if (authError) {
+        console.error('Auth Error:', authError);
+      }
+
+      console.log('✅ Profile completed successfully!');
       onProfileComplete();
       
     } catch (error) {
