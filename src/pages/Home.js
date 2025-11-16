@@ -130,58 +130,7 @@ const Home = () => {
       <div className="relative z-10">
         <Hero />
 
-        {/* User Welcome Banner - Personalized */}
-        {user && (
-          <motion.section 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="py-8 bg-gradient-to-r from-amber-50 via-orange-50 to-amber-50 relative overflow-hidden"
-          >
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl p-6 sm:p-8 border border-amber-200">
-                <div className="flex items-start gap-4">
-                  {/* User Avatar */}
-                  <div className="hidden sm:flex w-16 h-16 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 items-center justify-center shadow-lg flex-shrink-0">
-                    <User size={28} className="text-white" strokeWidth={2.5} />
-                  </div>
-                  
-                  {/* Welcome Content */}
-                  <div className="flex-1 min-w-0">
-                    <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
-                      Welcome back, <span className="text-amber-600">
-                        {user.user_metadata?.name || 'valued customer'}
-                      </span>! 👋
-                    </h2>
-                    <p className="text-gray-600 mb-4">
-                      Thank you for choosing SBGhee. Browse our premium products and place your order!
-                    </p>
-                    
-                    {/* User Info Cards */}
-                    <div className="grid sm:grid-cols-2 gap-3">
-                      {/* Phone */}
-                      <div className="bg-amber-50 px-4 py-3 rounded-lg border border-amber-100">
-                        <p className="text-xs font-medium text-amber-800 mb-1">📱 Phone Number</p>
-                        <p className="text-sm text-gray-700 font-semibold">{user.phone}</p>
-                      </div>
-                      
-                      {/* Address */}
-                      {user.user_metadata?.address && (
-                        <div className="bg-amber-50 px-4 py-3 rounded-lg border border-amber-100">
-                          <p className="text-xs font-medium text-amber-800 mb-1">📍 Delivery Address</p>
-                          <p className="text-sm text-gray-700 line-clamp-2">
-                            {user.user_metadata.address}
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </motion.section>
-        )}
-        
+      
         {/* Features Section */}
         <section className="py-16 bg-white relative">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
