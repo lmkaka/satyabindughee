@@ -419,7 +419,7 @@ const Hero = () => {
           </div>
           <div className="flex items-center gap-1 text-amber-600">
             <Star className="text-amber-500 fill-amber-500" size={11} />
-            <span className="font-bold whitespace-nowrap">Premium</span>
+            <span className="font-bold whitespace-nowrap">Valuable</span>
           </div>
         </div>
       </div>
