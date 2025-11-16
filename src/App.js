@@ -10,6 +10,7 @@ import AdminPanel from './components/AdminPanel';
 import ContactUs from './pages/ContactUs';
 import GoogleAuth from './components/GoogleAuth';
 import UserProfile from './components/UserProfile';
+import TrackOrders from './components/TrackOrders';
 import './index.css';
 import ScrollToTop from './components/ScrollToTop';
 
@@ -87,6 +88,7 @@ function AppContent({ isSidebarOpen, setIsSidebarOpen }) {
   const { user, loading } = useAuth();
   const [showAuth, setShowAuth] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
+  const [showTrackOrders, setShowTrackOrders] = useState(false); // ✅ Track Orders state
 
   // Check if profile is completed for new users
   useEffect(() => {
@@ -122,6 +124,13 @@ function AppContent({ isSidebarOpen, setIsSidebarOpen }) {
     setIsSidebarOpen(false); // Close sidebar if open
   };
 
+  // ✅ Handle Track Orders click
+  const handleTrackOrdersClick = () => {
+    console.log('App: Opening Track Orders');
+    setShowTrackOrders(true);
+    setIsSidebarOpen(false); // Close sidebar if open
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-amber-50 via-white to-orange-50">
@@ -142,11 +151,12 @@ function AppContent({ isSidebarOpen, setIsSidebarOpen }) {
         user={user}
       />
       
-      {/* Sidebar with Login Handler */}
+      {/* Sidebar with Login & Track Orders Handlers */}
       <Sidebar 
         isOpen={isSidebarOpen} 
         onClose={() => setIsSidebarOpen(false)}
-        onLoginClick={handleLoginClick} // ✅ Pass login handler
+        onLoginClick={handleLoginClick}
+        onTrackOrdersClick={handleTrackOrdersClick} // ✅ Pass track orders handler
       />
       
       <motion.main
@@ -183,6 +193,12 @@ function AppContent({ isSidebarOpen, setIsSidebarOpen }) {
           onProfileComplete={handleProfileComplete}
         />
       )}
+
+      {/* ✅ Track Orders Modal */}
+      <TrackOrders
+        isOpen={showTrackOrders}
+        onClose={() => setShowTrackOrders(false)}
+      />
     </div>
   );
 }
