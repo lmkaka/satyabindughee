@@ -61,25 +61,22 @@ const ProductCard = ({ product, user }) => {
   const inStock = is_active !== false;
   const displayBenefits = (benefits && benefits.length > 0) ? benefits : defaultBenefits;
 
-  // ✅ Handle Order Click - Check login ONLY when clicked
-  const handleOrderClick = () => {
+  // ✅ Handle Order Click - Only opens modal on button click
+  const handleOrderClick = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
     if (!user) {
-      // Not logged in - Show GoogleAuth modal
       setIsAuthOpen(true);
     } else {
-      // Logged in - Show order form
       setIsOrderFormOpen(true);
     }
   };
 
   return (
     <>
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        whileHover={{ y: -5 }}
-        className="bg-white rounded-xl shadow-lg overflow-hidden card-hover"
-      >
+      {/* ✅ Remove whileHover animation to prevent accidental triggers */}
+      <div className="bg-white rounded-xl shadow-lg overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
         {/* Image Container */}
         <div className="relative">
           <div className="w-full h-64 bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center p-2">
@@ -177,10 +174,8 @@ const ProductCard = ({ product, user }) => {
             </div>
           </div>
 
-          {/* ✅ ORDER NOW BUTTON - Same for everyone, checks login on click */}
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
+          {/* ✅ ORDER NOW BUTTON - Only triggers on explicit click */}
+          <button
             onClick={handleOrderClick}
             disabled={!inStock}
             className={`
@@ -188,7 +183,7 @@ const ProductCard = ({ product, user }) => {
               flex items-center justify-center gap-2.5
               transition-all duration-300 shadow-lg hover:shadow-xl
               ${inStock 
-                ? 'bg-gradient-to-r from-orange-500 via-amber-500 to-orange-500 hover:from-orange-600 hover:via-amber-600 hover:to-orange-600 text-white' 
+                ? 'bg-gradient-to-r from-orange-500 via-amber-500 to-orange-500 hover:from-orange-600 hover:via-amber-600 hover:to-orange-600 text-white active:scale-95' 
                 : 'bg-gray-300 text-gray-500 cursor-not-allowed opacity-60'
               }
             `}
@@ -197,17 +192,17 @@ const ProductCard = ({ product, user }) => {
             <span className="font-black tracking-wide">
               {inStock ? 'Order Now' : 'Out of Stock'}
             </span>
-          </motion.button>
+          </button>
         </div>
-      </motion.div>
+      </div>
 
-      {/* ✅ Google Auth Modal - Opens if not logged in */}
+      {/* ✅ Google Auth Modal - Only opens on button click */}
       <GoogleAuth 
         isOpen={isAuthOpen} 
         onClose={() => setIsAuthOpen(false)} 
       />
 
-      {/* ✅ Order Form Modal - Opens if logged in */}
+      {/* ✅ Order Form Modal - Only opens on button click */}
       <OrderForm
         isOpen={isOrderFormOpen}
         onClose={() => setIsOrderFormOpen(false)}
