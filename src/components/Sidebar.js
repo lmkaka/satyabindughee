@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { X, Home, Info, Phone, MapPin, Clock, User, LogOut } from 'lucide-react';
@@ -13,16 +13,48 @@ const Sidebar = ({ isOpen, onClose, onLoginClick }) => {
     { icon: Phone, label: 'Contact', path: '/contact' },
   ];
 
+  // Lock body scroll when sidebar is open
+  useEffect(() => {
+    if (isOpen) {
+      // Save current scroll position
+      const scrollY = window.scrollY;
+      document.body.style.position = 'fixed';
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.width = '100%';
+      document.body.style.overflow = 'hidden';
+    } else {
+      // Restore scroll position
+      const scrollY = document.body.style.top;
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.width = '';
+      document.body.style.overflow = '';
+      window.scrollTo(0, parseInt(scrollY || '0') * -1);
+    }
+
+    return () => {
+      // Cleanup on unmount
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.width = '';
+      document.body.style.overflow = '';
+    };
+  }, [isOpen]);
+
   const handleSignOut = () => {
     signOut();
     onClose();
   };
 
   const handleLoginClick = () => {
+    console.log('Login button clicked'); // Debug log
     onClose(); // Close sidebar first
-    if (onLoginClick) {
-      onLoginClick(); // Open login modal
-    }
+    setTimeout(() => {
+      if (onLoginClick) {
+        console.log('Opening login modal'); // Debug log
+        onLoginClick(); // Open login modal after sidebar closes
+      }
+    }, 300); // Wait for sidebar close animation
   };
 
   return (
@@ -244,7 +276,7 @@ const Sidebar = ({ isOpen, onClose, onLoginClick }) => {
                 <motion.button
                   onClick={handleLoginClick}
                   whileTap={{ scale: 0.97 }}
-                  className="flex items-center justify-center gap-2.5 w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 active:from-green-700 active:to-emerald-800 text-white font-semibold py-3.5 sm:py-4 rounded-xl shadow-lg shadow-green-500/25 transition-all duration-150 touch-manipulation min-h-[48px]"
+                  className="flex items-center justify-center gap-2.5 w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 active:from-green-700 active:to-emerald-800 text-white font-semibold py-3.5 sm:py-4 rounded-xl shadow-lg shadow-green-500/25 hover:shadow-xl transition-all duration-150 touch-manipulation min-h-[48px]"
                   style={{
                     willChange: 'transform',
                     transform: 'translateZ(0)',
@@ -259,7 +291,7 @@ const Sidebar = ({ isOpen, onClose, onLoginClick }) => {
               <motion.a
                 href="tel:+918603530133"
                 whileTap={{ scale: 0.97 }}
-                className="flex items-center justify-center gap-2.5 w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 active:from-orange-700 active:to-orange-800 text-white font-semibold py-3.5 sm:py-4 rounded-xl shadow-lg shadow-orange-500/25 transition-all duration-150 touch-manipulation min-h-[48px]"
+                className="flex items-center justify-center gap-2.5 w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 active:from-orange-700 active:to-orange-800 text-white font-semibold py-3.5 sm:py-4 rounded-xl shadow-lg shadow-orange-500/25 hover:shadow-xl transition-all duration-150 touch-manipulation min-h-[48px]"
                 style={{
                   willChange: 'transform',
                   transform: 'translateZ(0)',
