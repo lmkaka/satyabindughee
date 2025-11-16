@@ -3,12 +3,16 @@ import { supabase } from '../supabaseClient';
 
 const UserProfile = ({ user, onProfileComplete }) => {
   const [formData, setFormData] = useState({
-    name: '',
-    phone: user.phone || '',
+    phone: '',
     address: ''
   });
   const [loading, setLoading] = useState(false);
   const [gettingLocation, setGettingLocation] = useState(false);
+
+  // Google already provides name and email
+  const userName = user.user_metadata?.full_name || user.user_metadata?.name || 'User';
+  const userEmail = user.email;
+  const userAvatar = user.user_metadata?.avatar_url;
 
   const handleChange = (e) => {
     setFormData({
@@ -32,7 +36,7 @@ const UserProfile = ({ user, onProfileComplete }) => {
         const { latitude, longitude } = position.coords;
         
         try {
-          // Using OpenStreetMap's Nominatim API (free, no API key needed)
+          // Using OpenStreetMap's Nominatim API (free)
           const response = await fetch(
             `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`
           );
@@ -63,11 +67,18 @@ const UserProfile = ({ user, onProfileComplete }) => {
     e.preventDefault();
     setLoading(true);
 
+    // Validate phone number
+    if (!/^[0-9]{10}$/.test(formData.phone)) {
+      alert('Please enter a valid 10-digit phone number');
+      setLoading(false);
+      return;
+    }
+
     try {
       // Update user metadata in Supabase Auth
       const { error: updateError } = await supabase.auth.updateUser({
         data: {
-          name: formData.name,
+          phone: formData.phone,
           address: formData.address,
           profile_completed: true
         }
@@ -80,7 +91,8 @@ const UserProfile = ({ user, onProfileComplete }) => {
         .from('profiles')
         .upsert({
           user_id: user.id,
-          name: formData.name,
+          name: userName,
+          email: userEmail,
           phone: formData.phone,
           address: formData.address,
           created_at: new Date().toISOString()
@@ -103,38 +115,57 @@ const UserProfile = ({ user, onProfileComplete }) => {
           Complete Your Profile
         </h2>
         <p className="text-gray-600 text-center mb-6">
-          Tell us a bit about yourself
+          Add your contact details for order delivery
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-gray-700 font-medium mb-2">
-              Full Name *
-            </label>
-            <input
-              type="text"
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-              required
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none"
-              placeholder="Enter your full name"
-            />
+          {/* Display Google Info (Read-only) */}
+          <div className="bg-amber-50 p-4 rounded-lg border border-amber-200 mb-4">
+            <div className="flex items-center gap-3 mb-2">
+              {userAvatar && (
+                <img 
+                  src={userAvatar} 
+                  alt="Profile" 
+                  className="w-12 h-12 rounded-full"
+                />
+              )}
+              <div>
+                <p className="font-semibold text-gray-800">{userName}</p>
+                <p className="text-sm text-gray-600">{userEmail}</p>
+              </div>
+            </div>
+            <p className="text-xs text-amber-700">
+              ✓ Info from your Google account
+            </p>
           </div>
 
+          {/* Phone Number Input */}
           <div>
             <label className="block text-gray-700 font-medium mb-2">
-              Phone Number
+              Phone Number *
             </label>
-            <input
-              type="text"
-              name="phone"
-              value={formData.phone}
-              disabled
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-100 cursor-not-allowed"
-            />
+            <div className="flex gap-2">
+              <div className="flex items-center px-3 py-3 border border-gray-300 rounded-lg bg-gray-50">
+                <span className="text-gray-700 font-medium">+91</span>
+              </div>
+              <input
+                type="tel"
+                name="phone"
+                value={formData.phone}
+                onChange={handleChange}
+                required
+                maxLength="10"
+                pattern="[0-9]{10}"
+                className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none"
+                placeholder="9876543210"
+              />
+            </div>
+            <p className="text-xs text-gray-500 mt-1">
+              Enter 10-digit mobile number (for order updates)
+            </p>
           </div>
 
+          {/* Address Input */}
           <div>
             <label className="block text-gray-700 font-medium mb-2">
               Delivery Address *
@@ -146,7 +177,7 @@ const UserProfile = ({ user, onProfileComplete }) => {
               required
               rows="3"
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none"
-              placeholder="Enter your delivery address"
+              placeholder="House no., Street, Area, City, State, PIN"
             />
             
             <button
