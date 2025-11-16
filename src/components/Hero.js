@@ -12,7 +12,7 @@ const Slide = memo(({ src, alt }) => (
 ));
 Slide.displayName = 'Slide';
 
-// Edit Profile Modal Component
+// Edit Profile Modal Component with Geolocation
 const EditProfileModal = ({ user, isOpen, onClose, onUpdate }) => {
   const [formData, setFormData] = useState({
     name: user?.user_metadata?.name || user?.user_metadata?.full_name || '',
@@ -20,14 +20,81 @@ const EditProfileModal = ({ user, isOpen, onClose, onUpdate }) => {
     address: user?.user_metadata?.address || ''
   });
   const [loading, setLoading] = useState(false);
+  const [gettingLocation, setGettingLocation] = useState(false);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  // Get Current Location Address
+  const getCurrentLocation = async () => {
+    setGettingLocation(true);
+    
+    if (!navigator.geolocation) {
+      alert('Geolocation is not supported by your browser');
+      setGettingLocation(false);
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        
+        try {
+          // Using OpenStreetMap's Nominatim API (free)
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`
+          );
+          const data = await response.json();
+          
+          if (data && data.display_name) {
+            setFormData({
+              ...formData,
+              address: data.display_name
+            });
+          } else {
+            alert('Could not fetch address. Please enter manually.');
+          }
+        } catch (error) {
+          console.error('Error getting address:', error);
+          alert('Could not fetch address. Please enter manually.');
+        } finally {
+          setGettingLocation(false);
+        }
+      },
+      (error) => {
+        console.error('Geolocation error:', error);
+        let errorMessage = 'Could not get your location.';
+        
+        if (error.code === error.PERMISSION_DENIED) {
+          errorMessage = 'Location permission denied. Please enable location access.';
+        } else if (error.code === error.POSITION_UNAVAILABLE) {
+          errorMessage = 'Location information unavailable.';
+        } else if (error.code === error.TIMEOUT) {
+          errorMessage = 'Location request timed out.';
+        }
+        
+        alert(errorMessage + ' Please enter address manually.');
+        setGettingLocation(false);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0
+      }
+    );
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+
+    // Validate phone
+    if (!/^[0-9]{10}$/.test(formData.phone)) {
+      alert('Please enter a valid 10-digit phone number');
+      setLoading(false);
+      return;
+    }
 
     try {
       // Update profiles table
@@ -70,13 +137,14 @@ const EditProfileModal = ({ user, isOpen, onClose, onUpdate }) => {
         {/* Header */}
         <div className="sticky top-0 bg-gradient-to-r from-amber-500 to-orange-500 p-5 rounded-t-2xl flex items-center justify-between">
           <h3 className="text-xl font-bold text-white">Edit Profile</h3>
-          <button onClick={onClose} className="text-white hover:bg-white/20 rounded-lg p-1">
+          <button onClick={onClose} className="text-white hover:bg-white/20 rounded-lg p-1 transition">
             <X size={24} />
           </button>
         </div>
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          {/* Name Field */}
           <div>
             <label className="block text-gray-700 font-semibold mb-2">Full Name *</label>
             <input
@@ -85,16 +153,17 @@ const EditProfileModal = ({ user, isOpen, onClose, onUpdate }) => {
               value={formData.name}
               onChange={handleChange}
               required
-              className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none"
+              className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent outline-none transition"
               placeholder="Enter your name"
             />
           </div>
 
+          {/* Phone Field */}
           <div>
             <label className="block text-gray-700 font-semibold mb-2">Phone Number *</label>
             <div className="flex gap-2">
               <div className="flex items-center px-3 py-3 border-2 border-gray-200 rounded-xl bg-gray-50">
-                <span className="font-semibold">+91</span>
+                <span className="font-semibold text-gray-700">+91</span>
               </div>
               <input
                 type="tel"
@@ -104,12 +173,14 @@ const EditProfileModal = ({ user, isOpen, onClose, onUpdate }) => {
                 required
                 maxLength="10"
                 pattern="[0-9]{10}"
-                className="flex-1 px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none"
+                className="flex-1 px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent outline-none transition"
                 placeholder="9876543210"
               />
             </div>
+            <p className="text-xs text-gray-500 mt-1.5">For order updates & delivery</p>
           </div>
 
+          {/* Address Field with Auto Location */}
           <div>
             <label className="block text-gray-700 font-semibold mb-2">Delivery Address *</label>
             <textarea
@@ -118,17 +189,48 @@ const EditProfileModal = ({ user, isOpen, onClose, onUpdate }) => {
               onChange={handleChange}
               required
               rows="3"
-              className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none resize-none"
+              className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent outline-none resize-none transition"
               placeholder="House no., Street, City, PIN"
             />
+            
+            {/* Get Current Location Button */}
+            <button
+              type="button"
+              onClick={getCurrentLocation}
+              disabled={gettingLocation}
+              className="mt-3 flex items-center gap-2 px-4 py-2.5 bg-blue-50 hover:bg-blue-100 text-blue-700 font-semibold rounded-xl transition-all border border-blue-200 disabled:opacity-50 disabled:cursor-not-allowed w-full justify-center"
+            >
+              {gettingLocation ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-blue-700 border-t-transparent rounded-full animate-spin"></div>
+                  <span>Getting location...</span>
+                </>
+              ) : (
+                <>
+                  <MapPin size={18} strokeWidth={2.5} />
+                  <span>Use Current Location</span>
+                </>
+              )}
+            </button>
+            <p className="text-xs text-gray-500 mt-2 text-center">
+              📍 Auto-detect your delivery address
+            </p>
           </div>
 
+          {/* Submit Button */}
           <button
             type="submit"
-            disabled={loading}
-            className="w-full bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold py-3 rounded-xl hover:shadow-lg transition disabled:opacity-50"
+            disabled={loading || gettingLocation}
+            className="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-bold py-3.5 rounded-xl shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {loading ? 'Saving...' : 'Save Changes'}
+            {loading ? (
+              <span className="flex items-center justify-center gap-2">
+                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                Saving...
+              </span>
+            ) : (
+              'Save Changes'
+            )}
           </button>
         </form>
       </div>
