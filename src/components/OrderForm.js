@@ -1,11 +1,12 @@
 import React, { useState, useEffect, memo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, User, Phone, MapPin, ShoppingCart, Download, CheckCircle, AlertCircle, Package, Sparkles } from 'lucide-react';
+import { X, User, Phone, MapPin, ShoppingCart, Download, CheckCircle, AlertCircle, Package, Sparkles, Edit2 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
+import { useAuth } from '../App';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 
-// ✅ Product Card Component
+// ✅ Product Card Component (unchanged)
 const ProductCard = memo(({ variant, isSelected, quantity, onToggle }) => {
   const discount = Math.round(((variant.originalPrice - variant.price) / variant.originalPrice) * 100);
   
@@ -76,7 +77,7 @@ const ProductCard = memo(({ variant, isSelected, quantity, onToggle }) => {
 
 ProductCard.displayName = 'ProductCard';
 
-// ✅ Cart Item Component
+// ✅ Cart Item Component (unchanged)
 const CartItem = memo(({ item, onUpdateQuantity }) => {
   return (
     <motion.div
@@ -131,12 +132,8 @@ const CartItem = memo(({ item, onUpdateQuantity }) => {
 CartItem.displayName = 'CartItem';
 
 const OrderForm = ({ isOpen, onClose, product }) => {
-  const [formData, setFormData] = useState({
-    name: '',
-    phone: '',
-    address: ''
-  });
-
+  const { user } = useAuth(); // Get logged-in user
+  
   const [cart, setCart] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -151,26 +148,25 @@ const OrderForm = ({ isOpen, onClose, product }) => {
     { id: 5, name: 'Premium Pure Ghee', weight: '5kg', price: 4799, originalPrice: 5299 }
   ];
 
-  // ✅ Browser Back Button Handler - Closes Modal Instead of Navigating Away
+  // Get user data from auth
+  const userName = user?.user_metadata?.name || user?.user_metadata?.full_name || 'Guest';
+  const userPhone = user?.user_metadata?.phone || 'N/A';
+  const userAddress = user?.user_metadata?.address || 'N/A';
+
+  // ✅ Browser Back Button Handler
   useEffect(() => {
     if (isOpen) {
-      // Push a new history state when modal opens
       window.history.pushState({ modalOpen: true }, '');
       
       const handlePopState = (event) => {
         if (event.state?.modalOpen) {
-          // Close modal instead of going back
           onClose();
-          // Prevent further back navigation
           window.history.pushState({ modalOpen: false }, '');
         }
       };
 
       window.addEventListener('popstate', handlePopState);
-
-      return () => {
-        window.removeEventListener('popstate', handlePopState);
-      };
+      return () => window.removeEventListener('popstate', handlePopState);
     }
   }, [isOpen, onClose]);
 
@@ -285,10 +281,15 @@ const OrderForm = ({ isOpen, onClose, product }) => {
     }
   }, [completedOrder]);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async () => {
     if (cart.length === 0) {
       setError('Please select at least one product');
+      return;
+    }
+
+    // Check if user data is available
+    if (!user || !userName || !userPhone || !userAddress || userName === 'Guest' || userPhone === 'N/A' || userAddress === 'N/A') {
+      setError('Please complete your profile first');
       return;
     }
 
@@ -296,9 +297,9 @@ const OrderForm = ({ isOpen, onClose, product }) => {
     setError(null);
 
     const order = {
-      name: formData.name.trim(),
-      phone: formData.phone.trim(),
-      address: formData.address.trim(),
+      name: userName,
+      phone: userPhone,
+      address: userAddress,
       product: {
         name: 'Premium Pure Ghee',
         weight: cart.map(item => `${item.weight}×${item.quantity}`).join(', '),
@@ -324,9 +325,9 @@ const OrderForm = ({ isOpen, onClose, product }) => {
 
       setCompletedOrder({
         id: data[0].id,
-        name: formData.name,
-        phone: formData.phone,
-        address: formData.address,
+        name: userName,
+        phone: userPhone,
+        address: userAddress,
         items: cart,
         total: calculateTotal(),
         order_date: new Date().toISOString()
@@ -342,9 +343,9 @@ const OrderForm = ({ isOpen, onClose, product }) => {
       
       setCompletedOrder({
         id: fallbackOrder.id,
-        name: formData.name,
-        phone: formData.phone,
-        address: formData.address,
+        name: userName,
+        phone: userPhone,
+        address: userAddress,
         items: cart,
         total: calculateTotal(),
         order_date: new Date().toISOString()
@@ -355,13 +356,7 @@ const OrderForm = ({ isOpen, onClose, product }) => {
     }
   };
 
-  const handleInputChange = useCallback((e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-  }, []);
-
   const handleClose = useCallback(() => {
-    setFormData({ name: '', phone: '', address: '' });
     setCart([]);
     setIsSuccess(false);
     setCompletedOrder(null);
@@ -391,7 +386,7 @@ const OrderForm = ({ isOpen, onClose, product }) => {
         >
           {!isSuccess ? (
             <>
-              {/* ✅ COMPACT STICKY HEADER */}
+              {/* COMPACT STICKY HEADER */}
               <div className="sticky top-0 z-50 bg-gradient-to-r from-orange-500 to-amber-500 px-3 py-2 flex items-center justify-between rounded-t-2xl shadow-md">
                 <div className="flex items-center gap-2">
                   <div className="w-7 h-7 bg-white/20 rounded-lg flex items-center justify-center">
@@ -407,7 +402,6 @@ const OrderForm = ({ isOpen, onClose, product }) => {
                   </div>
                 </div>
                 
-                {/* ✅ CLOSE BUTTON */}
                 <button
                   onClick={handleClose}
                   className="w-8 h-8 bg-white rounded-lg hover:bg-gray-100 transition-colors flex items-center justify-center flex-shrink-0 shadow-sm"
@@ -416,9 +410,26 @@ const OrderForm = ({ isOpen, onClose, product }) => {
                 </button>
               </div>
 
-              {/* ✅ SCROLLABLE CONTENT */}
+              {/* SCROLLABLE CONTENT */}
               <div className="flex-1 overflow-y-auto px-3 py-2.5 space-y-2.5" style={{ WebkitOverflowScrolling: 'touch' }}>
                 
+                {/* Auto-Filled User Info - Compact Display */}
+                {user && (
+                  <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-2 border border-blue-200">
+                    <div className="flex items-center justify-between mb-1">
+                      <h4 className="text-[10px] font-black text-blue-900 flex items-center gap-1">
+                        <User size={10} className="text-blue-600" />
+                        Delivery Info
+                      </h4>
+                    </div>
+                    <div className="space-y-0.5 text-[9px]">
+                      <p className="text-blue-900 font-bold">{userName}</p>
+                      <p className="text-blue-700">+91 {userPhone}</p>
+                      <p className="text-blue-700 line-clamp-2">{userAddress}</p>
+                    </div>
+                  </div>
+                )}
+
                 {/* Products */}
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
@@ -488,66 +499,24 @@ const OrderForm = ({ isOpen, onClose, product }) => {
                   </div>
                 )}
 
-                {/* Form */}
-                <form onSubmit={handleSubmit} className="space-y-2 pb-2">
-                  <h4 className="text-[11px] font-black text-gray-900 flex items-center gap-1">
-                    <MapPin size={11} className="text-orange-500" />
-                    Delivery Details
-                  </h4>
-
-                  <input
-                    type="text"
-                    name="name"
-                    value={formData.name}
-                    onChange={handleInputChange}
-                    required
-                    minLength={3}
-                    className="w-full px-2.5 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-300 focus:border-orange-500 text-[11px]"
-                    placeholder="Full Name"
-                  />
-
-                  <input
-                    type="tel"
-                    name="phone"
-                    value={formData.phone}
-                    onChange={handleInputChange}
-                    required
-                    pattern="[0-9]{10}"
-                    inputMode="numeric"
-                    className="w-full px-2.5 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-300 focus:border-orange-500 text-[11px]"
-                    placeholder="10-digit Phone Number"
-                  />
-
-                  <textarea
-                    name="address"
-                    value={formData.address}
-                    onChange={handleInputChange}
-                    required
-                    minLength={10}
-                    rows={2}
-                    className="w-full px-2.5 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-300 focus:border-orange-500 resize-none text-[11px]"
-                    placeholder="Delivery Address"
-                  />
-
-                  <button
-                    type="submit"
-                    disabled={isSubmitting || cart.length === 0}
-                    className="w-full bg-gradient-to-r from-orange-500 to-amber-500 text-white font-black py-2.5 rounded-lg shadow-md disabled:opacity-50 text-xs active:scale-[0.98] transition-transform"
-                  >
-                    {isSubmitting ? (
-                      <span className="flex items-center justify-center gap-1.5">
-                        <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                        Processing...
-                      </span>
-                    ) : (
-                      <span className="flex items-center justify-center gap-1.5">
-                        <CheckCircle size={14} />
-                       {cart.length > 0 ? `Confirm Order • ₹${calculateTotal()}` : 'Select Items First'}
-
-                      </span>
-                    )}
-                  </button>
-                </form>
+                {/* Confirm Button */}
+                <button
+                  onClick={handleSubmit}
+                  disabled={isSubmitting || cart.length === 0}
+                  className="w-full bg-gradient-to-r from-orange-500 to-amber-500 text-white font-black py-2.5 rounded-lg shadow-md disabled:opacity-50 text-xs active:scale-[0.98] transition-transform"
+                >
+                  {isSubmitting ? (
+                    <span className="flex items-center justify-center gap-1.5">
+                      <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      Processing...
+                    </span>
+                  ) : (
+                    <span className="flex items-center justify-center gap-1.5">
+                      <CheckCircle size={14} />
+                      {cart.length > 0 ? `Confirm Order • ₹${calculateTotal()}` : 'Select Items First'}
+                    </span>
+                  )}
+                </button>
               </div>
             </>
           ) : (
