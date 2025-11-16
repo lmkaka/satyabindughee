@@ -1477,7 +1477,6 @@ const loadProducts = async () => {
           </div>
         )}
       </AnimatePresence>
-    </div>
 {/* ✅ ADD THESE TWO MODALS AT THE END: */}
 
 {/* All Users Modal */}
