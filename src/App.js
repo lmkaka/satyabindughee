@@ -1,15 +1,15 @@
 import React, { useState, useEffect, createContext, useContext } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { supabase } from './supabaseClient'; // Your existing supabase client
+import { supabase } from './supabaseClient';
 import Navbar from './components/Navbar';
 import Sidebar from './components/Sidebar';
 import Home from './pages/Home';
 import AboutUs from './pages/AboutUs';
 import AdminPanel from './components/AdminPanel';
 import ContactUs from './pages/ContactUs';
-import PhoneAuth from './components/PhoneAuth'; // New component
-import UserProfile from './components/UserProfile'; // New component
+import GoogleAuth from './components/GoogleAuth'; // Updated: Google OAuth
+import UserProfile from './components/UserProfile'; // Optional: Address collection only
 import './index.css';
 import ScrollToTop from './components/ScrollToTop';
 
@@ -36,11 +36,16 @@ const AuthProvider = ({ children }) => {
       setLoading(false);
     });
 
-    // Listen for auth changes
+    // Listen for auth changes (Google redirect callback)
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
+      
+      // Google OAuth successful - user redirected back
+      if (_event === 'SIGNED_IN' && session?.user) {
+        console.log('Google Sign In Successful:', session.user);
+      }
     });
 
     return () => subscription.unsubscribe();
@@ -83,19 +88,20 @@ function AppContent({ isSidebarOpen, setIsSidebarOpen }) {
   const [showAuth, setShowAuth] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
 
-  // Check if profile is completed for new users
+  // Check if profile is completed for new users (Optional - only for address)
   useEffect(() => {
-    if (user && !user.user_metadata?.profile_completed) {
-      setShowProfile(true);
+    // Google provides name & email automatically
+    // Only show profile if you need address
+    if (user && !user.user_metadata?.address) {
+      // Uncomment next line if you want to collect address
+      // setShowProfile(true);
     }
   }, [user]);
 
   const handleProfileComplete = () => {
     setShowProfile(false);
     // Refresh user data
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      // User data will auto-update via onAuthStateChange
-    });
+    supabase.auth.getSession();
   };
 
   if (loading) {
@@ -131,18 +137,18 @@ function AppContent({ isSidebarOpen, setIsSidebarOpen }) {
         </Routes>
       </motion.main>
 
-      {/* Phone Auth Modal */}
+      {/* Google Auth Modal */}
       {showAuth && (
-        <PhoneAuth
+        <GoogleAuth
           onClose={() => setShowAuth(false)}
           onSuccess={(userData) => {
-            console.log('User logged in:', userData);
+            console.log('User logged in with Google:', userData);
             setShowAuth(false);
           }}
         />
       )}
 
-      {/* Profile Completion Modal (First-time users only) */}
+      {/* Profile Completion Modal (Optional - Only for address collection) */}
       {showProfile && user && (
         <UserProfile
           user={user}
