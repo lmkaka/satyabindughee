@@ -1,12 +1,14 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { useAuth } from '../App';
 import Hero from '../components/Hero';
 import ProductCard from '../components/ProductCard';
 import Reviews from '../components/Reviews';
 import { products } from '../data/products';
-import { Truck, Shield, Award, Clock } from 'lucide-react';
+import { Truck, Shield, Award, Clock, User } from 'lucide-react';
 
 const Home = () => {
+  const { user } = useAuth();
   const [isDragging, setIsDragging] = useState(false);
   const [constraints, setConstraints] = useState({ top: 0, left: 0, right: 0, bottom: 0 });
   
@@ -58,7 +60,7 @@ const Home = () => {
 
   return (
     <div className="relative">
-      {/* ✅ Logo Watermark Background - Fixed Position */}
+      {/* Logo Watermark Background - Fixed Position */}
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
         <div className="absolute inset-0 flex items-center justify-center">
           <img
@@ -73,7 +75,7 @@ const Home = () => {
         </div>
       </div>
 
-      {/* ✅ Draggable Floating WhatsApp Button - Full Screen Drag */}
+      {/* Draggable Floating WhatsApp Button - Full Screen Drag */}
       <motion.div
         drag
         dragMomentum={false}
@@ -127,6 +129,58 @@ const Home = () => {
       {/* Main Content - Relative to watermark */}
       <div className="relative z-10">
         <Hero />
+
+        {/* User Welcome Banner - Personalized */}
+        {user && (
+          <motion.section 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            className="py-8 bg-gradient-to-r from-amber-50 via-orange-50 to-amber-50 relative overflow-hidden"
+          >
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl p-6 sm:p-8 border border-amber-200">
+                <div className="flex items-start gap-4">
+                  {/* User Avatar */}
+                  <div className="hidden sm:flex w-16 h-16 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 items-center justify-center shadow-lg flex-shrink-0">
+                    <User size={28} className="text-white" strokeWidth={2.5} />
+                  </div>
+                  
+                  {/* Welcome Content */}
+                  <div className="flex-1 min-w-0">
+                    <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
+                      Welcome back, <span className="text-amber-600">
+                        {user.user_metadata?.name || 'valued customer'}
+                      </span>! 👋
+                    </h2>
+                    <p className="text-gray-600 mb-4">
+                      Thank you for choosing SBGhee. Browse our premium products and place your order!
+                    </p>
+                    
+                    {/* User Info Cards */}
+                    <div className="grid sm:grid-cols-2 gap-3">
+                      {/* Phone */}
+                      <div className="bg-amber-50 px-4 py-3 rounded-lg border border-amber-100">
+                        <p className="text-xs font-medium text-amber-800 mb-1">📱 Phone Number</p>
+                        <p className="text-sm text-gray-700 font-semibold">{user.phone}</p>
+                      </div>
+                      
+                      {/* Address */}
+                      {user.user_metadata?.address && (
+                        <div className="bg-amber-50 px-4 py-3 rounded-lg border border-amber-100">
+                          <p className="text-xs font-medium text-amber-800 mb-1">📍 Delivery Address</p>
+                          <p className="text-sm text-gray-700 line-clamp-2">
+                            {user.user_metadata.address}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </motion.section>
+        )}
         
         {/* Features Section */}
         <section className="py-16 bg-white relative">
@@ -183,6 +237,19 @@ const Home = () => {
               <p className="text-xl text-gray-600 max-w-3xl mx-auto">
                 Choose from our range of pure ghee products, available in different sizes to suit your needs
               </p>
+              
+              {/* Login Prompt for Non-logged-in Users */}
+              {!user && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="mt-6 inline-block bg-amber-50 border-2 border-amber-200 rounded-xl px-6 py-3"
+                >
+                  <p className="text-amber-800 font-medium">
+                    🔒 <span className="font-semibold">Login</span> to place orders and enjoy faster checkout!
+                  </p>
+                </motion.div>
+              )}
             </motion.div>
 
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
@@ -194,14 +261,14 @@ const Home = () => {
                   transition={{ duration: 0.6, delay: index * 0.1 }}
                   viewport={{ once: true }}
                 >
-                  <ProductCard product={product} />
+                  <ProductCard product={product} user={user} />
                 </motion.div>
               ))}
             </div>
           </div>
         </section>
 
-        {/* ✅ Reviews Section - Integrated */}
+        {/* Reviews Section - Integrated */}
         <Reviews />
       </div>
     </div>
