@@ -8,8 +8,8 @@ import Home from './pages/Home';
 import AboutUs from './pages/AboutUs';
 import AdminPanel from './components/AdminPanel';
 import ContactUs from './pages/ContactUs';
-import GoogleAuth from './components/GoogleAuth'; // Updated: Google OAuth
-import UserProfile from './components/UserProfile'; // Optional: Address collection only
+import GoogleAuth from './components/GoogleAuth';
+import UserProfile from './components/UserProfile';
 import './index.css';
 import ScrollToTop from './components/ScrollToTop';
 
@@ -88,20 +88,31 @@ function AppContent({ isSidebarOpen, setIsSidebarOpen }) {
   const [showAuth, setShowAuth] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
 
-  // Check if profile is completed for new users (Optional - only for address)
+  // Check if profile is completed for new users
   useEffect(() => {
-    // Google provides name & email automatically
-    // Only show profile if you need address
-    if (user && !user.user_metadata?.address) {
-      // Uncomment next line if you want to collect address
-      // setShowProfile(true);
+    if (user) {
+      // Check if user has completed profile
+      const hasPhone = user.user_metadata?.phone;
+      const hasAddress = user.user_metadata?.address;
+      const isProfileComplete = user.user_metadata?.profile_completed;
+      
+      // Show profile modal if ANY of these are missing
+      if (!hasPhone || !hasAddress || !isProfileComplete) {
+        console.log('First-time user detected - showing profile form');
+        setShowProfile(true);
+      } else {
+        console.log('Returning user - profile already complete');
+        setShowProfile(false);
+      }
     }
   }, [user]);
 
   const handleProfileComplete = () => {
     setShowProfile(false);
-    // Refresh user data
-    supabase.auth.getSession();
+    // Refresh user data to get updated metadata
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log('Profile completed, updated user:', session?.user);
+    });
   };
 
   if (loading) {
@@ -138,7 +149,7 @@ function AppContent({ isSidebarOpen, setIsSidebarOpen }) {
       </motion.main>
 
       {/* Google Auth Modal */}
-      {showAuth && (
+      {showAuth && !user && (
         <GoogleAuth
           onClose={() => setShowAuth(false)}
           onSuccess={(userData) => {
@@ -148,7 +159,7 @@ function AppContent({ isSidebarOpen, setIsSidebarOpen }) {
         />
       )}
 
-      {/* Profile Completion Modal (Optional - Only for address collection) */}
+      {/* Profile Completion Modal (First-time users only) */}
       {showProfile && user && (
         <UserProfile
           user={user}
