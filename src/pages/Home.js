@@ -1,12 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '../App';
-import { supabase } from '../supabaseClient'; // ✅ Add this import
+import { supabase } from '../supabaseClient';
 import Hero from '../components/Hero';
 import ProductCard from '../components/ProductCard';
 import Reviews from '../components/Reviews';
 import TrackOrders from '../components/TrackOrders';
-// import { products } from '../data/products'; // ❌ Remove this line
 import { Truck, Shield, Award, Clock, Package } from 'lucide-react';
 
 const Home = () => {
@@ -14,8 +13,6 @@ const Home = () => {
   const [isDragging, setIsDragging] = useState(false);
   const [constraints, setConstraints] = useState({ top: 0, left: 0, right: 0, bottom: 0 });
   const [isTrackOrdersOpen, setIsTrackOrdersOpen] = useState(false);
-  
-  // ✅ Add products state and loading state
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   
@@ -42,52 +39,58 @@ const Home = () => {
     }
   ];
 
-  // ✅ Load products from Supabase
+  // Load products from Supabase
   useEffect(() => {
     loadProducts();
   }, []);
 
   const loadProducts = async () => {
-    setLoading(true);
     try {
-      console.log('Fetching products from Supabase...');
+      setLoading(true);
       
       const { data, error } = await supabase
         .from('products')
         .select('*')
-        .eq('is_active', true) // Only fetch active products
+        .eq('is_active', true)
         .order('created_at', { ascending: true });
       
       if (error) {
         console.error('Supabase error:', error);
-        throw error;
+        setProducts([]);
+        setLoading(false);
+        return;
       }
       
-      console.log(`✅ Loaded ${data?.length || 0} products`);
-      
-      // Transform Supabase data to match your product structure
-      const transformedProducts = data.map(product => ({
-        id: product.id,
-        name: product.name,
-        weight: product.weight,
-        price: product.price,
-        originalPrice: product.original_price,
-        image: product.image_base64 || 'https://radarofc.onrender.com/IMG_20251106_204751_845-modified.png', // Fallback image
-        description: product.description || 'Premium quality pure ghee',
-        discount: Math.round(((product.original_price - product.price) / product.original_price) * 100)
-      }));
+      // Transform data safely
+      const transformedProducts = (data || []).map(product => {
+        try {
+          return {
+            id: product.id,
+            name: product.name || 'Premium Ghee',
+            weight: product.weight || '250gms',
+            price: product.price || 0,
+            originalPrice: product.original_price || product.price || 0,
+            image: product.image_base64 || 'https://radarofc.onrender.com/IMG_20251106_204751_845-modified.png',
+            description: product.description || 'Premium quality pure ghee',
+            discount: product.original_price ? 
+              Math.round(((product.original_price - product.price) / product.original_price) * 100) : 0
+          };
+        } catch (err) {
+          console.error('Error transforming product:', err);
+          return null;
+        }
+      }).filter(Boolean); // Remove null values
       
       setProducts(transformedProducts);
     } catch (err) {
-      console.error('Error loading products:', err);
-      // Fallback to empty array if error
+      console.error('Error in loadProducts:', err);
       setProducts([]);
     } finally {
       setLoading(false);
     }
   };
 
-  // Update constraints dynamically for full screen dragging
+  // Update constraints dynamically
   useEffect(() => {
     const updateConstraints = () => {
       setConstraints({
@@ -104,7 +107,6 @@ const Home = () => {
   }, []);
 
   const handleWhatsAppClick = () => {
-    // Only open WhatsApp if not dragging
     if (!isDragging) {
       window.open('https://wa.me/918603530133', '_blank');
     }
@@ -112,7 +114,7 @@ const Home = () => {
 
   return (
     <div className="relative">
-      {/* Logo Watermark Background - Fixed Position */}
+      {/* Logo Watermark Background */}
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
         <div className="absolute inset-0 flex items-center justify-center">
           <img
@@ -127,7 +129,7 @@ const Home = () => {
         </div>
       </div>
 
-      {/* Draggable Floating WhatsApp Button - Full Screen Drag */}
+      {/* Draggable WhatsApp Button */}
       <motion.div
         drag
         dragMomentum={false}
@@ -142,14 +144,8 @@ const Home = () => {
         style={{ touchAction: 'none' }}
       >
         <div className="relative">
-          {/* WhatsApp Button with Original Logo */}
           <div className="w-16 h-16 bg-[#25D366] hover:bg-[#20BA5A] rounded-full flex items-center justify-center shadow-2xl transition-colors">
-            {/* Official WhatsApp Logo SVG */}
-            <svg
-              viewBox="0 0 175.216 175.552"
-              className="w-10 h-10 fill-white"
-              xmlns="http://www.w3.org/2000/svg"
-            >
+            <svg viewBox="0 0 175.216 175.552" className="w-10 h-10 fill-white" xmlns="http://www.w3.org/2000/svg">
               <defs>
                 <linearGradient id="whatsappGradient" x1="85.915" y1="32.567" x2="85.915" y2="137.092" gradientUnits="userSpaceOnUse">
                   <stop offset="0" stopColor="#57d163"/>
@@ -161,8 +157,6 @@ const Home = () => {
               <path fill="#fff" fillRule="evenodd" d="M68.772 55.603c-1.378-3.061-2.828-3.123-4.137-3.176l-3.524-.043c-1.226 0-3.218.46-4.902 2.3s-6.435 6.287-6.435 15.332 6.588 17.785 7.506 19.013 12.718 20.381 31.405 27.75c15.529 6.124 18.689 4.906 22.061 4.6s10.877-4.447 12.408-8.74 1.532-7.971 1.073-8.74-1.685-1.226-3.525-2.146-10.877-5.367-12.562-5.981-2.91-.919-4.137.921-4.746 5.979-5.819 7.206-2.144 1.381-3.984.462-7.76-2.861-14.784-9.124c-5.465-4.873-9.154-10.891-10.228-12.73s-.114-2.835.808-3.751c.825-.824 1.838-2.147 2.759-3.22s1.224-1.84 1.836-3.065.307-2.301-.153-3.22-4.032-10.011-5.666-13.647"/>
             </svg>
           </div>
-          
-          {/* Pulse Animation Ring */}
           <motion.div
             animate={{
               scale: [1, 1.3, 1.3, 1],
@@ -178,7 +172,7 @@ const Home = () => {
         </div>
       </motion.div>
 
-      {/* ✅ Track Orders Button - Floating (Only for logged-in users) */}
+      {/* Track Orders Button */}
       {user && (
         <motion.button
           onClick={() => setIsTrackOrdersOpen(true)}
@@ -191,17 +185,12 @@ const Home = () => {
         </motion.button>
       )}
 
-      {/* ✅ Track Orders Modal */}
-      <TrackOrders
-        isOpen={isTrackOrdersOpen}
-        onClose={() => setIsTrackOrdersOpen(false)}
-      />
+      <TrackOrders isOpen={isTrackOrdersOpen} onClose={() => setIsTrackOrdersOpen(false)} />
 
-      {/* Main Content - Relative to watermark */}
+      {/* Main Content */}
       <div className="relative z-10">
         <Hero />
 
-      
         {/* Features Section */}
         <section className="py-16 bg-white relative">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -212,9 +201,7 @@ const Home = () => {
               viewport={{ once: true }}
               className="text-center mb-12"
             >
-              <h2 className="text-4xl font-playfair font-bold text-gray-900 mb-4">
-                Why Choose SBGhee?
-              </h2>
+              <h2 className="text-4xl font-playfair font-bold text-gray-900 mb-4">Why Choose SBGhee?</h2>
               <p className="text-xl text-gray-600 max-w-3xl mx-auto">
                 Experience the difference with our premium quality ghee, made with love and tradition
               </p>
@@ -251,14 +238,11 @@ const Home = () => {
               viewport={{ once: true }}
               className="text-center mb-12"
             >
-              <h2 className="text-4xl font-playfair font-bold text-gray-900 mb-4">
-                Our Premium Products
-              </h2>
+              <h2 className="text-4xl font-playfair font-bold text-gray-900 mb-4">Our Premium Products</h2>
               <p className="text-xl text-gray-600 max-w-3xl mx-auto">
                 Choose from our range of pure ghee products, available in different sizes to suit your needs
               </p>
               
-              {/* Login Prompt for Non-logged-in Users */}
               {!user && (
                 <motion.div
                   initial={{ opacity: 0, scale: 0.95 }}
@@ -272,21 +256,18 @@ const Home = () => {
               )}
             </motion.div>
 
-            {/* ✅ Loading State */}
             {loading ? (
               <div className="flex flex-col items-center justify-center py-20">
                 <div className="w-16 h-16 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mb-4"></div>
                 <p className="text-gray-600 font-semibold text-lg">Loading products...</p>
               </div>
             ) : products.length === 0 ? (
-              // ✅ No Products State
               <div className="text-center py-20">
                 <Package className="w-24 h-24 text-gray-300 mx-auto mb-4" />
                 <h3 className="text-2xl font-bold text-gray-900 mb-2">No Products Available</h3>
                 <p className="text-gray-600">Products will appear here once added by admin.</p>
               </div>
             ) : (
-              // ✅ Products Grid
               <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
                 {products.map((product, index) => (
                   <motion.div
@@ -304,7 +285,6 @@ const Home = () => {
           </div>
         </section>
 
-        {/* Reviews Section - Integrated */}
         <Reviews />
       </div>
     </div>
