@@ -241,67 +241,109 @@ const Hero = () => {
         </div>
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-10 pb-12 sm:pb-16">
-          
-          {/* Clean User Info Bar */}
-          {user && (userName || userPhone || userAddress) && (
-            <div className="mb-6 animate-slideDown">
-              <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-lg border border-orange-100 p-4 sm:p-5">
-                <div className="flex items-center justify-between gap-4">
-                  {/* Left: User Info */}
-                  <div className="flex items-center gap-3 flex-1 min-w-0">
-                    {/* Avatar */}
-                    {user.user_metadata?.avatar_url ? (
-                      <img 
-                        src={user.user_metadata.avatar_url} 
-                        alt="User" 
-                        className="w-14 h-14 rounded-full border-2 border-orange-300 shadow-md flex-shrink-0"
-                      />
-                    ) : (
-                      <div className="w-14 h-14 rounded-full bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center shadow-md flex-shrink-0">
-                        <User className="text-white" size={24} strokeWidth={2.5} />
-                      </div>
-                    )}
+        {/* 🔥 PROFESSIONAL BLINKIT-STYLE DELIVERY BAR */}
+{user && (userName || userPhone || userAddress) && (
+  <div className="mb-6 animate-slideDown">
+    {/* Welcome Message Bar */}
+    <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+      {/* Top Section - Welcome */}
+      <div className="bg-gradient-to-r from-amber-50 to-orange-50 px-4 sm:px-5 py-3 border-b border-orange-100">
+        <div className="flex items-center gap-3">
+          {/* Avatar */}
+          <div className="relative flex-shrink-0">
+            {user.user_metadata?.avatar_url ? (
+              <img 
+                src={user.user_metadata.avatar_url} 
+                alt="User" 
+                className="w-12 h-12 rounded-full border-2 border-orange-300 shadow-md"
+              />
+            ) : (
+              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center shadow-md">
+                <User className="text-white" size={20} strokeWidth={2.5} />
+              </div>
+            )}
+            {/* Online indicator */}
+            <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-green-500 border-2 border-white rounded-full"></div>
+          </div>
 
-                    {/* Info */}
-                    <div className="flex-1 min-w-0">
-                      <h3 className="text-base sm:text-lg font-bold text-gray-900 truncate">
-                        {userName || 'Guest User'}
-                      </h3>
-                      <div className="flex items-center gap-3 text-xs sm:text-sm text-gray-600 mt-1">
-                        {userPhone && (
-                          <div className="flex items-center gap-1">
-                            <Phone size={14} className="text-blue-500" />
-                            <span className="font-medium">+91 {userPhone}</span>
-                          </div>
-                        )}
-                        {userAddress && (
-                          <>
-                            <span className="hidden sm:inline">•</span>
-                            <div className="flex items-center gap-1">
-                              <MapPin size={14} className="text-green-500 flex-shrink-0" />
-                              <span className="font-medium truncate max-w-[200px]">
-                                {userAddress.substring(0, 30)}...
-                              </span>
-                            </div>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  </div>
+          {/* Welcome Text */}
+          <div className="flex-1 min-w-0">
+            <p className="text-xs text-gray-500 font-medium">Welcome back</p>
+            <h3 className="text-base sm:text-lg font-bold text-gray-900 truncate">
+              {userName || 'Guest User'}
+            </h3>
+          </div>
 
-                  {/* Right: Edit Button */}
-                  <button
-                    onClick={() => setIsEditProfileOpen(true)}
-                    className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-semibold rounded-xl shadow-md hover:shadow-lg transition-all flex-shrink-0"
-                  >
-                    <Edit2 size={16} />
-                    <span className="hidden sm:inline">Edit Profile</span>
-                    <span className="sm:hidden">Edit</span>
-                  </button>
+          {/* Edit Button */}
+          <button
+            onClick={() => setIsEditProfileOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-2 bg-white hover:bg-gray-50 border border-gray-200 rounded-xl text-sm font-semibold text-gray-700 transition-all shadow-sm"
+          >
+            <Edit2 size={14} />
+            <span className="hidden sm:inline">Edit</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Bottom Section - Delivery Info */}
+      <div className="px-4 sm:px-5 py-4 bg-white">
+        <div className="grid sm:grid-cols-2 gap-3">
+          {/* Delivery Address */}
+          {userAddress && (
+            <div className="flex items-start gap-3 group cursor-pointer" onClick={() => setIsEditProfileOpen(true)}>
+              <div className="w-10 h-10 bg-green-50 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:bg-green-100 transition-colors">
+                <MapPin className="text-green-600" size={18} strokeWidth={2.5} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <p className="text-xs font-bold text-green-700 uppercase tracking-wide">Delivering to</p>
+                  <ChevronRight size={12} className="text-gray-400 group-hover:text-green-600 transition-colors" />
                 </div>
+                <p className="text-sm font-semibold text-gray-900 line-clamp-2 leading-snug">
+                  {userAddress}
+                </p>
               </div>
             </div>
           )}
+
+          {/* Contact Number */}
+          {userPhone && (
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center flex-shrink-0">
+                <Phone className="text-blue-600" size={18} strokeWidth={2.5} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-bold text-blue-700 uppercase tracking-wide mb-1">Contact Number</p>
+                <p className="text-sm font-semibold text-gray-900">
+                  +91 {userPhone}
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Quick Stats Bar */}
+        <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between text-xs">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-1.5">
+              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+              <span className="text-gray-600 font-medium">Active Now</span>
+            </div>
+            <div className="h-3 w-px bg-gray-200"></div>
+            <div className="flex items-center gap-1.5">
+              <Shield className="text-blue-500" size={12} />
+              <span className="text-gray-600 font-medium">Verified</span>
+            </div>
+          </div>
+          <div className="flex items-center gap-1 text-amber-600">
+            <Star className="text-amber-500 fill-amber-500" size={12} />
+            <span className="font-bold">Premium Member</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
 
           {/* Carousel Section */}
           <div className="mb-6 sm:mb-10">
