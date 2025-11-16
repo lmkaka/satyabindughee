@@ -6,13 +6,12 @@ import OrderForm from './OrderForm';
 const ProductCard = ({ product }) => {
   const [isOrderFormOpen, setIsOrderFormOpen] = useState(false);
   
-  // ✅ Safety check
-  if (!product) {
-    return null;
-  }
-
+  // ✅ MOVE ALL HOOKS BEFORE ANY EARLY RETURN
+  
   // ✅ Decode Base64 image with memoization
   const decodedImage = useMemo(() => {
+    if (!product) return 'https://radarofc.onrender.com/IMG_20251106_204751_845-modified.png';
+    
     let imageUrl = product.image_base64 || product.image;
     
     // If no image, use fallback
@@ -32,7 +31,19 @@ const ProductCard = ({ product }) => {
     
     // Otherwise, assume it's Base64 without prefix - add it
     return `data:image/jpeg;base64,${imageUrl}`;
-  }, [product.image_base64, product.image]);
+  }, [product]);
+
+  // ✅ Calculate discount safely
+  const discount = useMemo(() => {
+    if (!product || !product.original_price || !product.price) return 0;
+    if (product.original_price <= product.price) return 0;
+    return Math.round(((product.original_price - product.price) / product.original_price) * 100);
+  }, [product]);
+
+  // ✅ NOW check for null product AFTER all hooks
+  if (!product) {
+    return null;
+  }
 
   // ✅ Safe destructure with defaults
   const {
@@ -45,12 +56,6 @@ const ProductCard = ({ product }) => {
     benefits = [],
     is_active = true
   } = product;
-
-  // ✅ Calculate discount safely
-  const discount = useMemo(() => {
-    if (!original_price || !price || original_price <= price) return 0;
-    return Math.round(((original_price - price) / original_price) * 100);
-  }, [price, original_price]);
 
   const inStock = is_active !== false;
 
@@ -146,7 +151,7 @@ const ProductCard = ({ product }) => {
         onClose={() => setIsOrderFormOpen(false)}
         product={{
           ...product,
-          image: decodedImage, // ✅ Pass decoded image to OrderForm
+          image: decodedImage,
           price: price,
           originalPrice: original_price,
           inStock: inStock
