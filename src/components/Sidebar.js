@@ -1,14 +1,22 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { X, Home, Info, Phone, MapPin, Clock } from 'lucide-react';
+import { X, Home, Info, Phone, MapPin, Clock, User, LogOut } from 'lucide-react';
+import { useAuth } from '../App';
 
 const Sidebar = ({ isOpen, onClose }) => {
+  const { user, signOut } = useAuth();
+
   const menuItems = [
     { icon: Home, label: 'Home', path: '/' },
     { icon: Info, label: 'About Us', path: '/about' },
     { icon: Phone, label: 'Contact', path: '/contact' },
   ];
+
+  const handleSignOut = () => {
+    signOut();
+    onClose();
+  };
 
   return (
     <AnimatePresence>
@@ -32,11 +40,11 @@ const Sidebar = ({ isOpen, onClose }) => {
             transition={{ 
               type: 'tween', 
               duration: 0.3, 
-              ease: [0.32, 0.72, 0, 1] // Custom easing for smooth feel
+              ease: [0.32, 0.72, 0, 1]
             }}
             className="fixed left-0 top-0 h-full w-[280px] sm:w-[320px] bg-white shadow-2xl z-50 flex flex-col"
             style={{
-              maxWidth: '85vw', // Prevents sidebar from being too wide on small screens
+              maxWidth: '85vw',
               WebkitOverflowScrolling: 'touch',
             }}
           >
@@ -59,6 +67,29 @@ const Sidebar = ({ isOpen, onClose }) => {
                 <X size={20} className="text-gray-600" strokeWidth={2} />
               </motion.button>
             </div>
+
+            {/* User Info Section - If Logged In */}
+            {user && (
+              <motion.div 
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="px-4 sm:px-5 py-4 bg-gradient-to-r from-amber-50 to-orange-50 border-b border-amber-100"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-lg">
+                    <User size={20} className="text-white" strokeWidth={2.5} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm sm:text-base font-semibold text-gray-900 truncate">
+                      {user.user_metadata?.name || 'User'}
+                    </p>
+                    <p className="text-xs sm:text-sm text-gray-600 truncate">
+                      {user.phone}
+                    </p>
+                  </div>
+                </div>
+              </motion.div>
+            )}
 
             {/* Navigation - Touch Optimized */}
             <nav className="flex-1 px-3 sm:px-4 py-4 sm:py-6 overflow-y-auto">
@@ -112,8 +143,44 @@ const Sidebar = ({ isOpen, onClose }) => {
               </div>
             </div>
 
-            {/* CTA Button - Touch Optimized */}
-            <div className="px-4 sm:px-5 pb-5 sm:pb-6 pt-2">
+            {/* Auth Actions - Touch Optimized */}
+            <div className="px-4 sm:px-5 pb-5 sm:pb-6 pt-2 space-y-2">
+              {user ? (
+                <>
+                  {/* User Address (if available) */}
+                  {user.user_metadata?.address && (
+                    <div className="px-3 py-2 bg-amber-50 rounded-lg border border-amber-100">
+                      <p className="text-[10px] sm:text-xs font-medium text-amber-800 mb-1">
+                        Delivery Address:
+                      </p>
+                      <p className="text-xs text-gray-600 line-clamp-2">
+                        {user.user_metadata.address}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Logout Button */}
+                  <motion.button
+                    onClick={handleSignOut}
+                    whileTap={{ scale: 0.97 }}
+                    className="flex items-center justify-center gap-2.5 w-full bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 active:from-red-700 active:to-red-800 text-white font-semibold py-3.5 sm:py-4 rounded-xl shadow-lg shadow-red-500/25 hover:shadow-xl hover:shadow-red-500/30 transition-all duration-200 touch-manipulation min-h-[48px]"
+                  >
+                    <LogOut size={18} strokeWidth={2.5} />
+                    <span className="text-[15px] sm:text-base">Logout</span>
+                  </motion.button>
+                </>
+              ) : (
+                <motion.button
+                  onClick={onClose}
+                  whileTap={{ scale: 0.97 }}
+                  className="flex items-center justify-center gap-2.5 w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 active:from-green-700 active:to-emerald-800 text-white font-semibold py-3.5 sm:py-4 rounded-xl shadow-lg shadow-green-500/25 hover:shadow-xl hover:shadow-green-500/30 transition-all duration-200 touch-manipulation min-h-[48px]"
+                >
+                  <User size={18} strokeWidth={2.5} />
+                  <span className="text-[15px] sm:text-base">Login to Continue</span>
+                </motion.button>
+              )}
+
+              {/* Call Button */}
               <motion.a
                 href="tel:+918603530133"
                 whileTap={{ scale: 0.97 }}
