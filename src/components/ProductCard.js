@@ -172,6 +172,7 @@ const ProductCard = ({ product, user }) => {
         </button>
       </div>
     </div>
+
   );
 };
 
