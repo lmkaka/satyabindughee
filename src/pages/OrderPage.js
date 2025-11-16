@@ -5,6 +5,7 @@ import { supabase } from '../supabaseClient';
 import { useAuth } from '../App';
 import { useNavigate } from 'react-router-dom';
 import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 
 const OrderPage = () => {
   const { user } = useAuth();
@@ -90,6 +91,150 @@ const OrderPage = () => {
       const original = item.original_price || item.price;
       return total + ((original - item.price) * item.quantity);
     }, 0);
+  };
+
+  // ✅ Professional Invoice Generator
+  const downloadInvoice = () => {
+    if (!completedOrder) return;
+    
+    try {
+      const doc = new jsPDF('p', 'mm', 'a4');
+      const pageWidth = doc.internal.pageSize.getWidth();
+      
+      // Header - Orange gradient background
+      doc.setFillColor(255, 140, 0);
+      doc.rect(0, 0, pageWidth, 50, 'F');
+      
+      // Company name
+      doc.setFontSize(32);
+      doc.setTextColor(255, 255, 255);
+      doc.setFont('helvetica', 'bold');
+      doc.text('SBGhee', 15, 25);
+      
+      // Invoice title
+      doc.setFontSize(18);
+      doc.text('TAX INVOICE', pageWidth - 15, 25, { align: 'right' });
+      
+      // Company details
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.text('Premium Pure Ghee', 15, 35);
+      doc.text('Lalpur, Ranchi, Jharkhand', 15, 41);
+      doc.text('Phone: +91 8603530133', 15, 47);
+      
+      // Invoice number and date
+      doc.setTextColor(255, 255, 255);
+      const invoiceNum = completedOrder.id.toString().padStart(6, '0');
+      doc.text(`Invoice #: ${invoiceNum}`, pageWidth - 15, 35, { align: 'right' });
+      doc.text(`Date: ${new Date(completedOrder.order_date).toLocaleDateString('en-IN')}`, pageWidth - 15, 41, { align: 'right' });
+      doc.text(`Status: PENDING`, pageWidth - 15, 47, { align: 'right' });
+      
+      // Customer details box
+      let yPos = 65;
+      doc.setFillColor(248, 250, 252);
+      doc.rect(15, yPos, 180, 35, 'F');
+      
+      doc.setTextColor(0, 0, 0);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(11);
+      doc.text('BILL TO:', 20, yPos + 8);
+      
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(10);
+      doc.text(completedOrder.name, 20, yPos + 15);
+      doc.text(`Phone: +91 ${completedOrder.phone}`, 20, yPos + 21);
+      
+      const addressLines = doc.splitTextToSize(completedOrder.address, 160);
+      doc.text(addressLines, 20, yPos + 27);
+      
+      // Table header
+      yPos = 115;
+      doc.setFillColor(255, 140, 0);
+      doc.rect(15, yPos, pageWidth - 30, 10, 'F');
+      
+      doc.setTextColor(255, 255, 255);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10);
+      doc.text('PRODUCT', 20, yPos + 7);
+      doc.text('QTY', 105, yPos + 7);
+      doc.text('PRICE', 125, yPos + 7);
+      doc.text('AMOUNT', 165, yPos + 7);
+      
+      // Table rows
+      yPos += 12;
+      doc.setTextColor(0, 0, 0);
+      doc.setFont('helvetica', 'normal');
+      
+      let subtotal = 0;
+      
+      completedOrder.items.forEach((item, index) => {
+        if (index % 2 === 0) {
+          doc.setFillColor(249, 250, 251);
+          doc.rect(15, yPos - 2, pageWidth - 30, 10, 'F');
+        }
+        
+        const itemTotal = item.price * item.quantity;
+        subtotal += itemTotal;
+        
+        doc.text(`${item.name} (${item.weight})`, 20, yPos + 5);
+        doc.text(item.quantity.toString(), 110, yPos + 5);
+        doc.text(`₹${item.price}`, 125, yPos + 5);
+        doc.text(`₹${itemTotal}`, 165, yPos + 5);
+        
+        yPos += 10;
+      });
+      
+      // Totals section
+      yPos += 10;
+      doc.setDrawColor(200, 200, 200);
+      doc.line(15, yPos, pageWidth - 15, yPos);
+      
+      yPos += 8;
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(11);
+      
+      // Subtotal
+      doc.text('Subtotal:', 135, yPos);
+      doc.text(`₹${subtotal}`, 165, yPos);
+      
+      yPos += 8;
+      
+      // Savings
+      if (calculateSavings() > 0) {
+        doc.setTextColor(34, 197, 94);
+        doc.text('You Saved:', 135, yPos);
+        doc.text(`- ₹${calculateSavings()}`, 165, yPos);
+        yPos += 8;
+      }
+      
+      // Total
+      doc.setFillColor(255, 237, 213);
+      doc.rect(125, yPos - 5, 70, 12, 'F');
+      
+      doc.setTextColor(255, 140, 0);
+      doc.setFontSize(14);
+      doc.text('TOTAL:', 135, yPos + 3);
+      doc.text(`₹${completedOrder.total}`, 165, yPos + 3);
+      
+      // Footer
+      yPos = 270;
+      doc.setTextColor(100, 100, 100);
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'normal');
+      doc.text('Thank you for your order!', pageWidth / 2, yPos, { align: 'center' });
+      doc.text('For any queries, contact: +91 8603530133', pageWidth / 2, yPos + 5, { align: 'center' });
+      
+      // Terms
+      doc.setFontSize(7);
+      doc.text('Terms & Conditions Apply | Subject to Ranchi Jurisdiction', pageWidth / 2, yPos + 12, { align: 'center' });
+      
+      // Save PDF
+      doc.save(`SBGhee_Invoice_${invoiceNum}.pdf`);
+      
+    } catch (error) {
+      console.error('PDF generation error:', error);
+      alert('Failed to generate invoice. Please try again.');
+    }
   };
 
   const handleSubmit = async () => {
@@ -214,27 +359,41 @@ const OrderPage = () => {
             <CheckCircle className="text-white" size={40} strokeWidth={2.5} />
           </div>
           <h2 className="text-2xl font-black text-gray-900 mb-2">Order Placed!</h2>
-          <p className="text-gray-600 mb-6">We'll confirm shortly</p>
+          <p className="text-gray-600 mb-6">Your order has been confirmed. We'll contact you shortly.</p>
           
           <div className="bg-green-50 rounded-xl p-4 border-2 border-green-200 mb-6 text-left max-h-60 overflow-y-auto">
+            <p className="font-bold text-xs text-green-800 mb-3 uppercase">Order Summary</p>
             {completedOrder?.items.map((item, i) => (
               <div key={i} className="flex justify-between mb-2 text-sm">
-                <span>{item.weight} × {item.quantity}</span>
-                <span className="font-bold">₹{item.price * item.quantity}</span>
+                <span className="text-gray-700">{item.weight} × {item.quantity}</span>
+                <span className="font-bold text-gray-900">₹{item.price * item.quantity}</span>
               </div>
             ))}
-            <div className="border-t-2 border-green-300 pt-2 flex justify-between mt-2">
-              <span className="font-black">Total</span>
+            <div className="border-t-2 border-green-300 pt-3 mt-3 flex justify-between">
+              <span className="font-black text-gray-800">Total Amount</span>
               <span className="text-xl font-black text-green-700">₹{completedOrder?.total}</span>
             </div>
           </div>
 
-          <button
-            onClick={() => navigate('/')}
-            className="w-full bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-bold py-3 rounded-xl transition"
-          >
-            Back to Home
-          </button>
+          <div className="grid grid-cols-2 gap-3 mb-4">
+            <button
+              onClick={downloadInvoice}
+              className="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-bold py-3 rounded-xl transition flex items-center justify-center gap-2"
+            >
+              <Download size={18} strokeWidth={2.5} />
+              Invoice
+            </button>
+            
+            <button
+              onClick={() => navigate('/')}
+              className="bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-3 rounded-xl transition flex items-center justify-center gap-2"
+            >
+              <X size={18} strokeWidth={2.5} />
+              Close
+            </button>
+          </div>
+
+          <p className="text-xs text-gray-500">Invoice #: {completedOrder?.id.toString().padStart(6, '0')}</p>
         </motion.div>
       </div>
     );
