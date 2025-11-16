@@ -1,10 +1,12 @@
 import React, { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { ShoppingCart, Check, Shield, Award, Sparkles, Zap, PackageCheck } from 'lucide-react';
+import { ShoppingCart, Check, Shield, Award, Sparkles, Zap, PackageCheck, LogIn } from 'lucide-react';
 import OrderForm from './OrderForm';
+import GoogleAuth from './GoogleAuth'; // ✅ Import GoogleAuth
 
-const ProductCard = ({ product }) => {
+const ProductCard = ({ product, user }) => { // ✅ Accept user prop
   const [isOrderFormOpen, setIsOrderFormOpen] = useState(false);
+  const [isAuthOpen, setIsAuthOpen] = useState(false); // ✅ Auth modal state
   
   // ✅ Default benefits if none provided
   const defaultBenefits = [
@@ -60,6 +62,17 @@ const ProductCard = ({ product }) => {
   const inStock = is_active !== false;
   const displayBenefits = (benefits && benefits.length > 0) ? benefits : defaultBenefits;
 
+  // ✅ Handle Order Click - Check if user is logged in
+  const handleOrderClick = () => {
+    if (!user) {
+      // User not logged in - Open GoogleAuth modal
+      setIsAuthOpen(true);
+    } else {
+      // User logged in - Open order form
+      setIsOrderFormOpen(true);
+    }
+  };
+
   return (
     <>
       <motion.div
@@ -90,7 +103,7 @@ const ProductCard = ({ product }) => {
             />
           </div>
           
-          {/* Discount Badge - Icon Only */}
+          {/* Discount Badge */}
           {discount > 0 && (
             <div className="absolute top-3 left-3 bg-gradient-to-r from-red-500 to-red-600 text-white px-3 py-1.5 rounded-full text-xs font-black shadow-lg flex items-center gap-1">
               <Zap size={14} strokeWidth={3} />
@@ -98,7 +111,7 @@ const ProductCard = ({ product }) => {
             </div>
           )}
           
-          {/* Quality Badges - Clean Icons */}
+          {/* Quality Badges */}
           <div className="absolute top-3 right-3 flex flex-col gap-2">
             <div className="bg-green-500 text-white p-1.5 rounded-full shadow-lg" title="100% Pure">
               <Shield size={16} strokeWidth={2.5} />
@@ -107,6 +120,14 @@ const ProductCard = ({ product }) => {
               <Award size={16} strokeWidth={2.5} />
             </div>
           </div>
+
+          {/* ✅ Login Required Badge (if not logged in) */}
+          {!user && (
+            <div className="absolute bottom-3 left-3 right-3 bg-amber-500/95 backdrop-blur-sm text-white px-3 py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-2 shadow-lg">
+              <LogIn size={14} strokeWidth={3} />
+              <span>Login to Order</span>
+            </div>
+          )}
         </div>
 
         <div className="p-6">
@@ -115,7 +136,7 @@ const ProductCard = ({ product }) => {
           
           <p className="text-gray-600 text-sm mb-4 line-clamp-2">{description}</p>
 
-          {/* Benefits Badges - Clean Icons */}
+          {/* Benefits Badges */}
           <div className="mb-4">
             <div className="flex items-center gap-1.5 mb-2">
               <Sparkles size={14} className="text-amber-500" strokeWidth={2.5} />
@@ -165,40 +186,60 @@ const ProductCard = ({ product }) => {
             </div>
           </div>
 
-          {/* ✅ ENHANCED ORDER BUTTON */}
+          {/* ✅ ORDER BUTTON - Opens Auth if not logged in */}
           <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
-            onClick={() => setIsOrderFormOpen(true)}
+            onClick={handleOrderClick} // ✅ Changed to handleOrderClick
             disabled={!inStock}
             className={`
               w-full py-3.5 px-6 rounded-xl font-bold text-base
               flex items-center justify-center gap-2.5
               transition-all duration-300 shadow-lg hover:shadow-xl
               ${inStock 
-                ? 'bg-gradient-to-r from-orange-500 via-amber-500 to-orange-500 hover:from-orange-600 hover:via-amber-600 hover:to-orange-600 text-white' 
+                ? user 
+                  ? 'bg-gradient-to-r from-orange-500 via-amber-500 to-orange-500 hover:from-orange-600 hover:via-amber-600 hover:to-orange-600 text-white'
+                  : 'bg-gradient-to-r from-blue-500 via-indigo-500 to-blue-500 hover:from-blue-600 hover:via-indigo-600 hover:to-blue-600 text-white'
                 : 'bg-gray-300 text-gray-500 cursor-not-allowed opacity-60'
               }
             `}
           >
-            <ShoppingCart size={22} strokeWidth={2.5} />
-            <span className="font-black tracking-wide">
-              {inStock ? 'Order Now' : 'Out of Stock'}
-            </span>
+            {!user ? (
+              <>
+                <LogIn size={22} strokeWidth={2.5} />
+                <span className="font-black tracking-wide">Login to Order</span>
+              </>
+            ) : (
+              <>
+                <ShoppingCart size={22} strokeWidth={2.5} />
+                <span className="font-black tracking-wide">
+                  {inStock ? 'Order Now' : 'Out of Stock'}
+                </span>
+              </>
+            )}
           </motion.button>
         </div>
       </motion.div>
 
-      <OrderForm
-        isOpen={isOrderFormOpen}
-        onClose={() => setIsOrderFormOpen(false)}
-        product={{
-          ...product,
-          image: decodedImage,
-          price: price,
-          originalPrice: original_price,
-          inStock: inStock
-        }}
+      {/* ✅ Order Form Modal (Only if logged in) */}
+      {user && (
+        <OrderForm
+          isOpen={isOrderFormOpen}
+          onClose={() => setIsOrderFormOpen(false)}
+          product={{
+            ...product,
+            image: decodedImage,
+            price: price,
+            originalPrice: original_price,
+            inStock: inStock
+          }}
+        />
+      )}
+
+      {/* ✅ Google Auth Modal (If not logged in) */}
+      <GoogleAuth 
+        isOpen={isAuthOpen} 
+        onClose={() => setIsAuthOpen(false)} 
       />
     </>
   );
