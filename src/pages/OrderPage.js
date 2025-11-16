@@ -93,7 +93,7 @@ const OrderPage = () => {
     }, 0);
   };
 
-  // ✅ Professional Invoice Generator
+  // ✅ FIXED - Professional Invoice with Proper Rupee Symbol
   const downloadInvoice = () => {
     if (!completedOrder) return;
     
@@ -132,7 +132,7 @@ const OrderPage = () => {
       // Customer details box
       let yPos = 65;
       doc.setFillColor(248, 250, 252);
-      doc.rect(15, yPos, 180, 35, 'F');
+      doc.rect(15, yPos, 180, 40, 'F');
       
       doc.setTextColor(0, 0, 0);
       doc.setFont('helvetica', 'bold');
@@ -148,7 +148,7 @@ const OrderPage = () => {
       doc.text(addressLines, 20, yPos + 27);
       
       // Table header
-      yPos = 115;
+      yPos = 120;
       doc.setFillColor(255, 140, 0);
       doc.rect(15, yPos, pageWidth - 30, 10, 'F');
       
@@ -156,9 +156,9 @@ const OrderPage = () => {
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(10);
       doc.text('PRODUCT', 20, yPos + 7);
-      doc.text('QTY', 105, yPos + 7);
-      doc.text('PRICE', 125, yPos + 7);
-      doc.text('AMOUNT', 165, yPos + 7);
+      doc.text('QTY', 110, yPos + 7);
+      doc.text('PRICE', 135, yPos + 7);
+      doc.text('AMOUNT', 170, yPos + 7);
       
       // Table rows
       yPos += 12;
@@ -176,10 +176,11 @@ const OrderPage = () => {
         const itemTotal = item.price * item.quantity;
         subtotal += itemTotal;
         
+        // ✅ Use Rs. instead of ₹ symbol for PDF compatibility
         doc.text(`${item.name} (${item.weight})`, 20, yPos + 5);
-        doc.text(item.quantity.toString(), 110, yPos + 5);
-        doc.text(`₹${item.price}`, 125, yPos + 5);
-        doc.text(`₹${itemTotal}`, 165, yPos + 5);
+        doc.text(item.quantity.toString(), 115, yPos + 5);
+        doc.text(`Rs.${item.price}`, 135, yPos + 5);
+        doc.text(`Rs.${itemTotal}`, 170, yPos + 5);
         
         yPos += 10;
       });
@@ -189,13 +190,13 @@ const OrderPage = () => {
       doc.setDrawColor(200, 200, 200);
       doc.line(15, yPos, pageWidth - 15, yPos);
       
-      yPos += 8;
+      yPos += 10;
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(11);
       
       // Subtotal
       doc.text('Subtotal:', 135, yPos);
-      doc.text(`₹${subtotal}`, 165, yPos);
+      doc.text(`Rs.${subtotal}`, 170, yPos);
       
       yPos += 8;
       
@@ -203,8 +204,9 @@ const OrderPage = () => {
       if (calculateSavings() > 0) {
         doc.setTextColor(34, 197, 94);
         doc.text('You Saved:', 135, yPos);
-        doc.text(`- ₹${calculateSavings()}`, 165, yPos);
-        yPos += 8;
+        doc.text(`- Rs.${calculateSavings()}`, 170, yPos);
+        yPos += 10;
+        doc.setTextColor(0, 0, 0);
       }
       
       // Total
@@ -214,14 +216,15 @@ const OrderPage = () => {
       doc.setTextColor(255, 140, 0);
       doc.setFontSize(14);
       doc.text('TOTAL:', 135, yPos + 3);
-      doc.text(`₹${completedOrder.total}`, 165, yPos + 3);
+      doc.text(`Rs.${completedOrder.total}`, 170, yPos + 3);
       
       // Footer
       yPos = 270;
       doc.setTextColor(100, 100, 100);
       doc.setFontSize(9);
-      doc.setFont('helvetica', 'normal');
+      doc.setFont('helvetica', 'italic');
       doc.text('Thank you for your order!', pageWidth / 2, yPos, { align: 'center' });
+      doc.setFont('helvetica', 'normal');
       doc.text('For any queries, contact: +91 8603530133', pageWidth / 2, yPos + 5, { align: 'center' });
       
       // Terms
@@ -365,7 +368,7 @@ const OrderPage = () => {
             <p className="font-bold text-xs text-green-800 mb-3 uppercase">Order Summary</p>
             {completedOrder?.items.map((item, i) => (
               <div key={i} className="flex justify-between mb-2 text-sm">
-                <span className="text-gray-700">{item.weight} × {item.quantity}</span>
+                <span className="text-gray-700">{item.name} ({item.weight}) × {item.quantity}</span>
                 <span className="font-bold text-gray-900">₹{item.price * item.quantity}</span>
               </div>
             ))}
@@ -373,12 +376,19 @@ const OrderPage = () => {
               <span className="font-black text-gray-800">Total Amount</span>
               <span className="text-xl font-black text-green-700">₹{completedOrder?.total}</span>
             </div>
+            {calculateSavings() > 0 && (
+              <div className="mt-2 text-center">
+                <span className="inline-block bg-green-100 text-green-700 text-xs font-bold px-3 py-1 rounded-full">
+                  You Saved: ₹{calculateSavings()}
+                </span>
+              </div>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-3 mb-4">
             <button
               onClick={downloadInvoice}
-              className="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-bold py-3 rounded-xl transition flex items-center justify-center gap-2"
+              className="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-bold py-3 rounded-xl transition flex items-center justify-center gap-2 shadow-lg"
             >
               <Download size={18} strokeWidth={2.5} />
               Invoice
