@@ -2,7 +2,6 @@ import React, { useState, useEffect, memo, useCallback } from 'react';
 import { Star, Award, Shield, Truck, ArrowRight, Play, ChevronLeft, ChevronRight, BadgeCheck, MapPin, Phone, User, Edit2, X } from 'lucide-react';
 import { useAuth } from '../App';
 import { supabase } from '../supabaseClient';
-import OrderForm from './OrderForm';
 
 // Memoized Slide Component
 const Slide = memo(({ src, alt }) => (
@@ -12,7 +11,7 @@ const Slide = memo(({ src, alt }) => (
 ));
 Slide.displayName = 'Slide';
 
-// Edit Profile Modal Component - Ultra Compact for Smallest Screens
+// Edit Profile Modal Component
 const EditProfileModal = ({ user, isOpen, onClose, onUpdate }) => {
   const [formData, setFormData] = useState({
     name: user?.user_metadata?.name || user?.user_metadata?.full_name || '',
@@ -26,7 +25,6 @@ const EditProfileModal = ({ user, isOpen, onClose, onUpdate }) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  // Get Current Location Address
   const getCurrentLocation = async () => {
     setGettingLocation(true);
     
@@ -110,7 +108,6 @@ const EditProfileModal = ({ user, isOpen, onClose, onUpdate }) => {
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-3">
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm max-h-[95vh] overflow-y-auto">
         
-        {/* Compact Header */}
         <div className="sticky top-0 bg-gradient-to-r from-amber-500 to-orange-500 px-4 py-3 rounded-t-xl flex items-center justify-between z-10">
           <h3 className="text-base font-bold text-white">Edit Profile</h3>
           <button 
@@ -121,10 +118,8 @@ const EditProfileModal = ({ user, isOpen, onClose, onUpdate }) => {
           </button>
         </div>
 
-        {/* Compact Form */}
         <form onSubmit={handleSubmit} className="p-4 space-y-3">
           
-          {/* Name - Compact */}
           <div>
             <label className="block text-xs font-bold text-gray-700 mb-1.5">Full Name *</label>
             <input
@@ -138,7 +133,6 @@ const EditProfileModal = ({ user, isOpen, onClose, onUpdate }) => {
             />
           </div>
 
-          {/* Phone - Compact */}
           <div>
             <label className="block text-xs font-bold text-gray-700 mb-1.5">Phone Number *</label>
             <div className="flex gap-2">
@@ -159,7 +153,6 @@ const EditProfileModal = ({ user, isOpen, onClose, onUpdate }) => {
             </div>
           </div>
 
-          {/* Address - Compact */}
           <div>
             <label className="block text-xs font-bold text-gray-700 mb-1.5">Address *</label>
             <textarea
@@ -172,7 +165,6 @@ const EditProfileModal = ({ user, isOpen, onClose, onUpdate }) => {
               placeholder="Full address with PIN"
             />
             
-            {/* Location Button - Ultra Compact */}
             <button
               type="button"
               onClick={getCurrentLocation}
@@ -193,7 +185,6 @@ const EditProfileModal = ({ user, isOpen, onClose, onUpdate }) => {
             </button>
           </div>
 
-          {/* Submit - Compact */}
           <button
             type="submit"
             disabled={loading || gettingLocation}
@@ -218,7 +209,6 @@ const Hero = () => {
   const { user } = useAuth();
   const [currentSlide, setCurrentSlide] = useState(0);
   const [imagesLoaded, setImagesLoaded] = useState(false);
-  const [isOrderFormOpen, setIsOrderFormOpen] = useState(false);
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
   const [loadingProgress, setLoadingProgress] = useState(0);
   
@@ -231,16 +221,6 @@ const Hero = () => {
     'https://radarofc.onrender.com/6.jpg',
     'https://radarofc.onrender.com/7.jpg',
   ];
-
-  const heroProduct = {
-    name: 'Premium Pure Ghee',
-    weight: '250gms',
-    price: 299,
-    originalPrice: 349,
-    image: 'https://radarofc.onrender.com/sb1.jpg',
-    description: 'Pure and natural ghee made with traditional methods',
-    inStock: true
-  };
 
   const stats = [
     { number: '2k+', label: 'Happy Customers' },
@@ -288,8 +268,9 @@ const Hero = () => {
     return () => clearInterval(interval);
   }, [images.length, imagesLoaded]);
 
+  // ✅ Opens /order in new tab
   const handleShopNow = useCallback(() => {
-    setIsOrderFormOpen(true);
+    window.open('/order', '_blank');
   }, []);
 
   const handleWatchStory = useCallback(() => {
@@ -305,8 +286,12 @@ const Hero = () => {
   }, [images.length]);
 
   const handleProfileUpdate = () => {
-    // Refresh user data after update
     supabase.auth.getSession();
+  };
+
+  // ✅ All order buttons open /order in new tab
+  const handleOrderClick = () => {
+    window.open('/order', '_blank');
   };
 
   return (
@@ -319,116 +304,107 @@ const Hero = () => {
         </div>
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-10 pb-12 sm:pb-16">
-  {/* 🔥 MOBILE-FIRST BLINKIT-STYLE DELIVERY BAR */}
-{user && (userName || userPhone || userAddress) && (
-  <div className="mb-4 sm:mb-6 animate-slideDown">
-    <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-      
-      {/* Top Section - Compact Welcome */}
-      <div className="bg-gradient-to-r from-amber-50 to-orange-50 px-3 sm:px-5 py-3 sm:py-3.5 border-b border-orange-100">
-        <div className="flex items-center gap-2.5 sm:gap-3">
-          {/* Avatar - Smaller on mobile */}
-          <div className="relative flex-shrink-0">
-            {user.user_metadata?.avatar_url ? (
-              <img 
-                src={user.user_metadata.avatar_url} 
-                alt="User" 
-                className="w-10 h-10 sm:w-12 sm:h-12 rounded-full border-2 border-orange-300 shadow-md"
-              />
-            ) : (
-              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center shadow-md">
-                <User className="text-white" size={18} strokeWidth={2.5} />
-              </div>
-            )}
-            {/* Online indicator */}
-            <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 sm:w-4 sm:h-4 bg-green-500 border-2 border-white rounded-full"></div>
-          </div>
-
-          {/* Welcome Text - Responsive */}
-          <div className="flex-1 min-w-0">
-            <p className="text-[10px] sm:text-xs text-gray-500 font-medium">Welcome back</p>
-            <h3 className="text-sm sm:text-base font-bold text-gray-900 truncate leading-tight">
-              {userName || 'Guest User'}
-            </h3>
-          </div>
-
-          {/* Edit Button - Compact on mobile */}
-          <button
-            onClick={() => setIsEditProfileOpen(true)}
-            className="flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 sm:py-2 bg-white hover:bg-gray-50 active:bg-gray-100 border border-gray-200 rounded-lg sm:rounded-xl text-xs sm:text-sm font-semibold text-gray-700 transition-all shadow-sm touch-manipulation"
-          >
-            <Edit2 size={12} className="sm:w-3.5 sm:h-3.5" />
-            <span className="hidden xs:inline">Edit</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Bottom Section - Mobile Stack, Desktop Grid */}
-      <div className="px-3 sm:px-5 py-3 sm:py-4 bg-white space-y-3 sm:space-y-0">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           
-          {/* Delivery Address - Full width on mobile */}
-          {userAddress && (
-            <div 
-              className="flex items-start gap-2.5 sm:gap-3 group cursor-pointer active:bg-gray-50 p-2 -m-2 rounded-lg transition-colors" 
-              onClick={() => setIsEditProfileOpen(true)}
-            >
-              <div className="w-9 h-9 sm:w-10 sm:h-10 bg-green-50 rounded-lg sm:rounded-xl flex items-center justify-center flex-shrink-0 group-hover:bg-green-100 group-active:bg-green-200 transition-colors">
-                <MapPin className="text-green-600" size={16} strokeWidth={2.5} />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-1.5 mb-0.5">
-                  <p className="text-[10px] sm:text-xs font-bold text-green-700 uppercase tracking-wide">Delivering to</p>
-                  <ChevronRight size={10} className="text-gray-400 group-hover:text-green-600 transition-colors" />
+          {/* User Delivery Bar */}
+          {user && (userName || userPhone || userAddress) && (
+            <div className="mb-4 sm:mb-6 animate-slideDown">
+              <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+                
+                <div className="bg-gradient-to-r from-amber-50 to-orange-50 px-3 sm:px-5 py-3 sm:py-3.5 border-b border-orange-100">
+                  <div className="flex items-center gap-2.5 sm:gap-3">
+                    <div className="relative flex-shrink-0">
+                      {user.user_metadata?.avatar_url ? (
+                        <img 
+                          src={user.user_metadata.avatar_url} 
+                          alt="User" 
+                          className="w-10 h-10 sm:w-12 sm:h-12 rounded-full border-2 border-orange-300 shadow-md"
+                        />
+                      ) : (
+                        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center shadow-md">
+                          <User className="text-white" size={18} strokeWidth={2.5} />
+                        </div>
+                      )}
+                      <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 sm:w-4 sm:h-4 bg-green-500 border-2 border-white rounded-full"></div>
+                    </div>
+
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[10px] sm:text-xs text-gray-500 font-medium">Welcome back</p>
+                      <h3 className="text-sm sm:text-base font-bold text-gray-900 truncate leading-tight">
+                        {userName || 'Guest User'}
+                      </h3>
+                    </div>
+
+                    <button
+                      onClick={() => setIsEditProfileOpen(true)}
+                      className="flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 sm:py-2 bg-white hover:bg-gray-50 active:bg-gray-100 border border-gray-200 rounded-lg sm:rounded-xl text-xs sm:text-sm font-semibold text-gray-700 transition-all shadow-sm touch-manipulation"
+                    >
+                      <Edit2 size={12} className="sm:w-3.5 sm:h-3.5" />
+                      <span className="hidden xs:inline">Edit</span>
+                    </button>
+                  </div>
                 </div>
-                <p className="text-xs sm:text-sm font-semibold text-gray-900 line-clamp-2 leading-snug">
-                  {userAddress}
-                </p>
+
+                <div className="px-3 sm:px-5 py-3 sm:py-4 bg-white space-y-3 sm:space-y-0">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    
+                    {userAddress && (
+                      <div 
+                        className="flex items-start gap-2.5 sm:gap-3 group cursor-pointer active:bg-gray-50 p-2 -m-2 rounded-lg transition-colors" 
+                        onClick={() => setIsEditProfileOpen(true)}
+                      >
+                        <div className="w-9 h-9 sm:w-10 sm:h-10 bg-green-50 rounded-lg sm:rounded-xl flex items-center justify-center flex-shrink-0 group-hover:bg-green-100 group-active:bg-green-200 transition-colors">
+                          <MapPin className="text-green-600" size={16} strokeWidth={2.5} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1.5 mb-0.5">
+                            <p className="text-[10px] sm:text-xs font-bold text-green-700 uppercase tracking-wide">Delivering to</p>
+                            <ChevronRight size={10} className="text-gray-400 group-hover:text-green-600 transition-colors" />
+                          </div>
+                          <p className="text-xs sm:text-sm font-semibold text-gray-900 line-clamp-2 leading-snug">
+                            {userAddress}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                    {userPhone && (
+                      <div className="flex items-start gap-2.5 sm:gap-3 p-2 -m-2 rounded-lg">
+                        <div className="w-9 h-9 sm:w-10 sm:h-10 bg-blue-50 rounded-lg sm:rounded-xl flex items-center justify-center flex-shrink-0">
+                          <Phone className="text-blue-600" size={16} strokeWidth={2.5} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[10px] sm:text-xs font-bold text-blue-700 uppercase tracking-wide mb-0.5">Contact Number</p>
+                          <p className="text-xs sm:text-sm font-semibold text-gray-900">
+                            +91 {userPhone}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="mt-3 pt-3 border-t border-gray-100 flex items-center justify-between text-[10px] sm:text-xs">
+                    <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+                      <div className="flex items-center gap-1 sm:gap-1.5">
+                        <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-green-500 rounded-full animate-pulse"></div>
+                        <span className="text-gray-600 font-medium whitespace-nowrap">Active Now</span>
+                      </div>
+                      <div className="h-3 w-px bg-gray-200"></div>
+                      <div className="flex items-center gap-1 sm:gap-1.5">
+                        <Shield className="text-blue-500" size={11} />
+                        <span className="text-gray-600 font-medium whitespace-nowrap">Verified</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1 text-amber-600">
+                      <Star className="text-amber-500 fill-amber-500" size={11} />
+                      <span className="font-bold whitespace-nowrap">Valuable</span>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           )}
 
-          {/* Contact Number - Full width on mobile */}
-          {userPhone && (
-            <div className="flex items-start gap-2.5 sm:gap-3 p-2 -m-2 rounded-lg">
-              <div className="w-9 h-9 sm:w-10 sm:h-10 bg-blue-50 rounded-lg sm:rounded-xl flex items-center justify-center flex-shrink-0">
-                <Phone className="text-blue-600" size={16} strokeWidth={2.5} />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-[10px] sm:text-xs font-bold text-blue-700 uppercase tracking-wide mb-0.5">Contact Number</p>
-                <p className="text-xs sm:text-sm font-semibold text-gray-900">
-                  +91 {userPhone}
-                </p>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Quick Stats Bar - Mobile optimized */}
-        <div className="mt-3 pt-3 border-t border-gray-100 flex items-center justify-between text-[10px] sm:text-xs">
-          <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
-            <div className="flex items-center gap-1 sm:gap-1.5">
-              <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-green-500 rounded-full animate-pulse"></div>
-              <span className="text-gray-600 font-medium whitespace-nowrap">Active Now</span>
-            </div>
-            <div className="h-3 w-px bg-gray-200"></div>
-            <div className="flex items-center gap-1 sm:gap-1.5">
-              <Shield className="text-blue-500" size={11} />
-              <span className="text-gray-600 font-medium whitespace-nowrap">Verified</span>
-            </div>
-          </div>
-          <div className="flex items-center gap-1 text-amber-600">
-            <Star className="text-amber-500 fill-amber-500" size={11} />
-            <span className="font-bold whitespace-nowrap">Valuable</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-)}
-
-
-          {/* Carousel Section */}
+          {/* Carousel */}
           <div className="mb-6 sm:mb-10">
             <div className="relative max-w-5xl mx-auto">
               <div className="relative h-[280px] sm:h-[360px] md:h-[450px] lg:h-[520px] xl:h-[600px] bg-gradient-to-br from-orange-100 to-amber-100 rounded-2xl shadow-xl overflow-hidden">
@@ -543,7 +519,7 @@ const Hero = () => {
                     </div>
 
                     <button
-                      onClick={() => setIsOrderFormOpen(true)}
+                      onClick={handleOrderClick}
                       className="w-full bg-white text-green-600 py-3 sm:py-3.5 rounded-xl font-black text-sm sm:text-base hover:shadow-xl active:scale-95 transition-all flex items-center justify-center gap-2"
                     >
                       Order with Confidence
@@ -673,7 +649,7 @@ const Hero = () => {
                   </div>
                   
                   <button
-                    onClick={() => setIsOrderFormOpen(true)}
+                    onClick={handleOrderClick}
                     className="w-full bg-gradient-to-r from-orange-500 to-amber-500 text-white px-6 py-3 rounded-xl font-bold text-base hover:shadow-xl transition-shadow"
                   >
                     Quick Buy Now
@@ -703,13 +679,6 @@ const Hero = () => {
         isOpen={isEditProfileOpen}
         onClose={() => setIsEditProfileOpen(false)}
         onUpdate={handleProfileUpdate}
-      />
-
-      {/* Order Form */}
-      <OrderForm
-        isOpen={isOrderFormOpen}
-        onClose={() => setIsOrderFormOpen(false)}
-        product={heroProduct}
       />
     </>
   );
