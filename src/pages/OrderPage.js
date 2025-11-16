@@ -532,8 +532,6 @@ const OrderPage = () => {
                     </div>
                     {calculateSavings() > 0 && (
                       <div className="text-right">
-                        <p className="text-xs opacity-90 mb-1">Saved</p>
-                        <p className="text-lg font-black">₹{calculateSavings()}</p>
                       </div>
                     )}
                   </div>
