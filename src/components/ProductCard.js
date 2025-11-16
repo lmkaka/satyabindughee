@@ -1,11 +1,58 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { ShoppingCart, Check } from 'lucide-react'; // ❌ Removed Star, Heart
+import { ShoppingCart, Check } from 'lucide-react';
 import OrderForm from './OrderForm';
 
 const ProductCard = ({ product }) => {
   const [isOrderFormOpen, setIsOrderFormOpen] = useState(false);
-  const discount = Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100);
+  
+  // ✅ Safety check
+  if (!product) {
+    return null;
+  }
+
+  // ✅ Decode Base64 image with memoization
+  const decodedImage = useMemo(() => {
+    let imageUrl = product.image_base64 || product.image;
+    
+    // If no image, use fallback
+    if (!imageUrl) {
+      return 'https://radarofc.onrender.com/IMG_20251106_204751_845-modified.png';
+    }
+    
+    // If already has data:image prefix, return as is
+    if (imageUrl.startsWith('data:image')) {
+      return imageUrl;
+    }
+    
+    // If it's a regular URL (http/https), return as is
+    if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+      return imageUrl;
+    }
+    
+    // Otherwise, assume it's Base64 without prefix - add it
+    return `data:image/jpeg;base64,${imageUrl}`;
+  }, [product.image_base64, product.image]);
+
+  // ✅ Safe destructure with defaults
+  const {
+    id,
+    name = 'Premium Ghee',
+    weight = '250gms',
+    price = 0,
+    original_price = 0,
+    description = 'Premium quality pure ghee made from cow milk',
+    benefits = [],
+    is_active = true
+  } = product;
+
+  // ✅ Calculate discount safely
+  const discount = useMemo(() => {
+    if (!original_price || !price || original_price <= price) return 0;
+    return Math.round(((original_price - price) / original_price) * 100);
+  }, [price, original_price]);
+
+  const inStock = is_active !== false;
 
   return (
     <>
@@ -15,12 +62,12 @@ const ProductCard = ({ product }) => {
         whileHover={{ y: -5 }}
         className="bg-white rounded-xl shadow-lg overflow-hidden card-hover"
       >
-        {/* ✅ FIXED IMAGE CONTAINER - Full Display Without Cutoff */}
+        {/* Image Container with Base64 Decode */}
         <div className="relative">
           <div className="w-full h-64 bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center p-2">
             <img
-              src={product.image}
-              alt={`${product.name} ${product.weight}`}
+              src={decodedImage}
+              alt={`${name} ${weight}`}
               className="max-w-full max-h-full object-contain rounded-lg"
               style={{
                 objectFit: 'contain',
@@ -31,63 +78,53 @@ const ProductCard = ({ product }) => {
                 maxHeight: '100%'
               }}
               onError={(e) => {
-                console.log('Product image failed to load, using fallback...');
-                e.target.outerHTML = `
-                  <div class="w-full h-60 flex items-center justify-center bg-gradient-to-br from-amber-100 to-orange-100 rounded-lg">
-                    <div class="text-center">
-                      <div class="w-32 h-40 mx-auto mb-4 bg-gradient-to-b from-yellow-400 via-amber-500 to-orange-600 rounded-2xl shadow-xl relative overflow-hidden border-2 border-amber-300">
-                        <div class="absolute top-0 left-2 right-2 h-6 bg-gradient-to-r from-yellow-300 to-amber-400 rounded-lg shadow-md"></div>
-                        <div class="absolute bottom-2 left-2 right-2 top-8 bg-gradient-to-b from-amber-300/90 to-orange-400/90 rounded-xl shadow-inner"></div>
-                        <div class="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent"></div>
-                        <div class="absolute bottom-6 left-2 right-2 h-12 bg-white/15 rounded-md flex items-center justify-center">
-                          <div class="text-white font-bold text-xs">SB Ghee</div>
-                        </div>
-                      </div>
-                      <h4 class="text-lg font-bold text-amber-800">${product.name || 'Premium Ghee'}</h4>
-                    </div>
-                  </div>
-                `;
+                console.log('Image failed to load, using fallback');
+                e.target.src = 'https://radarofc.onrender.com/IMG_20251106_204751_845-modified.png';
               }}
             />
           </div>
           
-          {/* ✅ Only Discount Badge - NO Heart Button */}
-          <div className="absolute top-4 left-4 bg-red-500 text-white px-2 py-1 rounded-full text-sm font-semibold">
-            {discount}% OFF
-          </div>
-          {/* ❌ REMOVED Heart Button */}
+          {/* Discount Badge */}
+          {discount > 0 && (
+            <div className="absolute top-4 left-4 bg-red-500 text-white px-2 py-1 rounded-full text-sm font-semibold">
+              {discount}% OFF
+            </div>
+          )}
         </div>
 
         <div className="p-6">
-          <h3 className="font-playfair font-semibold text-xl mb-2">{product.name}</h3>
-          <p className="text-2xl font-bold text-primary-600 mb-4">{product.weight}</p>
+          <h3 className="font-playfair font-semibold text-xl mb-2">{name}</h3>
+          <p className="text-2xl font-bold text-primary-600 mb-4">{weight}</p>
           
-          {/* ❌ REMOVED Reviews & Stars Section */}
-          
-          <p className="text-gray-600 text-sm mb-4">{product.description}</p>
+          <p className="text-gray-600 text-sm mb-4">{description}</p>
 
-          <div className="mb-4">
-            <h4 className="font-semibold mb-2">Benefits:</h4>
-            <div className="flex flex-wrap gap-2">
-              {product.benefits.map((benefit, index) => (
-                <span
-                  key={index}
-                  className="flex items-center gap-1 text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full"
-                >
-                  <Check size={12} />
-                  {benefit}
-                </span>
-              ))}
+          {/* Benefits Section - Safe */}
+          {benefits && benefits.length > 0 && (
+            <div className="mb-4">
+              <h4 className="font-semibold mb-2">Benefits:</h4>
+              <div className="flex flex-wrap gap-2">
+                {benefits.map((benefit, index) => (
+                  <span
+                    key={index}
+                    className="flex items-center gap-1 text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full"
+                  >
+                    <Check size={12} />
+                    {benefit}
+                  </span>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <span className="text-2xl font-bold text-gray-900">₹{product.price}</span>
-              <span className="text-lg text-gray-500 line-through">₹{product.originalPrice}</span>
+              <span className="text-2xl font-bold text-gray-900">₹{price}</span>
+              {original_price > price && (
+                <span className="text-lg text-gray-500 line-through">₹{original_price}</span>
+              )}
             </div>
-            <span className="text-sm text-green-600 font-semibold">
-              {product.inStock ? 'In Stock' : 'Out of Stock'}
+            <span className={`text-sm font-semibold ${inStock ? 'text-green-600' : 'text-red-600'}`}>
+              {inStock ? 'In Stock' : 'Out of Stock'}
             </span>
           </div>
 
@@ -95,7 +132,7 @@ const ProductCard = ({ product }) => {
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             onClick={() => setIsOrderFormOpen(true)}
-            disabled={!product.inStock}
+            disabled={!inStock}
             className="w-full btn-primary flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <ShoppingCart size={20} />
@@ -107,7 +144,13 @@ const ProductCard = ({ product }) => {
       <OrderForm
         isOpen={isOrderFormOpen}
         onClose={() => setIsOrderFormOpen(false)}
-        product={product}
+        product={{
+          ...product,
+          image: decodedImage, // ✅ Pass decoded image to OrderForm
+          price: price,
+          originalPrice: original_price,
+          inStock: inStock
+        }}
       />
     </>
   );
