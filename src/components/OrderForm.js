@@ -1,144 +1,20 @@
 import React, { useState, useEffect, memo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, User, Phone, MapPin, ShoppingCart, Download, CheckCircle, AlertCircle, Package, Sparkles, Edit2 } from 'lucide-react';
+import { X, ShoppingCart, Download, CheckCircle, AlertCircle, Package, Sparkles, ChevronDown, Plus, Minus, Trash2 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../App';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 
-// ✅ Product Card Component (unchanged)
-const ProductCard = memo(({ variant, isSelected, quantity, onToggle }) => {
-  const discount = Math.round(((variant.originalPrice - variant.price) / variant.originalPrice) * 100);
-  
-  return (
-    <motion.button
-      type="button"
-      onClick={() => onToggle(variant)}
-      whileTap={{ scale: 0.96 }}
-      className={`relative w-full rounded-lg overflow-hidden transition-all ${
-        isSelected ? 'ring-2 ring-orange-500 shadow-md' : 'ring-1 ring-gray-200'
-      }`}
-    >
-      {discount > 0 && (
-        <div className="absolute top-1.5 left-1.5 z-10 bg-red-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full">
-          {discount}% OFF
-        </div>
-      )}
-
-      <AnimatePresence>
-        {isSelected && (
-          <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            exit={{ scale: 0 }}
-            className="absolute top-1.5 right-1.5 z-10 w-5 h-5 bg-orange-500 rounded-full flex items-center justify-center"
-          >
-            <CheckCircle size={12} className="text-white" strokeWidth={3} />
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      <div className={`p-2 ${isSelected ? 'bg-gradient-to-br from-orange-50 to-amber-50' : 'bg-white'}`}>
-        <div className="w-full aspect-square bg-gradient-to-br from-orange-100 to-amber-100 rounded-md mb-1.5 flex items-center justify-center">
-          <Package size={20} className="text-orange-600" strokeWidth={1.5} />
-        </div>
-
-        <h3 className={`text-xs font-black mb-0.5 ${isSelected ? 'text-orange-600' : 'text-gray-900'}`}>
-          {variant.weight}
-        </h3>
-        
-        <div className="flex items-baseline gap-1 mb-1">
-          <span className={`text-sm font-black ${isSelected ? 'text-orange-600' : 'text-gray-900'}`}>
-            ₹{variant.price}
-          </span>
-          <span className="text-[9px] text-gray-400 line-through">
-            ₹{variant.originalPrice}
-          </span>
-        </div>
-
-        {isSelected && quantity > 0 && (
-          <div className="pt-1 border-t border-orange-200">
-            <div className="flex justify-between items-center text-[10px]">
-              <span className="text-gray-600 font-semibold">Qty: {quantity}</span>
-              <span className="text-orange-600 font-black">₹{variant.price * quantity}</span>
-            </div>
-          </div>
-        )}
-      </div>
-
-      <div className={`py-1 text-center text-[9px] font-bold ${
-        isSelected ? 'bg-orange-500 text-white' : 'bg-gray-100 text-gray-600'
-      }`}>
-        {isSelected ? '✓ SELECTED' : 'TAP TO SELECT'}
-      </div>
-    </motion.button>
-  );
-});
-
-ProductCard.displayName = 'ProductCard';
-
-// ✅ Cart Item Component (unchanged)
-const CartItem = memo(({ item, onUpdateQuantity }) => {
-  return (
-    <motion.div
-      layout
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="bg-white rounded-md p-2 flex items-center gap-1.5 border border-orange-100"
-    >
-      <div className="w-8 h-8 bg-gradient-to-br from-orange-100 to-amber-100 rounded-md flex items-center justify-center flex-shrink-0">
-        <Package className="text-orange-600" size={14} />
-      </div>
-      
-      <div className="flex-1 min-w-0">
-        <p className="font-bold text-[11px] text-gray-900 truncate">{item.weight}</p>
-        <p className="text-[9px] text-gray-500">₹{item.price} each</p>
-      </div>
-
-      <div className="flex items-center gap-0.5 bg-orange-50 rounded-md px-1 py-0.5">
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            onUpdateQuantity(item.id, item.quantity - 1);
-          }}
-          className="w-5 h-5 bg-white rounded flex items-center justify-center text-orange-600 font-black text-sm active:bg-orange-100"
-        >
-          −
-        </button>
-        
-        <span className="w-5 text-center font-black text-[10px]">{item.quantity}</span>
-        
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            onUpdateQuantity(item.id, item.quantity + 1);
-          }}
-          className="w-5 h-5 bg-white rounded flex items-center justify-center text-orange-600 font-black text-sm active:bg-orange-100"
-        >
-          +
-        </button>
-      </div>
-
-      <div className="text-right min-w-[45px]">
-        <p className="font-black text-xs text-gray-900">₹{item.price * item.quantity}</p>
-      </div>
-    </motion.div>
-  );
-});
-
-CartItem.displayName = 'CartItem';
-
-const OrderForm = ({ isOpen, onClose, product }) => {
-  const { user } = useAuth(); // Get logged-in user
+const OrderForm = ({ isOpen, onClose }) => {
+  const { user } = useAuth();
   
   const [cart, setCart] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState(null);
   const [completedOrder, setCompletedOrder] = useState(null);
+  const [selectedVariant, setSelectedVariant] = useState('');
 
   const productVariants = [
     { id: 1, name: 'Premium Pure Ghee', weight: '250gms', price: 299, originalPrice: 349 },
@@ -148,38 +24,46 @@ const OrderForm = ({ isOpen, onClose, product }) => {
     { id: 5, name: 'Premium Pure Ghee', weight: '5kg', price: 4799, originalPrice: 5299 }
   ];
 
-  // Get user data from auth
   const userName = user?.user_metadata?.name || user?.user_metadata?.full_name || 'Guest';
   const userPhone = user?.user_metadata?.phone || 'N/A';
   const userAddress = user?.user_metadata?.address || 'N/A';
 
-  // ✅ Browser Back Button Handler
   useEffect(() => {
     if (isOpen) {
       window.history.pushState({ modalOpen: true }, '');
-      
       const handlePopState = (event) => {
         if (event.state?.modalOpen) {
           onClose();
           window.history.pushState({ modalOpen: false }, '');
         }
       };
-
       window.addEventListener('popstate', handlePopState);
       return () => window.removeEventListener('popstate', handlePopState);
     }
   }, [isOpen, onClose]);
 
-  const toggleCartItem = useCallback((variant) => {
+  const addToCart = () => {
+    if (!selectedVariant) {
+      setError('Please select a product');
+      return;
+    }
+    
+    const variant = productVariants.find(v => v.id === parseInt(selectedVariant));
+    if (!variant) return;
+
     setCart(prevCart => {
       const existingItem = prevCart.find(item => item.id === variant.id);
       if (existingItem) {
-        return prevCart.filter(item => item.id !== variant.id);
+        return prevCart.map(item =>
+          item.id === variant.id ? { ...item, quantity: item.quantity + 1 } : item
+        );
       } else {
         return [...prevCart, { ...variant, quantity: 1 }];
       }
     });
-  }, []);
+    setSelectedVariant('');
+    setError(null);
+  };
 
   const updateQuantity = useCallback((variantId, newQuantity) => {
     if (newQuantity < 1) {
@@ -187,10 +71,13 @@ const OrderForm = ({ isOpen, onClose, product }) => {
       return;
     }
     if (newQuantity > 10) return;
-    
     setCart(prevCart => prevCart.map(item =>
       item.id === variantId ? { ...item, quantity: newQuantity } : item
     ));
+  }, []);
+
+  const removeFromCart = useCallback((variantId) => {
+    setCart(prevCart => prevCart.filter(item => item.id !== variantId));
   }, []);
 
   const calculateTotal = useCallback(() => {
@@ -283,12 +170,11 @@ const OrderForm = ({ isOpen, onClose, product }) => {
 
   const handleSubmit = async () => {
     if (cart.length === 0) {
-      setError('Please select at least one product');
+      setError('Please add at least one product');
       return;
     }
 
-    // Check if user data is available
-    if (!user || !userName || !userPhone || !userAddress || userName === 'Guest' || userPhone === 'N/A' || userAddress === 'N/A') {
+    if (!user || userName === 'Guest' || userPhone === 'N/A' || userAddress === 'N/A') {
       setError('Please complete your profile first');
       return;
     }
@@ -361,6 +247,7 @@ const OrderForm = ({ isOpen, onClose, product }) => {
     setIsSuccess(false);
     setCompletedOrder(null);
     setError(null);
+    setSelectedVariant('');
     onClose();
   }, [onClose]);
 
@@ -372,7 +259,7 @@ const OrderForm = ({ isOpen, onClose, product }) => {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-50 flex items-start justify-center pt-20 sm:pt-0 sm:items-center"
+        className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
       >
         <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={handleClose} />
         
@@ -381,21 +268,21 @@ const OrderForm = ({ isOpen, onClose, product }) => {
           animate={{ y: 0 }}
           exit={{ y: "100%" }}
           transition={{ type: "spring", damping: 30, stiffness: 400 }}
-          className="relative bg-white w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl shadow-2xl flex flex-col"
-          style={{ maxHeight: 'calc(100vh - 5rem)' }}
+          className="relative bg-white w-full sm:max-w-lg rounded-t-3xl sm:rounded-2xl shadow-2xl flex flex-col"
+          style={{ maxHeight: '92vh' }}
         >
           {!isSuccess ? (
             <>
-              {/* COMPACT STICKY HEADER */}
-              <div className="sticky top-0 z-50 bg-gradient-to-r from-orange-500 to-amber-500 px-3 py-2 flex items-center justify-between rounded-t-2xl shadow-md">
-                <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 bg-white/20 rounded-lg flex items-center justify-center">
-                    <ShoppingCart size={14} className="text-white" strokeWidth={2.5} />
+              {/* HEADER */}
+              <div className="bg-gradient-to-r from-orange-500 to-amber-500 px-4 py-3 rounded-t-3xl sm:rounded-t-2xl flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-10 h-10 bg-white/20 backdrop-blur rounded-xl flex items-center justify-center">
+                    <ShoppingCart className="text-white" size={20} strokeWidth={2.5} />
                   </div>
                   <div>
-                    <h3 className="text-xs font-black text-white leading-tight">Place Order</h3>
+                    <h3 className="text-sm font-black text-white">Place Order</h3>
                     {cart.length > 0 && (
-                      <p className="text-[8px] text-white/90 font-bold leading-tight">
+                      <p className="text-[10px] text-white/90 font-semibold">
                         {cart.reduce((sum, item) => sum + item.quantity, 0)} items • ₹{calculateTotal()}
                       </p>
                     )}
@@ -404,25 +291,25 @@ const OrderForm = ({ isOpen, onClose, product }) => {
                 
                 <button
                   onClick={handleClose}
-                  className="w-8 h-8 bg-white rounded-lg hover:bg-gray-100 transition-colors flex items-center justify-center flex-shrink-0 shadow-sm"
+                  className="w-9 h-9 bg-white rounded-xl hover:bg-gray-100 active:bg-gray-200 transition flex items-center justify-center"
                 >
-                  <X size={18} className="text-orange-600" strokeWidth={3} />
+                  <X className="text-orange-600" size={20} strokeWidth={3} />
                 </button>
               </div>
 
-              {/* SCROLLABLE CONTENT */}
-              <div className="flex-1 overflow-y-auto px-3 py-2.5 space-y-2.5" style={{ WebkitOverflowScrolling: 'touch' }}>
+              {/* CONTENT */}
+              <div className="flex-1 overflow-y-auto p-4 space-y-3" style={{ WebkitOverflowScrolling: 'touch' }}>
                 
-                {/* Auto-Filled User Info - Compact Display */}
+                {/* User Info */}
                 {user && (
-                  <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-2 border border-blue-200">
-                    <div className="flex items-center justify-between mb-1">
-                      <h4 className="text-[10px] font-black text-blue-900 flex items-center gap-1">
-                        <User size={10} className="text-blue-600" />
-                        Delivery Info
-                      </h4>
+                  <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-3 border-2 border-blue-200">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-7 h-7 bg-blue-500 rounded-lg flex items-center justify-center">
+                        <Package className="text-white" size={14} />
+                      </div>
+                      <h4 className="text-xs font-black text-blue-900">Delivery Details</h4>
                     </div>
-                    <div className="space-y-0.5 text-[9px]">
+                    <div className="space-y-1 text-[10px]">
                       <p className="text-blue-900 font-bold">{userName}</p>
                       <p className="text-blue-700">+91 {userPhone}</p>
                       <p className="text-blue-700 line-clamp-2">{userAddress}</p>
@@ -430,60 +317,123 @@ const OrderForm = ({ isOpen, onClose, product }) => {
                   </div>
                 )}
 
-                {/* Products */}
+                {/* Product Selector */}
                 <div>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <h4 className="text-[11px] font-black text-gray-900 flex items-center gap-1">
-                      <Sparkles size={11} className="text-orange-500" />
-                      Select Products
-                    </h4>
-                    {cart.length > 0 && (
-                      <span className="text-[8px] font-bold text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded-full">
-                        {cart.length} selected
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="grid grid-cols-3 gap-1.5">
-                    {productVariants.map((variant) => {
-                      const cartItem = cart.find(item => item.id === variant.id);
-                      return (
-                        <ProductCard
-                          key={variant.id}
-                          variant={variant}
-                          isSelected={!!cartItem}
-                          quantity={cartItem?.quantity || 0}
-                          onToggle={toggleCartItem}
-                        />
-                      );
-                    })}
+                  <h4 className="text-xs font-black text-gray-900 mb-2 flex items-center gap-1.5">
+                    <Sparkles className="text-orange-500" size={13} />
+                    Add Products
+                  </h4>
+                  
+                  <div className="flex gap-2">
+                    <div className="relative flex-1">
+                      <select
+                        value={selectedVariant}
+                        onChange={(e) => setSelectedVariant(e.target.value)}
+                        className="w-full appearance-none px-3 py-2.5 pr-10 bg-white border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-300 focus:border-orange-500 outline-none text-xs font-semibold text-gray-900"
+                      >
+                        <option value="">Select Size...</option>
+                        {productVariants.map((variant) => (
+                          <option key={variant.id} value={variant.id}>
+                            {variant.weight} - ₹{variant.price} (Save ₹{variant.originalPrice - variant.price})
+                          </option>
+                        ))}
+                      </select>
+                      <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={16} />
+                    </div>
+                    
+                    <button
+                      onClick={addToCart}
+                      disabled={!selectedVariant}
+                      className="px-4 py-2.5 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 disabled:from-gray-300 disabled:to-gray-300 text-white font-bold rounded-xl transition flex items-center gap-1.5 disabled:cursor-not-allowed"
+                    >
+                      <Plus size={16} strokeWidth={3} />
+                      <span className="text-xs">Add</span>
+                    </button>
                   </div>
                 </div>
+
+                {/* Error */}
+                {error && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="bg-red-50 border-2 border-red-200 rounded-xl p-2.5 flex items-start gap-2"
+                  >
+                    <AlertCircle className="text-red-600 flex-shrink-0" size={14} />
+                    <p className="text-red-700 text-[10px] font-semibold">{error}</p>
+                  </motion.div>
+                )}
 
                 {/* Cart */}
                 {cart.length > 0 && (
                   <div>
-                    <h4 className="text-[11px] font-black text-gray-900 mb-1.5 flex items-center gap-1">
-                      <ShoppingCart size={11} className="text-orange-500" />
-                      Cart ({cart.length})
+                    <h4 className="text-xs font-black text-gray-900 mb-2 flex items-center gap-1.5">
+                      <ShoppingCart className="text-orange-500" size={13} />
+                      Your Cart ({cart.length})
                     </h4>
-                    <div className="space-y-1.5 bg-gray-50 rounded-lg p-1.5">
+                    
+                    <div className="bg-gray-50 rounded-xl p-2 space-y-2">
                       <AnimatePresence>
                         {cart.map((item) => (
-                          <CartItem key={item.id} item={item} onUpdateQuantity={updateQuantity} />
+                          <motion.div
+                            key={item.id}
+                            layout
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.9 }}
+                            className="bg-white rounded-lg p-2.5 flex items-center gap-2 border border-gray-200"
+                          >
+                            <div className="w-10 h-10 bg-gradient-to-br from-orange-100 to-amber-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                              <Package className="text-orange-600" size={16} />
+                            </div>
+                            
+                            <div className="flex-1 min-w-0">
+                              <p className="font-bold text-xs text-gray-900 truncate">{item.weight}</p>
+                              <p className="text-[9px] text-gray-500">₹{item.price} each</p>
+                            </div>
+
+                            <div className="flex items-center gap-1 bg-orange-50 rounded-lg px-1 py-0.5">
+                              <button
+                                onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                                className="w-6 h-6 bg-white rounded-md flex items-center justify-center text-orange-600 font-black hover:bg-orange-100 active:scale-95 transition"
+                              >
+                                <Minus size={12} strokeWidth={3} />
+                              </button>
+                              
+                              <span className="w-6 text-center font-black text-xs">{item.quantity}</span>
+                              
+                              <button
+                                onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                                className="w-6 h-6 bg-white rounded-md flex items-center justify-center text-orange-600 font-black hover:bg-orange-100 active:scale-95 transition"
+                              >
+                                <Plus size={12} strokeWidth={3} />
+                              </button>
+                            </div>
+
+                            <div className="text-right">
+                              <p className="font-black text-xs text-gray-900">₹{item.price * item.quantity}</p>
+                            </div>
+
+                            <button
+                              onClick={() => removeFromCart(item.id)}
+                              className="w-7 h-7 bg-red-50 hover:bg-red-100 rounded-lg flex items-center justify-center text-red-600 active:scale-95 transition"
+                            >
+                              <Trash2 size={13} strokeWidth={2.5} />
+                            </button>
+                          </motion.div>
                         ))}
                       </AnimatePresence>
                       
-                      {/* Total */}
-                      <div className="bg-gradient-to-r from-orange-500 to-amber-500 rounded-md p-2 mt-1.5">
+                      {/* Total Card */}
+                      <div className="bg-gradient-to-r from-orange-500 to-amber-500 rounded-lg p-3">
                         <div className="flex justify-between items-center">
                           <div>
-                            <p className="text-white/80 text-[8px] font-bold">Total</p>
-                            <p className="text-white text-base font-black">₹{calculateTotal()}</p>
+                            <p className="text-white/80 text-[9px] font-bold mb-0.5">Order Total</p>
+                            <p className="text-white text-lg font-black">₹{calculateTotal()}</p>
                           </div>
                           <div className="text-right">
-                            <p className="text-white/80 text-[8px] font-bold">Save</p>
-                            <p className="text-white text-xs font-black">₹{calculateSavings()}</p>
+                            <p className="text-white/80 text-[9px] font-bold mb-0.5">You Save</p>
+                            <p className="text-white text-sm font-black">₹{calculateSavings()}</p>
                           </div>
                         </div>
                       </div>
@@ -491,73 +441,70 @@ const OrderForm = ({ isOpen, onClose, product }) => {
                   </div>
                 )}
 
-                {/* Error */}
-                {error && (
-                  <div className="bg-red-50 border border-red-200 rounded-md p-1.5 flex items-start gap-1.5">
-                    <AlertCircle className="text-red-600 flex-shrink-0" size={12} />
-                    <p className="text-red-700 text-[10px] font-medium">{error}</p>
-                  </div>
-                )}
-
                 {/* Confirm Button */}
                 <button
                   onClick={handleSubmit}
                   disabled={isSubmitting || cart.length === 0}
-                  className="w-full bg-gradient-to-r from-orange-500 to-amber-500 text-white font-black py-2.5 rounded-lg shadow-md disabled:opacity-50 text-xs active:scale-[0.98] transition-transform"
+                  className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 disabled:from-gray-300 disabled:to-gray-400 text-white font-black py-3.5 rounded-xl shadow-lg transition text-sm disabled:cursor-not-allowed active:scale-[0.98]"
                 >
                   {isSubmitting ? (
-                    <span className="flex items-center justify-center gap-1.5">
-                      <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      Processing...
+                    <span className="flex items-center justify-center gap-2">
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      Processing Order...
                     </span>
                   ) : (
-                    <span className="flex items-center justify-center gap-1.5">
-                      <CheckCircle size={14} />
-                      {cart.length > 0 ? `Confirm Order • ₹${calculateTotal()}` : 'Select Items First'}
+                    <span className="flex items-center justify-center gap-2">
+                      <CheckCircle size={18} strokeWidth={2.5} />
+                      {cart.length > 0 ? `Confirm Order • ₹${calculateTotal()}` : 'Add Items to Continue'}
                     </span>
                   )}
                 </button>
               </div>
             </>
           ) : (
-            <div className="p-5 text-center flex flex-col items-center justify-center min-h-[350px]">
-              <div className="w-14 h-14 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center mb-3">
-                <CheckCircle className="text-white" size={32} />
-              </div>
+            <div className="p-6 text-center flex flex-col items-center justify-center min-h-[400px]">
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ type: "spring", duration: 0.5 }}
+                className="w-20 h-20 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center mb-4 shadow-xl"
+              >
+                <CheckCircle className="text-white" size={40} strokeWidth={2.5} />
+              </motion.div>
               
-              <h3 className="text-lg font-black text-gray-900 mb-1.5">Order Placed!</h3>
-              <p className="text-gray-600 mb-4 text-xs">We'll contact you soon.</p>
+              <h3 className="text-2xl font-black text-gray-900 mb-2">Order Placed!</h3>
+              <p className="text-gray-600 mb-5 text-sm">We'll contact you soon to confirm.</p>
               
-              <div className="w-full bg-green-50 rounded-xl p-3 border-2 border-green-200 mb-4">
-                <p className="text-xs font-bold text-gray-700 mb-2">Summary</p>
-                <div className="space-y-1.5 text-left mb-2">
+              <div className="w-full bg-green-50 rounded-2xl p-4 border-2 border-green-200 mb-5">
+                <p className="text-xs font-bold text-gray-700 mb-3">Order Summary</p>
+                <div className="space-y-2 text-left mb-3">
                   {completedOrder?.items.map((item, i) => (
-                    <div key={i} className="flex justify-between text-[10px]">
-                      <span>{item.weight} × {item.quantity}</span>
-                      <span className="font-bold">₹{item.price * item.quantity}</span>
+                    <div key={i} className="flex justify-between text-xs">
+                      <span className="text-gray-700">{item.weight} × {item.quantity}</span>
+                      <span className="font-bold text-gray-900">₹{item.price * item.quantity}</span>
                     </div>
                   ))}
                 </div>
-                <div className="border-t-2 border-green-300 pt-2 flex justify-between">
-                  <span className="font-black text-gray-800 text-sm">Total</span>
-                  <span className="text-lg font-black text-green-700">₹{completedOrder?.total}</span>
+                <div className="border-t-2 border-green-300 pt-3 flex justify-between items-center">
+                  <span className="font-black text-gray-800">Total Amount</span>
+                  <span className="text-2xl font-black text-green-700">₹{completedOrder?.total}</span>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-2 w-full">
+              <div className="grid grid-cols-2 gap-3 w-full">
                 <button
                   onClick={downloadInvoice}
-                  className="bg-gradient-to-r from-orange-500 to-amber-500 text-white font-bold py-2 rounded-lg flex items-center justify-center gap-1 text-xs"
+                  className="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 text-sm transition active:scale-95"
                 >
-                  <Download size={14} />
-                  Invoice
+                  <Download size={16} strokeWidth={2.5} />
+                  Download Invoice
                 </button>
                 
                 <button
                   onClick={handleClose}
-                  className="bg-gray-100 text-gray-700 font-bold py-2 rounded-lg flex items-center justify-center gap-1 text-xs"
+                  className="bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-3 rounded-xl flex items-center justify-center gap-2 text-sm transition active:scale-95"
                 >
-                  <X size={14} />
+                  <X size={16} strokeWidth={2.5} />
                   Close
                 </button>
               </div>
