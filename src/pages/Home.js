@@ -4,13 +4,15 @@ import { useAuth } from '../App';
 import Hero from '../components/Hero';
 import ProductCard from '../components/ProductCard';
 import Reviews from '../components/Reviews';
+import TrackOrders from '../components/TrackOrders';
 import { products } from '../data/products';
-import { Truck, Shield, Award, Clock, User } from 'lucide-react';
+import { Truck, Shield, Award, Clock, Package } from 'lucide-react';
 
 const Home = () => {
   const { user } = useAuth();
   const [isDragging, setIsDragging] = useState(false);
   const [constraints, setConstraints] = useState({ top: 0, left: 0, right: 0, bottom: 0 });
+  const [isTrackOrdersOpen, setIsTrackOrdersOpen] = useState(false);
   
   const features = [
     {
@@ -125,6 +127,25 @@ const Home = () => {
           />
         </div>
       </motion.div>
+
+      {/* ✅ Track Orders Button - Floating (Only for logged-in users) */}
+      {user && (
+        <motion.button
+          onClick={() => setIsTrackOrdersOpen(true)}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          className="fixed bottom-28 right-6 z-50 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-bold px-5 py-3.5 rounded-full shadow-2xl flex items-center gap-2.5 text-sm transition-all"
+        >
+          <Package size={20} strokeWidth={2.5} />
+          <span className="hidden sm:inline">Track Orders</span>
+        </motion.button>
+      )}
+
+      {/* ✅ Track Orders Modal */}
+      <TrackOrders
+        isOpen={isTrackOrdersOpen}
+        onClose={() => setIsTrackOrdersOpen(false)}
+      />
 
       {/* Main Content - Relative to watermark */}
       <div className="relative z-10">
