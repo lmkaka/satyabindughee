@@ -42,7 +42,7 @@ const Products = () => {
   try {
     // Try direct query first
     const { data, error, count } = await supabase
-      .from('user_profiles')
+      .from('profiles')
       .select('*', { count: 'exact' })
       .order('created_at', { ascending: false });
     
