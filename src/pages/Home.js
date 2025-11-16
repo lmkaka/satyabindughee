@@ -60,7 +60,6 @@ const Home = () => {
         return;
       }
       
-      // ✅ Just pass the raw data - ProductCard will handle Base64 decode
       setProducts(data || []);
       
     } catch (err) {
@@ -224,17 +223,7 @@ const Home = () => {
                 Choose from our range of pure ghee products, available in different sizes to suit your needs
               </p>
               
-              {!user && (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  className="mt-6 inline-block bg-amber-50 border-2 border-amber-200 rounded-xl px-6 py-3"
-                >
-                  <p className="text-amber-800 font-medium">
-                    🔒 <span className="font-semibold">Login</span> to place orders and enjoy faster checkout!
-                  </p>
-                </motion.div>
-              )}
+              {/* ❌ REMOVED LOGIN BANNER - No more scroll prompt! */}
             </motion.div>
 
             {loading ? (
