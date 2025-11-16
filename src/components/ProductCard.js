@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { ShoppingCart, Check, Shield, Award, Sparkles } from 'lucide-react';
+import { ShoppingCart, Check, Shield, Award, Sparkles, Zap, PackageCheck } from 'lucide-react';
 import OrderForm from './OrderForm';
 
 const ProductCard = ({ product }) => {
@@ -53,13 +53,11 @@ const ProductCard = ({ product }) => {
     price = 0,
     original_price = 0,
     description = 'Premium quality pure ghee made from cow milk',
-    benefits = defaultBenefits, // ✅ Use default if not provided
+    benefits = defaultBenefits,
     is_active = true
   } = product;
 
   const inStock = is_active !== false;
-  
-  // ✅ Use product benefits or default
   const displayBenefits = (benefits && benefits.length > 0) ? benefits : defaultBenefits;
 
   return (
@@ -92,14 +90,15 @@ const ProductCard = ({ product }) => {
             />
           </div>
           
-          {/* Discount Badge */}
+          {/* Discount Badge - Icon Only */}
           {discount > 0 && (
-            <div className="absolute top-3 left-3 bg-gradient-to-r from-red-500 to-red-600 text-white px-3 py-1.5 rounded-full text-xs font-black shadow-lg">
-              🔥 {discount}% OFF
+            <div className="absolute top-3 left-3 bg-gradient-to-r from-red-500 to-red-600 text-white px-3 py-1.5 rounded-full text-xs font-black shadow-lg flex items-center gap-1">
+              <Zap size={14} strokeWidth={3} />
+              <span>{discount}% OFF</span>
             </div>
           )}
           
-          {/* ✅ Quality Badges on Image */}
+          {/* Quality Badges - Clean Icons */}
           <div className="absolute top-3 right-3 flex flex-col gap-2">
             <div className="bg-green-500 text-white p-1.5 rounded-full shadow-lg" title="100% Pure">
               <Shield size={16} strokeWidth={2.5} />
@@ -116,11 +115,11 @@ const ProductCard = ({ product }) => {
           
           <p className="text-gray-600 text-sm mb-4 line-clamp-2">{description}</p>
 
-          {/* ✅ BENEFITS BADGES - Always Visible */}
+          {/* Benefits Badges - Clean Icons */}
           <div className="mb-4">
-            <div className="flex items-center gap-1 mb-2">
-              <Sparkles size={14} className="text-amber-500" />
-              <h4 className="font-bold text-xs text-gray-700 uppercase">Key Features</h4>
+            <div className="flex items-center gap-1.5 mb-2">
+              <Sparkles size={14} className="text-amber-500" strokeWidth={2.5} />
+              <h4 className="font-bold text-xs text-gray-700 uppercase tracking-wide">Key Features</h4>
             </div>
             <div className="flex flex-wrap gap-2">
               {displayBenefits.slice(0, 4).map((benefit, index) => (
@@ -129,7 +128,7 @@ const ProductCard = ({ product }) => {
                   className="flex items-center gap-1 text-xs bg-gradient-to-r from-green-50 to-emerald-50 text-green-800 px-2.5 py-1 rounded-full border border-green-200 font-semibold"
                 >
                   <Check size={11} strokeWidth={3} />
-                  {benefit}
+                  <span>{benefit}</span>
                 </span>
               ))}
             </div>
@@ -137,41 +136,55 @@ const ProductCard = ({ product }) => {
 
           {/* Price Section */}
           <div className="mb-4 bg-gradient-to-r from-orange-50 to-amber-50 rounded-xl p-3 border-2 border-orange-200">
-            <div className="flex items-baseline gap-2 mb-1">
+            <div className="flex items-baseline gap-2 mb-1 flex-wrap">
               <span className="text-3xl font-black text-gray-900">₹{price}</span>
               {original_price > price && (
                 <>
                   <span className="text-base text-gray-400 line-through font-semibold">₹{original_price}</span>
-                  <span className="text-xs font-black text-green-600 bg-green-100 px-2 py-0.5 rounded-full border border-green-300">
-                    Save ₹{original_price - price}
+                  <span className="text-xs font-black text-green-600 bg-green-100 px-2 py-0.5 rounded-full border border-green-300 flex items-center gap-1">
+                    <PackageCheck size={12} strokeWidth={3} />
+                    <span>Save ₹{original_price - price}</span>
                   </span>
                 </>
               )}
             </div>
             
             {/* Stock & Discount Status */}
-            <div className="flex items-center justify-between mt-2">
-              <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${inStock ? 'bg-green-100 text-green-700 border border-green-300' : 'bg-red-100 text-red-700 border border-red-300'}`}>
-                {inStock ? '✓ In Stock' : '✗ Out of Stock'}
+            <div className="flex items-center justify-between mt-2 flex-wrap gap-2">
+              <span className={`text-xs font-bold px-2.5 py-1 rounded-full flex items-center gap-1 ${inStock ? 'bg-green-100 text-green-700 border border-green-300' : 'bg-red-100 text-red-700 border border-red-300'}`}>
+                <Check size={12} strokeWidth={3} />
+                <span>{inStock ? 'In Stock' : 'Out of Stock'}</span>
               </span>
               
               {discount > 0 && (
-                <span className="text-xs font-black text-orange-700 bg-orange-100 px-2.5 py-1 rounded-full border border-orange-300">
-                  {discount}% OFF
+                <span className="text-xs font-black text-orange-700 bg-orange-100 px-2.5 py-1 rounded-full border border-orange-300 flex items-center gap-1">
+                  <Zap size={12} strokeWidth={3} />
+                  <span>{discount}% OFF</span>
                 </span>
               )}
             </div>
           </div>
 
+          {/* ✅ ENHANCED ORDER BUTTON */}
           <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             onClick={() => setIsOrderFormOpen(true)}
             disabled={!inStock}
-            className="w-full btn-primary flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+            className={`
+              w-full py-3.5 px-6 rounded-xl font-bold text-base
+              flex items-center justify-center gap-2.5
+              transition-all duration-300 shadow-lg hover:shadow-xl
+              ${inStock 
+                ? 'bg-gradient-to-r from-orange-500 via-amber-500 to-orange-500 hover:from-orange-600 hover:via-amber-600 hover:to-orange-600 text-white' 
+                : 'bg-gray-300 text-gray-500 cursor-not-allowed opacity-60'
+              }
+            `}
           >
-            <ShoppingCart size={20} strokeWidth={2.5} />
-            <span className="font-bold">Order Now</span>
+            <ShoppingCart size={22} strokeWidth={2.5} />
+            <span className="font-black tracking-wide">
+              {inStock ? 'Order Now' : 'Out of Stock'}
+            </span>
           </motion.button>
         </div>
       </motion.div>
