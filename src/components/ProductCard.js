@@ -1,14 +1,13 @@
 import React, { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { ShoppingCart, Check, Shield, Award, Sparkles, Zap, PackageCheck, LogIn } from 'lucide-react';
+import { ShoppingCart, Check, Shield, Award, Sparkles, Zap, PackageCheck } from 'lucide-react';
 import OrderForm from './OrderForm';
-import GoogleAuth from './GoogleAuth'; // ✅ Import GoogleAuth
+import GoogleAuth from './GoogleAuth';
 
-const ProductCard = ({ product, user }) => { // ✅ Accept user prop
+const ProductCard = ({ product, user }) => {
   const [isOrderFormOpen, setIsOrderFormOpen] = useState(false);
-  const [isAuthOpen, setIsAuthOpen] = useState(false); // ✅ Auth modal state
+  const [isAuthOpen, setIsAuthOpen] = useState(false);
   
-  // ✅ Default benefits if none provided
   const defaultBenefits = [
     '100% Pure',
     'No Preservatives',
@@ -16,7 +15,7 @@ const ProductCard = ({ product, user }) => { // ✅ Accept user prop
     'Traditional Method'
   ];
   
-  // ✅ Decode Base64 image
+  // Decode Base64 image
   const decodedImage = useMemo(() => {
     if (!product) return 'https://radarofc.onrender.com/IMG_20251106_204751_845-modified.png';
     
@@ -37,7 +36,7 @@ const ProductCard = ({ product, user }) => { // ✅ Accept user prop
     return `data:image/jpeg;base64,${imageUrl}`;
   }, [product]);
 
-  // ✅ Calculate discount
+  // Calculate discount
   const discount = useMemo(() => {
     if (!product || !product.original_price || !product.price) return 0;
     if (product.original_price <= product.price) return 0;
@@ -62,13 +61,13 @@ const ProductCard = ({ product, user }) => { // ✅ Accept user prop
   const inStock = is_active !== false;
   const displayBenefits = (benefits && benefits.length > 0) ? benefits : defaultBenefits;
 
-  // ✅ Handle Order Click - Check if user is logged in
+  // ✅ Handle Order Click - Check login ONLY when clicked
   const handleOrderClick = () => {
     if (!user) {
-      // User not logged in - Open GoogleAuth modal
+      // Not logged in - Show GoogleAuth modal
       setIsAuthOpen(true);
     } else {
-      // User logged in - Open order form
+      // Logged in - Show order form
       setIsOrderFormOpen(true);
     }
   };
@@ -120,14 +119,6 @@ const ProductCard = ({ product, user }) => { // ✅ Accept user prop
               <Award size={16} strokeWidth={2.5} />
             </div>
           </div>
-
-          {/* ✅ Login Required Badge (if not logged in) */}
-          {!user && (
-            <div className="absolute bottom-3 left-3 right-3 bg-amber-500/95 backdrop-blur-sm text-white px-3 py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-2 shadow-lg">
-              <LogIn size={14} strokeWidth={3} />
-              <span>Login to Order</span>
-            </div>
-          )}
         </div>
 
         <div className="p-6">
@@ -186,60 +177,47 @@ const ProductCard = ({ product, user }) => { // ✅ Accept user prop
             </div>
           </div>
 
-          {/* ✅ ORDER BUTTON - Opens Auth if not logged in */}
+          {/* ✅ ORDER NOW BUTTON - Same for everyone, checks login on click */}
           <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
-            onClick={handleOrderClick} // ✅ Changed to handleOrderClick
+            onClick={handleOrderClick}
             disabled={!inStock}
             className={`
               w-full py-3.5 px-6 rounded-xl font-bold text-base
               flex items-center justify-center gap-2.5
               transition-all duration-300 shadow-lg hover:shadow-xl
               ${inStock 
-                ? user 
-                  ? 'bg-gradient-to-r from-orange-500 via-amber-500 to-orange-500 hover:from-orange-600 hover:via-amber-600 hover:to-orange-600 text-white'
-                  : 'bg-gradient-to-r from-blue-500 via-indigo-500 to-blue-500 hover:from-blue-600 hover:via-indigo-600 hover:to-blue-600 text-white'
+                ? 'bg-gradient-to-r from-orange-500 via-amber-500 to-orange-500 hover:from-orange-600 hover:via-amber-600 hover:to-orange-600 text-white' 
                 : 'bg-gray-300 text-gray-500 cursor-not-allowed opacity-60'
               }
             `}
           >
-            {!user ? (
-              <>
-                <LogIn size={22} strokeWidth={2.5} />
-                <span className="font-black tracking-wide">Login to Order</span>
-              </>
-            ) : (
-              <>
-                <ShoppingCart size={22} strokeWidth={2.5} />
-                <span className="font-black tracking-wide">
-                  {inStock ? 'Order Now' : 'Out of Stock'}
-                </span>
-              </>
-            )}
+            <ShoppingCart size={22} strokeWidth={2.5} />
+            <span className="font-black tracking-wide">
+              {inStock ? 'Order Now' : 'Out of Stock'}
+            </span>
           </motion.button>
         </div>
       </motion.div>
 
-      {/* ✅ Order Form Modal (Only if logged in) */}
-      {user && (
-        <OrderForm
-          isOpen={isOrderFormOpen}
-          onClose={() => setIsOrderFormOpen(false)}
-          product={{
-            ...product,
-            image: decodedImage,
-            price: price,
-            originalPrice: original_price,
-            inStock: inStock
-          }}
-        />
-      )}
-
-      {/* ✅ Google Auth Modal (If not logged in) */}
+      {/* ✅ Google Auth Modal - Opens if not logged in */}
       <GoogleAuth 
         isOpen={isAuthOpen} 
         onClose={() => setIsAuthOpen(false)} 
+      />
+
+      {/* ✅ Order Form Modal - Opens if logged in */}
+      <OrderForm
+        isOpen={isOrderFormOpen}
+        onClose={() => setIsOrderFormOpen(false)}
+        product={{
+          ...product,
+          image: decodedImage,
+          price: price,
+          originalPrice: original_price,
+          inStock: inStock
+        }}
       />
     </>
   );
