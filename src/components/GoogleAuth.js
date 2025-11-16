@@ -6,16 +6,22 @@ const GoogleAuth = ({ onClose, onSuccess }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // Google Sign In Handler
+  // Google Sign In Handler with Smart Redirect
   const handleGoogleSignIn = async () => {
     setLoading(true);
     setError('');
 
     try {
+      // Smart redirect: Use production URL if deployed, otherwise localhost
+      const isProduction = window.location.hostname !== 'localhost';
+      const redirectUrl = isProduction 
+        ? 'https://sbghee.com'  // Production URL
+        : window.location.origin; // Localhost for development
+
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: window.location.origin, // Auto-detects current URL (localhost or sbghee.com)
+          redirectTo: redirectUrl,
           queryParams: {
             access_type: 'offline',
             prompt: 'consent',
