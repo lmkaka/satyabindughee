@@ -1,11 +1,9 @@
 import React, { useState, useMemo } from 'react';
 import { ShoppingCart, Check, Shield, Award, Sparkles, Zap, PackageCheck } from 'lucide-react';
 import OrderForm from './OrderForm';
-import GoogleAuth from './GoogleAuth';
 
 const ProductCard = ({ product, user }) => {
   const [isOrderFormOpen, setIsOrderFormOpen] = useState(false);
-  const [isAuthOpen, setIsAuthOpen] = useState(false);
   
   const defaultBenefits = [
     '100% Pure',
@@ -58,17 +56,6 @@ const ProductCard = ({ product, user }) => {
 
   const inStock = is_active !== false;
   const displayBenefits = (benefits && benefits.length > 0) ? benefits : defaultBenefits;
-
-  // ✅ Handle Order Button Click - ONLY triggers on button click
-  const handleOrderClick = () => {
-    if (!user) {
-      // Not logged in - Open GoogleAuth
-      setIsAuthOpen(true);
-    } else {
-      // Logged in - Open OrderForm
-      setIsOrderFormOpen(true);
-    }
-  };
 
   return (
     <>
@@ -161,9 +148,9 @@ const ProductCard = ({ product, user }) => {
             </div>
           </div>
 
-          {/* ✅ ORDER NOW BUTTON - Checks login on click */}
+          {/* ORDER NOW BUTTON */}
           <button
-            onClick={handleOrderClick}
+            onClick={() => setIsOrderFormOpen(true)}
             disabled={!inStock}
             className={`
               w-full py-3.5 px-6 rounded-xl font-bold text-base
@@ -183,13 +170,7 @@ const ProductCard = ({ product, user }) => {
         </div>
       </div>
 
-      {/* ✅ GoogleAuth Modal - Opens if NOT logged in */}
-      <GoogleAuth 
-        isOpen={isAuthOpen} 
-        onClose={() => setIsAuthOpen(false)} 
-      />
-
-      {/* ✅ OrderForm Modal - Opens if logged in */}
+      {/* Only OrderForm - No GoogleAuth */}
       <OrderForm
         isOpen={isOrderFormOpen}
         onClose={() => setIsOrderFormOpen(false)}
