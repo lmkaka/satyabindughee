@@ -1378,7 +1378,7 @@ const loadProducts = async () => {
         </div>
       )}
 
-      {/* Modal for Order Details */}
+           {/* Modal for Order Details */}
       <AnimatePresence>
         {selectedOrder && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -1477,148 +1477,148 @@ const loadProducts = async () => {
           </div>
         )}
       </AnimatePresence>
-{/* ✅ ADD THESE TWO MODALS AT THE END: */}
 
-{/* All Users Modal */}
-<AnimatePresence>
-  {showUsersModal && (
-    <div className="fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center z-50 p-4">
-      <motion.div
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.9 }}
-        className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col"
-      >
-        <div className="sticky top-0 bg-gradient-to-r from-purple-500 to-indigo-600 p-5 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Users className="text-white" size={24} />
-            <div>
-              <h3 className="text-2xl font-black text-white">All Users</h3>
-              <p className="text-sm text-white/90">{users.length} total users</p>
-            </div>
+      {/* All Users Modal */}
+      <AnimatePresence>
+        {showUsersModal && (
+          <div className="fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center z-50 p-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col"
+            >
+              <div className="sticky top-0 bg-gradient-to-r from-purple-500 to-indigo-600 p-5 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Users className="text-white" size={24} />
+                  <div>
+                    <h3 className="text-2xl font-black text-white">All Users</h3>
+                    <p className="text-sm text-white/90">{users.length} total users</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowUsersModal(false)}
+                  className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center"
+                >
+                  <X className="text-white" size={22} />
+                </button>
+              </div>
+
+              <div className="flex-1 overflow-y-auto p-6">
+                <div className="space-y-3">
+                  {users.map((user) => (
+                    <div key={user.id} className="bg-gray-50 rounded-xl p-4 hover:bg-purple-50 transition border-2 border-gray-200">
+                      <div className="flex items-start gap-4">
+                        <div className="w-16 h-16 bg-gradient-to-br from-purple-400 to-indigo-500 rounded-full flex items-center justify-center flex-shrink-0">
+                          <User className="text-white" size={32} />
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="font-black text-lg">{user.name}</h4>
+                          <div className="grid sm:grid-cols-2 gap-2 mt-2 text-sm">
+                            <div className="flex items-center gap-2">
+                              <Phone size={14} className="text-gray-400" />
+                              <span>{user.phone}</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Mail size={14} className="text-gray-400" />
+                              <span className="truncate">{user.email || 'N/A'}</span>
+                            </div>
+                          </div>
+                          <div className="flex items-start gap-2 mt-2 text-sm">
+                            <MapPin size={14} className="text-gray-400 mt-0.5" />
+                            <span>{user.address || 'No address'}</span>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => {
+                            setSelectedUser(user);
+                            setShowUsersModal(false);
+                          }}
+                          className="bg-purple-100 hover:bg-purple-200 text-purple-700 px-4 py-2 rounded-xl font-bold text-xs"
+                        >
+                          Details
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
           </div>
-          <button
-            onClick={() => setShowUsersModal(false)}
-            className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center"
-          >
-            <X className="text-white" size={22} />
-          </button>
-        </div>
+        )}
+      </AnimatePresence>
 
-        <div className="flex-1 overflow-y-auto p-6">
-          <div className="space-y-3">
-            {users.map((user) => (
-              <div key={user.id} className="bg-gray-50 rounded-xl p-4 hover:bg-purple-50 transition border-2 border-gray-200">
-                <div className="flex items-start gap-4">
-                  <div className="w-16 h-16 bg-gradient-to-br from-purple-400 to-indigo-500 rounded-full flex items-center justify-center flex-shrink-0">
-                    <User className="text-white" size={32} />
-                  </div>
-                  <div className="flex-1">
-                    <h4 className="font-black text-lg">{user.name}</h4>
-                    <div className="grid sm:grid-cols-2 gap-2 mt-2 text-sm">
-                      <div className="flex items-center gap-2">
-                        <Phone size={14} className="text-gray-400" />
-                        <span>{user.phone}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Mail size={14} className="text-gray-400" />
-                        <span className="truncate">{user.email || 'N/A'}</span>
-                      </div>
-                    </div>
-                    <div className="flex items-start gap-2 mt-2 text-sm">
-                      <MapPin size={14} className="text-gray-400 mt-0.5" />
-                      <span>{user.address || 'No address'}</span>
-                    </div>
-                  </div>
+      {/* User Details Modal */}
+      <AnimatePresence>
+        {selectedUser && (
+          <div className="fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center z-50 p-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              className="bg-white rounded-2xl shadow-2xl w-full max-w-lg"
+            >
+              <div className="bg-gradient-to-r from-purple-500 to-indigo-600 p-6 rounded-t-2xl">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-2xl font-black text-white">User Details</h3>
                   <button
-                    onClick={() => {
-                      setSelectedUser(user);
-                      setShowUsersModal(false);
-                    }}
-                    className="bg-purple-100 hover:bg-purple-200 text-purple-700 px-4 py-2 rounded-xl font-bold text-xs"
+                    onClick={() => setSelectedUser(null)}
+                    className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center"
                   >
-                    Details
+                    <X className="text-white" size={20} />
+                  </button>
+                </div>
+                <div className="flex items-center gap-4">
+                  <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center border-4 border-white">
+                    <User className="text-white" size={36} />
+                  </div>
+                  <div>
+                    <h4 className="text-2xl font-black text-white">{selectedUser.name}</h4>
+                    <p className="text-white/90 text-sm">ID: #{selectedUser.id.toString().slice(-8)}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-6 space-y-5">
+                <div>
+                  <p className="text-xs text-gray-500 font-bold uppercase mb-1">Phone</p>
+                  <p className="font-black text-lg">{selectedUser.phone}</p>
+                </div>
+
+                <div>
+                  <p className="text-xs text-gray-500 font-bold uppercase mb-1">Email</p>
+                  <p className="font-bold">{selectedUser.email || 'Not provided'}</p>
+                </div>
+
+                <div>
+                  <p className="text-xs text-gray-500 font-bold uppercase mb-1">Address</p>
+                  <div className="bg-gray-50 p-4 rounded-xl border-2 border-gray-200">
+                    <p className="text-sm">{selectedUser.address || 'No address'}</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 pt-4">
+                  <a
+                    href={`tel:${selectedUser.phone}`}
+                    className="bg-green-500 hover:bg-green-600 text-white py-3 rounded-xl font-black text-sm flex items-center justify-center gap-2"
+                  >
+                    <Phone size={18} />
+                    Call
+                  </a>
+                  <button
+                    onClick={() => setSelectedUser(null)}
+                    className="bg-gray-100 hover:bg-gray-200 text-gray-700 py-3 rounded-xl font-black text-sm"
+                  >
+                    Close
                   </button>
                 </div>
               </div>
-            ))}
+            </motion.div>
           </div>
-        </div>
-      </motion.div>
+        )}
+      </AnimatePresence>
+
     </div>
-  )}
-</AnimatePresence>
-
-{/* User Details Modal */}
-<AnimatePresence>
-  {selectedUser && (
-    <div className="fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center z-50 p-4">
-      <motion.div
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.9 }}
-        className="bg-white rounded-2xl shadow-2xl w-full max-w-lg"
-      >
-        <div className="bg-gradient-to-r from-purple-500 to-indigo-600 p-6 rounded-t-2xl">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-2xl font-black text-white">User Details</h3>
-            <button
-              onClick={() => setSelectedUser(null)}
-              className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center"
-            >
-              <X className="text-white" size={20} />
-            </button>
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center border-4 border-white">
-              <User className="text-white" size={36} />
-            </div>
-            <div>
-              <h4 className="text-2xl font-black text-white">{selectedUser.name}</h4>
-              <p className="text-white/90 text-sm">ID: #{selectedUser.id.toString().slice(-8)}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="p-6 space-y-5">
-          <div>
-            <p className="text-xs text-gray-500 font-bold uppercase mb-1">Phone</p>
-            <p className="font-black text-lg">{selectedUser.phone}</p>
-          </div>
-
-          <div>
-            <p className="text-xs text-gray-500 font-bold uppercase mb-1">Email</p>
-            <p className="font-bold">{selectedUser.email || 'Not provided'}</p>
-          </div>
-
-          <div>
-            <p className="text-xs text-gray-500 font-bold uppercase mb-1">Address</p>
-            <div className="bg-gray-50 p-4 rounded-xl border-2 border-gray-200">
-              <p className="text-sm">{selectedUser.address || 'No address'}</p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3 pt-4">
-            <a
-              href={`tel:${selectedUser.phone}`}
-              className="bg-green-500 hover:bg-green-600 text-white py-3 rounded-xl font-black text-sm flex items-center justify-center gap-2"
-            >
-              <Phone size={18} />
-              Call
-            </a>
-            <button
-              onClick={() => setSelectedUser(null)}
-              className="bg-gray-100 hover:bg-gray-200 text-gray-700 py-3 rounded-xl font-black text-sm"
-            >
-              Close
-            </button>
-          </div>
-        </div>
-      </motion.div>
-    </div>
-  )}
-</AnimatePresence>
-
   );
 };
 
