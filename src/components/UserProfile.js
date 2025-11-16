@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { supabase } from '../supabaseClient';
 import { motion } from 'framer-motion';
+import { MapPin } from 'lucide-react';
 
 const UserProfile = ({ user, onProfileComplete }) => {
   const [formData, setFormData] = useState({
@@ -15,18 +16,14 @@ const UserProfile = ({ user, onProfileComplete }) => {
   const userAvatar = user.user_metadata?.avatar_url;
 
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  // Get address from geolocation
   const getLocationAddress = async () => {
     setGettingLocation(true);
     
     if (!navigator.geolocation) {
-      alert('Geolocation is not supported by your browser');
+      alert('Geolocation not supported');
       setGettingLocation(false);
       return;
     }
@@ -34,29 +31,22 @@ const UserProfile = ({ user, onProfileComplete }) => {
     navigator.geolocation.getCurrentPosition(
       async (position) => {
         const { latitude, longitude } = position.coords;
-        
         try {
           const response = await fetch(
             `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`
           );
           const data = await response.json();
-          
-          if (data && data.display_name) {
-            setFormData({
-              ...formData,
-              address: data.display_name
-            });
+          if (data?.display_name) {
+            setFormData({ ...formData, address: data.display_name });
           }
         } catch (error) {
-          console.error('Error getting address:', error);
-          alert('Could not fetch address. Please enter manually.');
+          alert('Could not fetch address');
         } finally {
           setGettingLocation(false);
         }
       },
-      (error) => {
-        console.error('Geolocation error:', error);
-        alert('Could not get your location. Please enter address manually.');
+      () => {
+        alert('Location access denied');
         setGettingLocation(false);
       }
     );
@@ -66,17 +56,13 @@ const UserProfile = ({ user, onProfileComplete }) => {
     e.preventDefault();
     setLoading(true);
 
-    // Validate phone number
     if (!/^[0-9]{10}$/.test(formData.phone)) {
-      alert('Please enter a valid 10-digit phone number');
+      alert('Enter valid 10-digit phone number');
       setLoading(false);
       return;
     }
 
     try {
-      console.log('Saving profile...');
-      
-      // Save to profiles table (PRIMARY STORAGE) - WITHOUT avatar_url
       const { error: profileError } = await supabase
         .from('profiles')
         .upsert({
@@ -91,15 +77,9 @@ const UserProfile = ({ user, onProfileComplete }) => {
           onConflict: 'user_id'
         });
 
-      if (profileError) {
-        console.error('Profile Error:', profileError);
-        throw profileError;
-      }
+      if (profileError) throw profileError;
 
-      console.log('✅ Profile saved to database!');
-
-      // Update auth metadata (for quick access)
-      const { error: authError } = await supabase.auth.updateUser({
+      await supabase.auth.updateUser({
         data: {
           name: formData.name,
           phone: formData.phone,
@@ -108,62 +88,50 @@ const UserProfile = ({ user, onProfileComplete }) => {
         }
       });
 
-      if (authError) {
-        console.error('Auth Error:', authError);
-      }
-
-      console.log('✅ Profile completed successfully!');
       onProfileComplete();
-      
     } catch (error) {
-      console.error('Error:', error);
-      alert('Error saving profile: ' + error.message);
+      alert('Error: ' + error.message);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-3">
       <motion.div 
-        initial={{ opacity: 0, scale: 0.9, y: 20 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.9, y: 20 }}
-        transition={{ duration: 0.3 }}
-        className="bg-white rounded-3xl shadow-2xl w-full max-w-md max-h-[95vh] overflow-y-auto"
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.2 }}
+        className="bg-white rounded-2xl shadow-2xl w-full max-w-sm max-h-[95vh] overflow-y-auto"
       >
-        {/* Header */}
-        <div className="sticky top-0 bg-gradient-to-r from-amber-500 to-orange-500 p-6 sm:p-8 rounded-t-3xl">
-          <div className="flex items-center gap-4 mb-3">
+        {/* Compact Header */}
+        <div className="bg-gradient-to-r from-amber-500 to-orange-500 p-4 rounded-t-2xl">
+          <div className="flex items-center gap-3">
             {userAvatar && (
               <img 
                 src={userAvatar} 
                 alt="Profile" 
-                className="w-16 h-16 sm:w-20 sm:h-20 rounded-full border-4 border-white shadow-lg"
+                className="w-12 h-12 rounded-full border-2 border-white shadow-md"
               />
             )}
-            <div className="flex-1">
-              <h2 className="text-2xl sm:text-3xl font-bold text-white">
-                Welcome! 👋
-              </h2>
-              <p className="text-amber-50 text-sm sm:text-base">
-                Let's set up your profile
-              </p>
+            <div>
+              <h2 className="text-lg font-bold text-white">Complete Profile</h2>
+              <p className="text-xs text-amber-50">Quick setup</p>
             </div>
           </div>
         </div>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6 sm:p-8 space-y-5">
-          {/* Email Display (Read-only) */}
-          <div className="bg-amber-50 p-4 rounded-xl border border-amber-200">
-            <p className="text-xs font-medium text-amber-800 mb-1">📧 Email</p>
-            <p className="text-sm font-semibold text-gray-800 truncate">{userEmail}</p>
+        {/* Compact Form */}
+        <form onSubmit={handleSubmit} className="p-4 space-y-3">
+          {/* Email - Compact */}
+          <div className="bg-amber-50 p-2.5 rounded-lg border border-amber-200">
+            <p className="text-[10px] font-bold text-amber-800 uppercase">Email</p>
+            <p className="text-xs font-semibold text-gray-800 truncate">{userEmail}</p>
           </div>
 
-          {/* Name Input (Editable) */}
+          {/* Name - Compact */}
           <div>
-            <label className="block text-gray-700 font-semibold mb-2 text-sm sm:text-base">
+            <label className="block text-xs font-bold text-gray-700 mb-1.5">
               Full Name *
             </label>
             <input
@@ -172,22 +140,19 @@ const UserProfile = ({ user, onProfileComplete }) => {
               value={formData.name}
               onChange={handleChange}
               required
-              className="w-full px-4 py-3 sm:py-3.5 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent outline-none transition text-base"
-              placeholder="Enter your full name"
+              className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none text-sm"
+              placeholder="Your name"
             />
-            <p className="text-xs text-gray-500 mt-1.5">
-              You can change this if needed
-            </p>
           </div>
 
-          {/* Phone Number Input */}
+          {/* Phone - Compact */}
           <div>
-            <label className="block text-gray-700 font-semibold mb-2 text-sm sm:text-base">
+            <label className="block text-xs font-bold text-gray-700 mb-1.5">
               Phone Number *
             </label>
             <div className="flex gap-2">
-              <div className="flex items-center justify-center px-4 py-3 sm:py-3.5 border-2 border-gray-200 rounded-xl bg-gray-50 min-w-[70px]">
-                <span className="text-gray-700 font-semibold text-base">+91</span>
+              <div className="flex items-center px-2.5 py-2.5 border-2 border-gray-200 rounded-lg bg-gray-50">
+                <span className="text-xs font-bold text-gray-700">+91</span>
               </div>
               <input
                 type="tel"
@@ -197,18 +162,15 @@ const UserProfile = ({ user, onProfileComplete }) => {
                 required
                 maxLength="10"
                 pattern="[0-9]{10}"
-                className="flex-1 px-4 py-3 sm:py-3.5 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent outline-none transition text-base"
+                className="flex-1 px-3 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none text-sm"
                 placeholder="9876543210"
               />
             </div>
-            <p className="text-xs text-gray-500 mt-1.5">
-              For order updates & delivery
-            </p>
           </div>
 
-          {/* Address Input */}
+          {/* Address - Compact */}
           <div>
-            <label className="block text-gray-700 font-semibold mb-2 text-sm sm:text-base">
+            <label className="block text-xs font-bold text-gray-700 mb-1.5">
               Delivery Address *
             </label>
             <textarea
@@ -216,43 +178,51 @@ const UserProfile = ({ user, onProfileComplete }) => {
               value={formData.address}
               onChange={handleChange}
               required
-              rows="3"
-              className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent outline-none transition resize-none text-base"
-              placeholder="House no., Street, Area, City, State, PIN"
+              rows="2"
+              className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none resize-none text-sm"
+              placeholder="Full address with PIN"
             />
             
+            {/* Location Button - Ultra Compact */}
             <button
               type="button"
               onClick={getLocationAddress}
               disabled={gettingLocation}
-              className="mt-3 flex items-center gap-2 text-amber-600 hover:text-amber-700 font-semibold text-sm active:scale-95 transition"
+              className="mt-2 flex items-center justify-center gap-1.5 w-full py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 font-semibold text-xs rounded-lg transition border border-blue-200 disabled:opacity-50"
             >
-              📍 {gettingLocation ? 'Getting location...' : 'Use my current location'}
+              {gettingLocation ? (
+                <>
+                  <div className="w-3 h-3 border-2 border-blue-700 border-t-transparent rounded-full animate-spin"></div>
+                  <span>Getting...</span>
+                </>
+              ) : (
+                <>
+                  <MapPin size={14} strokeWidth={2.5} />
+                  <span>Use Current Location</span>
+                </>
+              )}
             </button>
           </div>
 
-          {/* Submit Button */}
-          <motion.button
+          {/* Submit - Compact */}
+          <button
             type="submit"
             disabled={loading}
-            whileTap={{ scale: 0.98 }}
-            className="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-bold py-4 rounded-xl shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed text-base sm:text-lg"
+            className="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-bold py-3 rounded-lg shadow-lg transition disabled:opacity-50 text-sm"
           >
             {loading ? (
               <span className="flex items-center justify-center gap-2">
-                <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                </svg>
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                 Saving...
               </span>
             ) : (
-              'Continue to SB Ghee 🥛'
+              'Continue 🥛'
             )}
-          </motion.button>
+          </button>
 
-          <p className="text-xs text-gray-500 text-center">
-            This information helps us deliver your orders
+          {/* Footer Text - Compact */}
+          <p className="text-[10px] text-gray-500 text-center">
+            Required for order delivery
           </p>
         </form>
       </motion.div>
