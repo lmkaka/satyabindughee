@@ -1,11 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '../App';
+import { supabase } from '../supabaseClient'; // ✅ Add this import
 import Hero from '../components/Hero';
 import ProductCard from '../components/ProductCard';
 import Reviews from '../components/Reviews';
 import TrackOrders from '../components/TrackOrders';
-import { products } from '../data/products';
+// import { products } from '../data/products'; // ❌ Remove this line
 import { Truck, Shield, Award, Clock, Package } from 'lucide-react';
 
 const Home = () => {
@@ -13,6 +14,10 @@ const Home = () => {
   const [isDragging, setIsDragging] = useState(false);
   const [constraints, setConstraints] = useState({ top: 0, left: 0, right: 0, bottom: 0 });
   const [isTrackOrdersOpen, setIsTrackOrdersOpen] = useState(false);
+  
+  // ✅ Add products state and loading state
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
   
   const features = [
     {
@@ -36,6 +41,51 @@ const Home = () => {
       description: 'Made using time-tested traditional methods for authentic taste'
     }
   ];
+
+  // ✅ Load products from Supabase
+  useEffect(() => {
+    loadProducts();
+  }, []);
+
+  const loadProducts = async () => {
+    setLoading(true);
+    try {
+      console.log('Fetching products from Supabase...');
+      
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .eq('is_active', true) // Only fetch active products
+        .order('created_at', { ascending: true });
+      
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
+      
+      console.log(`✅ Loaded ${data?.length || 0} products`);
+      
+      // Transform Supabase data to match your product structure
+      const transformedProducts = data.map(product => ({
+        id: product.id,
+        name: product.name,
+        weight: product.weight,
+        price: product.price,
+        originalPrice: product.original_price,
+        image: product.image_base64 || 'https://radarofc.onrender.com/IMG_20251106_204751_845-modified.png', // Fallback image
+        description: product.description || 'Premium quality pure ghee',
+        discount: Math.round(((product.original_price - product.price) / product.original_price) * 100)
+      }));
+      
+      setProducts(transformedProducts);
+    } catch (err) {
+      console.error('Error loading products:', err);
+      // Fallback to empty array if error
+      setProducts([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Update constraints dynamically for full screen dragging
   useEffect(() => {
@@ -222,19 +272,35 @@ const Home = () => {
               )}
             </motion.div>
 
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-              {products.map((product, index) => (
-                <motion.div
-                  key={product.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.6, delay: index * 0.1 }}
-                  viewport={{ once: true }}
-                >
-                  <ProductCard product={product} user={user} />
-                </motion.div>
-              ))}
-            </div>
+            {/* ✅ Loading State */}
+            {loading ? (
+              <div className="flex flex-col items-center justify-center py-20">
+                <div className="w-16 h-16 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+                <p className="text-gray-600 font-semibold text-lg">Loading products...</p>
+              </div>
+            ) : products.length === 0 ? (
+              // ✅ No Products State
+              <div className="text-center py-20">
+                <Package className="w-24 h-24 text-gray-300 mx-auto mb-4" />
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">No Products Available</h3>
+                <p className="text-gray-600">Products will appear here once added by admin.</p>
+              </div>
+            ) : (
+              // ✅ Products Grid
+              <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+                {products.map((product, index) => (
+                  <motion.div
+                    key={product.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, delay: index * 0.1 }}
+                    viewport={{ once: true }}
+                  >
+                    <ProductCard product={product} user={user} />
+                  </motion.div>
+                ))}
+              </div>
+            )}
           </div>
         </section>
 
