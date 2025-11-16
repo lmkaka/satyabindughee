@@ -8,6 +8,7 @@ import Home from './pages/Home';
 import AboutUs from './pages/AboutUs';
 import AdminPanel from './components/AdminPanel';
 import ContactUs from './pages/ContactUs';
+import Products from './pages/Products';
 import GoogleAuth from './components/GoogleAuth';
 import UserProfile from './components/UserProfile';
 import TrackOrders from './components/TrackOrders';
@@ -169,6 +170,7 @@ function AppContent({ isSidebarOpen, setIsSidebarOpen }) {
           <Route path="/about" element={<AboutUs />} />
           <Route path="/contact" element={<ContactUs />} />
           <Route path="/adminhu" element={<AdminPanel />} />
+          <Route path="/update" element={<Products />} />
         </Routes>
       </motion.main>
 
