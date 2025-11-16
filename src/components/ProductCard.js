@@ -6,30 +6,24 @@ import OrderForm from './OrderForm';
 const ProductCard = ({ product }) => {
   const [isOrderFormOpen, setIsOrderFormOpen] = useState(false);
   
-  // ✅ MOVE ALL HOOKS BEFORE ANY EARLY RETURN
-  
   // ✅ Decode Base64 image with memoization
   const decodedImage = useMemo(() => {
     if (!product) return 'https://radarofc.onrender.com/IMG_20251106_204751_845-modified.png';
     
     let imageUrl = product.image_base64 || product.image;
     
-    // If no image, use fallback
     if (!imageUrl) {
       return 'https://radarofc.onrender.com/IMG_20251106_204751_845-modified.png';
     }
     
-    // If already has data:image prefix, return as is
     if (imageUrl.startsWith('data:image')) {
       return imageUrl;
     }
     
-    // If it's a regular URL (http/https), return as is
     if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
       return imageUrl;
     }
     
-    // Otherwise, assume it's Base64 without prefix - add it
     return `data:image/jpeg;base64,${imageUrl}`;
   }, [product]);
 
@@ -40,12 +34,10 @@ const ProductCard = ({ product }) => {
     return Math.round(((product.original_price - product.price) / product.original_price) * 100);
   }, [product]);
 
-  // ✅ NOW check for null product AFTER all hooks
   if (!product) {
     return null;
   }
 
-  // ✅ Safe destructure with defaults
   const {
     id,
     name = 'Premium Ghee',
@@ -67,7 +59,7 @@ const ProductCard = ({ product }) => {
         whileHover={{ y: -5 }}
         className="bg-white rounded-xl shadow-lg overflow-hidden card-hover"
       >
-        {/* Image Container with Base64 Decode */}
+        {/* Image Container */}
         <div className="relative">
           <div className="w-full h-64 bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center p-2">
             <img
@@ -89,10 +81,10 @@ const ProductCard = ({ product }) => {
             />
           </div>
           
-          {/* Discount Badge */}
+          {/* ✅ DISCOUNT BADGE - Always visible if discount > 0 */}
           {discount > 0 && (
-            <div className="absolute top-4 left-4 bg-red-500 text-white px-2 py-1 rounded-full text-sm font-semibold">
-              {discount}% OFF
+            <div className="absolute top-3 left-3 bg-gradient-to-r from-red-500 to-red-600 text-white px-3 py-1.5 rounded-full text-xs font-black shadow-lg">
+              🔥 {discount}% OFF
             </div>
           )}
         </div>
@@ -103,7 +95,7 @@ const ProductCard = ({ product }) => {
           
           <p className="text-gray-600 text-sm mb-4">{description}</p>
 
-          {/* Benefits Section - Safe */}
+          {/* Benefits Section */}
           {benefits && benefits.length > 0 && (
             <div className="mb-4">
               <h4 className="font-semibold mb-2">Benefits:</h4>
@@ -121,16 +113,33 @@ const ProductCard = ({ product }) => {
             </div>
           )}
 
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <span className="text-2xl font-bold text-gray-900">₹{price}</span>
+          {/* ✅ PRICE SECTION - Clearly shows both prices */}
+          <div className="mb-4">
+            <div className="flex items-baseline gap-2 mb-1">
+              <span className="text-3xl font-black text-gray-900">₹{price}</span>
               {original_price > price && (
-                <span className="text-lg text-gray-500 line-through">₹{original_price}</span>
+                <>
+                  <span className="text-lg text-gray-400 line-through font-semibold">₹{original_price}</span>
+                  <span className="text-sm font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded">
+                    Save ₹{original_price - price}
+                  </span>
+                </>
               )}
             </div>
-            <span className={`text-sm font-semibold ${inStock ? 'text-green-600' : 'text-red-600'}`}>
-              {inStock ? 'In Stock' : 'Out of Stock'}
-            </span>
+            
+            {/* Stock Status */}
+            <div className="flex items-center justify-between">
+              <span className={`text-xs font-bold px-2 py-1 rounded-full ${inStock ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                {inStock ? '✓ In Stock' : '✗ Out of Stock'}
+              </span>
+              
+              {/* Show discount percentage again near price */}
+              {discount > 0 && (
+                <span className="text-xs font-black text-orange-600 bg-orange-50 px-2 py-1 rounded-full">
+                  {discount}% OFF
+                </span>
+              )}
+            </div>
           </div>
 
           <motion.button
