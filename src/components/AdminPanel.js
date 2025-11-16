@@ -3,9 +3,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Package, User, Phone, MapPin, Eye, Download, Trash2, FileText,
   ClipboardList, Clock, CheckCircle, IndianRupee, RefreshCw,
-  MessageCircle, Mail, Reply, Lock, LogOut, X, Shield
+  MessageCircle, Mail, Reply, Lock, LogOut, X, Shield,
+  Users, UserPlus, Edit2, Search, Calendar, AlertCircle  // ✅ ADD THESE
 } from 'lucide-react';
 import jsPDF from 'jspdf';
+// Add this import after other imports
+import ProductManagement from './ProductManagement';
 import 'jspdf-autotable';
 import { supabase } from '../supabaseClient';
 
@@ -75,6 +78,12 @@ const AdminPanel = () => {
   const [activeTab, setActiveTab] = useState('orders');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+const [users, setUsers] = useState([]);
+const [products, setProducts] = useState([]);
+const [selectedUser, setSelectedUser] = useState(null);
+const [showUsersModal, setShowUsersModal] = useState(false);
+const [searchQuery, setSearchQuery] = useState('');
+
 
   // Check saved login
   useEffect(() => {
@@ -89,6 +98,8 @@ const AdminPanel = () => {
     if (isAuthenticated) {
       loadOrders();
       loadMessages();
+       loadUsers();     // ✅ ADD THIS
+    loadProducts();  // ✅ ADD THIS
     }
   }, [isAuthenticated]);
 
@@ -188,6 +199,40 @@ const AdminPanel = () => {
       setIsLoading(false);
     }
   };
+  // After your loadMessages function, ADD THESE:
+
+// Load users
+const loadUsers = async () => {
+  try {
+    const { data, error: supabaseError } = await supabase
+      .from('user_profiles')
+      .select('*')
+      .order('created_at', { ascending: false });
+    
+    if (supabaseError) throw supabaseError;
+    setUsers(data || []);
+  } catch (err) {
+    console.error('Failed to load users:', err);
+    setUsers([]);
+  }
+};
+
+// Load products
+const loadProducts = async () => {
+  try {
+    const { data, error: supabaseError } = await supabase
+      .from('products')
+      .select('*')
+      .order('created_at', { ascending: false });
+    
+    if (supabaseError) throw supabaseError;
+    setProducts(data || []);
+  } catch (err) {
+    console.error('Failed to load products:', err);
+    setProducts([]);
+  }
+};
+
 
   // FIXED: Update order status with proper reload
   const updateOrderStatus = async (orderId, newStatus) => {
@@ -901,6 +946,8 @@ const AdminPanel = () => {
         onClick={() => { 
           loadOrders(); 
           loadMessages(); 
+          loadUsers();     // ✅ ADD THIS
+  loadProducts();  // ✅ ADD THIS
         }}
         className="fixed bottom-6 right-6 md:bottom-8 md:right-8 w-14 h-14 md:w-16 md:h-16 bg-gradient-to-r from-orange-500 to-amber-500 rounded-full shadow-2xl flex items-center justify-center z-50 hover:shadow-orange-500/50 transition-all"
         title="Refresh Data"
@@ -937,9 +984,34 @@ const AdminPanel = () => {
                 : 'text-gray-600 hover:bg-gray-50'
             }`}
           >
+            
             <MessageCircle size={18} className="inline mr-2" />
             Messages ({messages.length})
           </button>
+            {/* ✅ ADD THESE TWO NEW BUTTONS: */}
+<button
+  onClick={() => setActiveTab('users')}
+  className={`flex-1 min-w-[120px] py-3 px-4 rounded-lg font-semibold text-sm transition-all whitespace-nowrap ${
+    activeTab === 'users'
+      ? 'bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-md'
+      : 'text-gray-600 hover:bg-gray-50'
+  }`}
+>
+  <Users size={18} className="inline mr-2" />
+  Users ({users.length})
+</button>
+
+<button
+  onClick={() => setActiveTab('products')}
+  className={`flex-1 min-w-[120px] py-3 px-4 rounded-lg font-semibold text-sm transition-all whitespace-nowrap ${
+    activeTab === 'products'
+      ? 'bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-md'
+      : 'text-gray-600 hover:bg-gray-50'
+  }`}
+>
+  <Package size={18} className="inline mr-2" />
+  Products
+</button>
         </div>
       </div>
 
@@ -1087,6 +1159,131 @@ const AdminPanel = () => {
               Export
             </button>
           </div>
+       {/* ✅ ADD THIS ENTIRE USERS TAB: */}
+{activeTab === 'users' && (
+  <div className="px-4 space-y-4">
+    {/* Users Header */}
+    <div className="bg-white rounded-2xl shadow-lg p-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h3 className="text-xl font-black text-gray-900 flex items-center gap-2">
+            <Users size={24} className="text-purple-600" />
+            Registered Users
+          </h3>
+          <p className="text-sm text-gray-600 mt-1">
+            Total: <span className="font-bold text-purple-600">{users.length}</span> users
+          </p>
+        </div>
+
+        <button
+          onClick={() => setShowUsersModal(true)}
+          className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white px-5 py-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 shadow-lg transition active:scale-95"
+        >
+          <Eye size={16} strokeWidth={2.5} />
+          View All ({users.length})
+        </button>
+      </div>
+
+      {/* Search Bar */}
+      <div className="relative mt-4">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Search users by name, phone, or email..."
+          className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-400 focus:border-purple-400 outline-none transition text-sm"
+        />
+      </div>
+    </div>
+
+    {/* Users Grid */}
+    {isLoading ? (
+      <div className="bg-white rounded-2xl shadow-lg p-12 text-center">
+        <div className="w-12 h-12 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+        <p className="text-gray-600 font-semibold">Loading users...</p>
+      </div>
+    ) : users.filter(user =>
+        user.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        user.phone?.includes(searchQuery) ||
+        user.email?.toLowerCase().includes(searchQuery.toLowerCase())
+      ).length === 0 ? (
+      <div className="bg-white rounded-2xl shadow-lg p-12 text-center">
+        <Users className="text-gray-300 mx-auto mb-4" size={64} />
+        <h3 className="text-lg font-bold text-gray-900 mb-2">
+          {searchQuery ? 'No users found' : 'No users registered yet'}
+        </h3>
+      </div>
+    ) : (
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        {users.filter(user =>
+          user.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          user.phone?.includes(searchQuery) ||
+          user.email?.toLowerCase().includes(searchQuery.toLowerCase())
+        ).slice(0, 12).map((user, index) => (
+          <motion.div
+            key={user.id}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.05 }}
+            className="bg-white rounded-2xl shadow-lg p-4 hover:shadow-xl transition-all border-2 border-gray-100 hover:border-purple-200"
+          >
+            <div className="flex items-center gap-3 mb-3">
+              {user.avatar_url ? (
+                <img 
+                  src={user.avatar_url} 
+                  alt={user.name} 
+                  className="w-14 h-14 rounded-full border-2 border-purple-200 shadow-md"
+                />
+              ) : (
+                <div className="w-14 h-14 bg-gradient-to-br from-purple-400 to-indigo-500 rounded-full flex items-center justify-center shadow-md">
+                  <User className="text-white" size={28} strokeWidth={2.5} />
+                </div>
+              )}
+              <div className="flex-1 min-w-0">
+                <p className="font-black text-sm text-gray-900 truncate">{user.name}</p>
+                <p className="text-xs text-gray-600 font-semibold">{user.phone}</p>
+              </div>
+            </div>
+
+            <div className="space-y-1.5 text-xs mb-3">
+              <div className="flex items-center gap-2 text-gray-600">
+                <Mail size={12} className="text-gray-400 flex-shrink-0" />
+                <span className="truncate">{user.email || 'No email'}</span>
+              </div>
+              <div className="flex items-start gap-2 text-gray-600">
+                <MapPin size={12} className="text-gray-400 flex-shrink-0 mt-0.5" />
+                <span className="line-clamp-2">{user.address || 'No address'}</span>
+              </div>
+            </div>
+
+            <div className="pt-3 border-t-2 border-gray-100 flex items-center justify-between">
+              <div className="flex items-center gap-1.5 text-[10px] text-gray-500">
+                <Calendar size={10} />
+                {new Date(user.created_at).toLocaleDateString('en-IN')}
+              </div>
+              <button
+                onClick={() => setSelectedUser(user)}
+                className="text-purple-600 hover:text-purple-700 font-black text-xs flex items-center gap-1"
+              >
+                View
+                <Eye size={12} />
+              </button>
+            </div>
+          </motion.div>
+        ))}
+      </div>
+    )}
+  </div>
+)}
+{/* ✅ ADD THIS PRODUCTS TAB: */}
+{activeTab === 'products' && (
+  <div className="px-4">
+    <ProductManagement />
+  </div>
+)}
+
+
           
           {isLoading ? (
             <div className="bg-white rounded-xl shadow-lg p-8 text-center">
@@ -1281,6 +1478,148 @@ const AdminPanel = () => {
         )}
       </AnimatePresence>
     </div>
+{/* ✅ ADD THESE TWO MODALS AT THE END: */}
+
+{/* All Users Modal */}
+<AnimatePresence>
+  {showUsersModal && (
+    <div className="fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center z-50 p-4">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.9 }}
+        className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col"
+      >
+        <div className="sticky top-0 bg-gradient-to-r from-purple-500 to-indigo-600 p-5 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Users className="text-white" size={24} />
+            <div>
+              <h3 className="text-2xl font-black text-white">All Users</h3>
+              <p className="text-sm text-white/90">{users.length} total users</p>
+            </div>
+          </div>
+          <button
+            onClick={() => setShowUsersModal(false)}
+            className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center"
+          >
+            <X className="text-white" size={22} />
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-6">
+          <div className="space-y-3">
+            {users.map((user) => (
+              <div key={user.id} className="bg-gray-50 rounded-xl p-4 hover:bg-purple-50 transition border-2 border-gray-200">
+                <div className="flex items-start gap-4">
+                  <div className="w-16 h-16 bg-gradient-to-br from-purple-400 to-indigo-500 rounded-full flex items-center justify-center flex-shrink-0">
+                    <User className="text-white" size={32} />
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="font-black text-lg">{user.name}</h4>
+                    <div className="grid sm:grid-cols-2 gap-2 mt-2 text-sm">
+                      <div className="flex items-center gap-2">
+                        <Phone size={14} className="text-gray-400" />
+                        <span>{user.phone}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Mail size={14} className="text-gray-400" />
+                        <span className="truncate">{user.email || 'N/A'}</span>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-2 mt-2 text-sm">
+                      <MapPin size={14} className="text-gray-400 mt-0.5" />
+                      <span>{user.address || 'No address'}</span>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setSelectedUser(user);
+                      setShowUsersModal(false);
+                    }}
+                    className="bg-purple-100 hover:bg-purple-200 text-purple-700 px-4 py-2 rounded-xl font-bold text-xs"
+                  >
+                    Details
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </motion.div>
+    </div>
+  )}
+</AnimatePresence>
+
+{/* User Details Modal */}
+<AnimatePresence>
+  {selectedUser && (
+    <div className="fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center z-50 p-4">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.9 }}
+        className="bg-white rounded-2xl shadow-2xl w-full max-w-lg"
+      >
+        <div className="bg-gradient-to-r from-purple-500 to-indigo-600 p-6 rounded-t-2xl">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-2xl font-black text-white">User Details</h3>
+            <button
+              onClick={() => setSelectedUser(null)}
+              className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center"
+            >
+              <X className="text-white" size={20} />
+            </button>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center border-4 border-white">
+              <User className="text-white" size={36} />
+            </div>
+            <div>
+              <h4 className="text-2xl font-black text-white">{selectedUser.name}</h4>
+              <p className="text-white/90 text-sm">ID: #{selectedUser.id.toString().slice(-8)}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="p-6 space-y-5">
+          <div>
+            <p className="text-xs text-gray-500 font-bold uppercase mb-1">Phone</p>
+            <p className="font-black text-lg">{selectedUser.phone}</p>
+          </div>
+
+          <div>
+            <p className="text-xs text-gray-500 font-bold uppercase mb-1">Email</p>
+            <p className="font-bold">{selectedUser.email || 'Not provided'}</p>
+          </div>
+
+          <div>
+            <p className="text-xs text-gray-500 font-bold uppercase mb-1">Address</p>
+            <div className="bg-gray-50 p-4 rounded-xl border-2 border-gray-200">
+              <p className="text-sm">{selectedUser.address || 'No address'}</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 pt-4">
+            <a
+              href={`tel:${selectedUser.phone}`}
+              className="bg-green-500 hover:bg-green-600 text-white py-3 rounded-xl font-black text-sm flex items-center justify-center gap-2"
+            >
+              <Phone size={18} />
+              Call
+            </a>
+            <button
+              onClick={() => setSelectedUser(null)}
+              className="bg-gray-100 hover:bg-gray-200 text-gray-700 py-3 rounded-xl font-black text-sm"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      </motion.div>
+    </div>
+  )}
+</AnimatePresence>
+
   );
 };
 
