@@ -37,22 +37,42 @@ const Products = () => {
     loadProducts();
   }, []);
 
-  const loadUsers = async () => {
-    setLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from('user_profiles')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setUsers(data || []);
-    } catch (err) {
-      console.error('Error loading users:', err);
-    } finally {
-      setLoading(false);
+ const loadUsers = async () => {
+  setLoading(true);
+  try {
+    // Try direct query first
+    const { data, error, count } = await supabase
+      .from('user_profiles')
+      .select('*', { count: 'exact' })
+      .order('created_at', { ascending: false });
+    
+    if (error) {
+      console.error('Supabase Error:', error);
+      
+      // If RLS error, show alert
+      if (error.code === 'PGRST301' || error.message.includes('policy')) {
+        alert('⚠️ Database permission issue. Please check Row Level Security policies.');
+      }
+      
+      throw error;
     }
-  };
+    
+    console.log(`✅ Loaded ${data?.length || 0} users from database`);
+    setUsers(data || []);
+    
+    // Show notification if no users found
+    if (!data || data.length === 0) {
+      console.warn('No users found in database. Check if data exists.');
+    }
+    
+  } catch (err) {
+    console.error('Failed to load users:', err);
+    setUsers([]);
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   const loadProducts = async () => {
     setLoading(true);
