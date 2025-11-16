@@ -1,9 +1,12 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Menu, Phone, Search } from 'lucide-react';
+import { Menu, Phone, Search, User, LogOut } from 'lucide-react';
+import { useAuth } from '../App';
 
-const Navbar = ({ onMenuClick }) => {
+const Navbar = ({ onMenuClick, onLoginClick }) => {
+  const { user, signOut } = useAuth();
+
   return (
     <motion.nav
       initial={{ y: -100 }}
@@ -17,7 +20,7 @@ const Navbar = ({ onMenuClick }) => {
           {/* Logo with Image */}
           <Link to="/" className="flex items-center space-x-3 group">
             <div className="relative">
-              {/* 🔥 TUMHARA LOGO YAHA HAI */}
+              {/* Logo */}
               <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl overflow-hidden shadow-lg group-hover:shadow-xl transition-all duration-300 transform group-hover:scale-105 bg-white">
                 <img 
                   src="https://radarofc.onrender.com/IMG_20251106_204751_845-modified.png" 
@@ -65,8 +68,9 @@ const Navbar = ({ onMenuClick }) => {
             </Link>
           </div>
 
-          {/* Actions - Modern */}
+          {/* Actions - Modern with Auth */}
           <div className="flex items-center space-x-3">
+            {/* Call Button */}
             <motion.a 
               href="tel:+918603530133"
               whileHover={{ scale: 1.05 }}
@@ -76,7 +80,45 @@ const Navbar = ({ onMenuClick }) => {
               <Phone size={18} />
               Call Now
             </motion.a>
+
+            {/* Auth Section */}
+            {user ? (
+              <div className="hidden md:flex items-center gap-3">
+                {/* User Info */}
+                <div className="flex items-center gap-2 bg-amber-50 px-4 py-2 rounded-lg border border-amber-200">
+                  <User size={18} className="text-amber-600" />
+                  <div className="text-left">
+                    <p className="text-sm font-semibold text-gray-800 leading-none">
+                      {user.user_metadata?.name || 'User'}
+                    </p>
+                    <p className="text-xs text-gray-500">{user.phone}</p>
+                  </div>
+                </div>
+
+                {/* Logout Button */}
+                <motion.button
+                  onClick={signOut}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-medium shadow-lg transition-all"
+                >
+                  <LogOut size={18} />
+                  Logout
+                </motion.button>
+              </div>
+            ) : (
+              <motion.button
+                onClick={onLoginClick}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="hidden md:flex items-center gap-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white px-6 py-2 rounded-lg font-semibold shadow-lg hover:shadow-xl transition-all"
+              >
+                <User size={18} />
+                Login
+              </motion.button>
+            )}
             
+            {/* Mobile Menu Button */}
             <button
               onClick={onMenuClick}
               className="md:hidden p-2 text-gray-700 hover:text-amber-600 transition-colors"
@@ -86,6 +128,29 @@ const Navbar = ({ onMenuClick }) => {
           </div>
         </div>
       </div>
+
+      {/* Mobile User Info Bar */}
+      {user && (
+        <div className="md:hidden bg-amber-50 border-t border-amber-100 px-4 py-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <User size={16} className="text-amber-600" />
+              <div>
+                <p className="text-sm font-semibold text-gray-800">
+                  {user.user_metadata?.name || 'User'}
+                </p>
+                <p className="text-xs text-gray-500">{user.phone}</p>
+              </div>
+            </div>
+            <button
+              onClick={signOut}
+              className="text-xs bg-red-500 text-white px-3 py-1 rounded-lg font-medium"
+            >
+              Logout
+            </button>
+          </div>
+        </div>
+      )}
     </motion.nav>
   );
 };
