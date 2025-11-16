@@ -1,38 +1,155 @@
-import React, { useState } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import React, { useState, useEffect, createContext, useContext } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { supabase } from './supabaseClient'; // Your existing supabase client
 import Navbar from './components/Navbar';
 import Sidebar from './components/Sidebar';
 import Home from './pages/Home';
 import AboutUs from './pages/AboutUs';
 import AdminPanel from './components/AdminPanel';
 import ContactUs from './pages/ContactUs';
+import PhoneAuth from './components/PhoneAuth'; // New component
+import UserProfile from './components/UserProfile'; // New component
 import './index.css';
-import ScrollToTop from './components/ScrollToTop'; // ✅ ADD THIS IMPORT
+import ScrollToTop from './components/ScrollToTop';
+
+// Create Auth Context
+const AuthContext = createContext({});
+
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within AuthProvider');
+  }
+  return context;
+};
+
+// Auth Provider Component
+const AuthProvider = ({ children }) => {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // Check active session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      setLoading(false);
+    });
+
+    // Listen for auth changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const signOut = async () => {
+    await supabase.auth.signOut();
+    setUser(null);
+  };
+
+  const value = {
+    user,
+    signOut,
+    loading,
+  };
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+};
+
+// Main App Component
 function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   return (
     <Router>
-      <ScrollToTop /> {/* ✅ Add this INSIDE Router but BEFORE Routes */}
-      <div className="min-h-screen bg-gradient-to-br from-amber-50 via-white to-orange-50">
-        <Navbar onMenuClick={() => setIsSidebarOpen(true)} />
-        <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
-        
-        <motion.main
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5 }}
-        >
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/about" element={<AboutUs />} />
-            <Route path="/contact" element={<ContactUs />} />
-            <Route path="/adminhu" element={<AdminPanel />} />
-          </Routes>
-        </motion.main>
-      </div>
+      <AuthProvider>
+        <ScrollToTop />
+        <AppContent 
+          isSidebarOpen={isSidebarOpen}
+          setIsSidebarOpen={setIsSidebarOpen}
+        />
+      </AuthProvider>
     </Router>
+  );
+}
+
+// App Content with Auth Logic
+function AppContent({ isSidebarOpen, setIsSidebarOpen }) {
+  const { user, loading } = useAuth();
+  const [showAuth, setShowAuth] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
+
+  // Check if profile is completed for new users
+  useEffect(() => {
+    if (user && !user.user_metadata?.profile_completed) {
+      setShowProfile(true);
+    }
+  }, [user]);
+
+  const handleProfileComplete = () => {
+    setShowProfile(false);
+    // Refresh user data
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      // User data will auto-update via onAuthStateChange
+    });
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-amber-50 via-white to-orange-50">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-16 h-16 border-4 border-amber-600 border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-amber-800 font-semibold">Loading SB Ghee...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-amber-50 via-white to-orange-50">
+      <Navbar 
+        onMenuClick={() => setIsSidebarOpen(true)}
+        onLoginClick={() => setShowAuth(true)}
+        user={user}
+      />
+      <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+      
+      <motion.main
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.5 }}
+      >
+        <Routes>
+          <Route path="/" element={<Home user={user} />} />
+          <Route path="/about" element={<AboutUs />} />
+          <Route path="/contact" element={<ContactUs />} />
+          <Route path="/adminhu" element={<AdminPanel />} />
+        </Routes>
+      </motion.main>
+
+      {/* Phone Auth Modal */}
+      {showAuth && (
+        <PhoneAuth
+          onClose={() => setShowAuth(false)}
+          onSuccess={(userData) => {
+            console.log('User logged in:', userData);
+            setShowAuth(false);
+          }}
+        />
+      )}
+
+      {/* Profile Completion Modal (First-time users only) */}
+      {showProfile && user && (
+        <UserProfile
+          user={user}
+          onProfileComplete={handleProfileComplete}
+        />
+      )}
+    </div>
   );
 }
 
