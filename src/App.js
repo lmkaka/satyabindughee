@@ -14,7 +14,6 @@ import UserProfile from './components/UserProfile';
 import TrackOrders from './components/TrackOrders';
 import './index.css';
 import ScrollToTop from './components/ScrollToTop';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import OrderPage from './pages/OrderPage';
 
 // Create Auth Context
