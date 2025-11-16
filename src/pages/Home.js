@@ -57,33 +57,14 @@ const Home = () => {
       if (error) {
         console.error('Supabase error:', error);
         setProducts([]);
-        setLoading(false);
         return;
       }
       
-      // Transform data safely
-      const transformedProducts = (data || []).map(product => {
-        try {
-          return {
-            id: product.id,
-            name: product.name || 'Premium Ghee',
-            weight: product.weight || '250gms',
-            price: product.price || 0,
-            originalPrice: product.original_price || product.price || 0,
-            image: product.image_base64 || 'https://radarofc.onrender.com/IMG_20251106_204751_845-modified.png',
-            description: product.description || 'Premium quality pure ghee',
-            discount: product.original_price ? 
-              Math.round(((product.original_price - product.price) / product.original_price) * 100) : 0
-          };
-        } catch (err) {
-          console.error('Error transforming product:', err);
-          return null;
-        }
-      }).filter(Boolean); // Remove null values
+      // ✅ Just pass the raw data - ProductCard will handle Base64 decode
+      setProducts(data || []);
       
-      setProducts(transformedProducts);
     } catch (err) {
-      console.error('Error in loadProducts:', err);
+      console.error('Error loading products:', err);
       setProducts([]);
     } finally {
       setLoading(false);
