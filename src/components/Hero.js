@@ -1,27 +1,147 @@
 import React, { useState, useEffect, memo, useCallback } from 'react';
-import { Star, Award, Shield, Truck, ArrowRight, Play, ChevronLeft, ChevronRight, BadgeCheck, MapPin, Phone, User } from 'lucide-react';
-import { useAuth } from '../App'; // Import useAuth hook
+import { Star, Award, Shield, Truck, ArrowRight, Play, ChevronLeft, ChevronRight, BadgeCheck, MapPin, Phone, User, Edit2, X } from 'lucide-react';
+import { useAuth } from '../App';
+import { supabase } from '../supabaseClient';
 import OrderForm from './OrderForm';
 
-// ✅ Memoized Slide Component
+// Memoized Slide Component
 const Slide = memo(({ src, alt }) => (
   <div className="absolute inset-0">
-    <img
-      src={src}
-      alt={alt}
-      className="w-full h-full object-cover"
-      loading="eager"
-    />
+    <img src={src} alt={alt} className="w-full h-full object-cover" loading="eager" />
   </div>
 ));
-
 Slide.displayName = 'Slide';
 
+// Edit Profile Modal Component
+const EditProfileModal = ({ user, isOpen, onClose, onUpdate }) => {
+  const [formData, setFormData] = useState({
+    name: user?.user_metadata?.name || user?.user_metadata?.full_name || '',
+    phone: user?.user_metadata?.phone || '',
+    address: user?.user_metadata?.address || ''
+  });
+  const [loading, setLoading] = useState(false);
+
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      // Update profiles table
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({
+          name: formData.name,
+          phone: formData.phone,
+          address: formData.address,
+          updated_at: new Date().toISOString()
+        })
+        .eq('user_id', user.id);
+
+      if (profileError) throw profileError;
+
+      // Update auth metadata
+      await supabase.auth.updateUser({
+        data: {
+          name: formData.name,
+          phone: formData.phone,
+          address: formData.address
+        }
+      });
+
+      alert('Profile updated successfully! ✅');
+      onUpdate();
+      onClose();
+    } catch (error) {
+      alert('Error updating profile: ' + error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+        {/* Header */}
+        <div className="sticky top-0 bg-gradient-to-r from-amber-500 to-orange-500 p-5 rounded-t-2xl flex items-center justify-between">
+          <h3 className="text-xl font-bold text-white">Edit Profile</h3>
+          <button onClick={onClose} className="text-white hover:bg-white/20 rounded-lg p-1">
+            <X size={24} />
+          </button>
+        </div>
+
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          <div>
+            <label className="block text-gray-700 font-semibold mb-2">Full Name *</label>
+            <input
+              type="text"
+              name="name"
+              value={formData.name}
+              onChange={handleChange}
+              required
+              className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none"
+              placeholder="Enter your name"
+            />
+          </div>
+
+          <div>
+            <label className="block text-gray-700 font-semibold mb-2">Phone Number *</label>
+            <div className="flex gap-2">
+              <div className="flex items-center px-3 py-3 border-2 border-gray-200 rounded-xl bg-gray-50">
+                <span className="font-semibold">+91</span>
+              </div>
+              <input
+                type="tel"
+                name="phone"
+                value={formData.phone}
+                onChange={handleChange}
+                required
+                maxLength="10"
+                pattern="[0-9]{10}"
+                className="flex-1 px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none"
+                placeholder="9876543210"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-gray-700 font-semibold mb-2">Delivery Address *</label>
+            <textarea
+              name="address"
+              value={formData.address}
+              onChange={handleChange}
+              required
+              rows="3"
+              className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none resize-none"
+              placeholder="House no., Street, City, PIN"
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold py-3 rounded-xl hover:shadow-lg transition disabled:opacity-50"
+          >
+            {loading ? 'Saving...' : 'Save Changes'}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+};
+
 const Hero = () => {
-  const { user } = useAuth(); // Get logged-in user
+  const { user } = useAuth();
   const [currentSlide, setCurrentSlide] = useState(0);
   const [imagesLoaded, setImagesLoaded] = useState(false);
   const [isOrderFormOpen, setIsOrderFormOpen] = useState(false);
+  const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
   const [loadingProgress, setLoadingProgress] = useState(0);
   
   const images = [
@@ -51,12 +171,10 @@ const Hero = () => {
     { number: '10+', label: 'Years Experience' }
   ];
 
-  // Get user info from profiles or metadata
   const userName = user?.user_metadata?.name || user?.user_metadata?.full_name || '';
   const userPhone = user?.user_metadata?.phone || '';
   const userAddress = user?.user_metadata?.address || '';
 
-  // ✅ Optimized Image Preloading
   useEffect(() => {
     const loadImages = async () => {
       let loaded = 0;
@@ -108,10 +226,14 @@ const Hero = () => {
     setCurrentSlide((prev) => (prev - 1 + images.length) % images.length);
   }, [images.length]);
 
+  const handleProfileUpdate = () => {
+    // Refresh user data after update
+    supabase.auth.getSession();
+  };
+
   return (
     <>
       <section className="relative overflow-hidden bg-gradient-to-br from-amber-50 via-orange-50 to-red-50 min-h-screen">
-        {/* Background */}
         <div className="absolute inset-0 opacity-20 pointer-events-none">
           <div className="absolute top-20 right-10 w-72 h-72 bg-orange-300 rounded-full blur-3xl"></div>
           <div className="absolute top-40 left-10 w-72 h-72 bg-amber-300 rounded-full blur-3xl"></div>
@@ -120,139 +242,66 @@ const Hero = () => {
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-10 pb-12 sm:pb-16">
           
-     {/* 🔥 PREMIUM BLINKIT-STYLE USER HEADER - Only if logged in */}
-{user && (userName || userPhone || userAddress) && (
-  <div className="mb-6 animate-slideDown">
-    {/* Main Container - Gradient Background */}
-    <div className="bg-gradient-to-r from-purple-600 via-pink-600 to-red-600 rounded-2xl shadow-2xl overflow-hidden">
-      <div className="bg-white/10 backdrop-blur-xl p-4 sm:p-5">
-        <div className="flex items-start gap-3 sm:gap-4">
-          {/* User Avatar - Large & Prominent */}
-          <div className="flex-shrink-0 relative">
-            {user.user_metadata?.avatar_url ? (
-              <div className="relative">
-                <img 
-                  src={user.user_metadata.avatar_url} 
-                  alt="User" 
-                  className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl border-4 border-white/30 shadow-2xl"
-                />
-                <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-400 rounded-full border-3 border-white flex items-center justify-center">
-                  <div className="w-2 h-2 bg-white rounded-full"></div>
-                </div>
-              </div>
-            ) : (
-              <div className="relative">
-                <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-br from-yellow-400 via-orange-500 to-red-500 flex items-center justify-center shadow-2xl border-4 border-white/30">
-                  <User className="text-white" size={32} strokeWidth={2.5} />
-                </div>
-                <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-400 rounded-full border-3 border-white flex items-center justify-center">
-                  <div className="w-2 h-2 bg-white rounded-full"></div>
-                </div>
-              </div>
-            )}
-          </div>
+          {/* Clean User Info Bar */}
+          {user && (userName || userPhone || userAddress) && (
+            <div className="mb-6 animate-slideDown">
+              <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-lg border border-orange-100 p-4 sm:p-5">
+                <div className="flex items-center justify-between gap-4">
+                  {/* Left: User Info */}
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    {/* Avatar */}
+                    {user.user_metadata?.avatar_url ? (
+                      <img 
+                        src={user.user_metadata.avatar_url} 
+                        alt="User" 
+                        className="w-14 h-14 rounded-full border-2 border-orange-300 shadow-md flex-shrink-0"
+                      />
+                    ) : (
+                      <div className="w-14 h-14 rounded-full bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center shadow-md flex-shrink-0">
+                        <User className="text-white" size={24} strokeWidth={2.5} />
+                      </div>
+                    )}
 
-          {/* User Info - Rich Content */}
-          <div className="flex-1 min-w-0">
-            {/* Welcome Text - Large & Bold */}
-            <div className="mb-3">
-              <div className="flex items-center gap-2 mb-1">
-                <h2 className="text-xl sm:text-2xl font-black text-white leading-tight">
-                  Hey, {userName || 'There'}! 👋
-                </h2>
-              </div>
-              <p className="text-white/90 text-sm sm:text-base font-semibold flex items-center gap-2">
-                <span className="inline-block w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
-                Ready to order premium ghee
-              </p>
-            </div>
+                    {/* Info */}
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-base sm:text-lg font-bold text-gray-900 truncate">
+                        {userName || 'Guest User'}
+                      </h3>
+                      <div className="flex items-center gap-3 text-xs sm:text-sm text-gray-600 mt-1">
+                        {userPhone && (
+                          <div className="flex items-center gap-1">
+                            <Phone size={14} className="text-blue-500" />
+                            <span className="font-medium">+91 {userPhone}</span>
+                          </div>
+                        )}
+                        {userAddress && (
+                          <>
+                            <span className="hidden sm:inline">•</span>
+                            <div className="flex items-center gap-1">
+                              <MapPin size={14} className="text-green-500 flex-shrink-0" />
+                              <span className="font-medium truncate max-w-[200px]">
+                                {userAddress.substring(0, 30)}...
+                              </span>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
 
-            {/* Info Cards - Compact & Modern */}
-            <div className="space-y-2">
-              {/* Phone Number Card */}
-              {userPhone && (
-                <div className="flex items-center gap-2.5 bg-white/20 backdrop-blur-md rounded-xl px-3 py-2.5 border border-white/30">
-                  <div className="w-8 h-8 bg-white/30 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <Phone className="text-white" size={16} strokeWidth={2.5} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-white/70 text-[10px] font-bold uppercase tracking-wider">Contact</p>
-                    <p className="text-white text-sm font-black">+91 {userPhone}</p>
-                  </div>
-                </div>
-              )}
-
-              {/* Delivery Address Card */}
-              {userAddress && (
-                <div className="flex items-center gap-2.5 bg-white/20 backdrop-blur-md rounded-xl px-3 py-2.5 border border-white/30">
-                  <div className="w-8 h-8 bg-white/30 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <MapPin className="text-white" size={16} strokeWidth={2.5} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-white/70 text-[10px] font-bold uppercase tracking-wider">Delivering to</p>
-                    <p className="text-white text-sm font-black line-clamp-1">
-                      {userAddress.length > 40 ? userAddress.substring(0, 40) + '...' : userAddress}
-                    </p>
-                  </div>
-                  <button className="px-3 py-1.5 bg-white/20 hover:bg-white/30 rounded-lg text-white text-xs font-bold transition-all">
-                    Change
+                  {/* Right: Edit Button */}
+                  <button
+                    onClick={() => setIsEditProfileOpen(true)}
+                    className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-semibold rounded-xl shadow-md hover:shadow-lg transition-all flex-shrink-0"
+                  >
+                    <Edit2 size={16} />
+                    <span className="hidden sm:inline">Edit Profile</span>
+                    <span className="sm:hidden">Edit</span>
                   </button>
                 </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Bottom Action Bar */}
-        <div className="mt-4 pt-4 border-t border-white/20 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-              <span className="text-white/90 text-xs font-bold">Account Active</span>
-            </div>
-            <div className="h-4 w-px bg-white/30"></div>
-            <span className="text-white/70 text-xs font-semibold">Premium Member</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="flex -space-x-2">
-              <div className="w-7 h-7 bg-yellow-400 rounded-full border-2 border-white flex items-center justify-center">
-                <Star className="text-yellow-800" size={12} fill="currentColor" />
-              </div>
-              <div className="w-7 h-7 bg-green-400 rounded-full border-2 border-white flex items-center justify-center">
-                <Shield className="text-green-800" size={12} />
               </div>
             </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    {/* Quick Actions - Below Main Card */}
-    <div className="grid grid-cols-3 gap-2 mt-3">
-      <button className="bg-white rounded-xl p-3 shadow-lg hover:shadow-xl transition-all group">
-        <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center mx-auto mb-2 group-hover:scale-110 transition-transform">
-          <Truck className="text-white" size={18} strokeWidth={2.5} />
-        </div>
-        <p className="text-xs font-black text-gray-800">Track Order</p>
-      </button>
-      
-      <button className="bg-white rounded-xl p-3 shadow-lg hover:shadow-xl transition-all group">
-        <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg flex items-center justify-center mx-auto mb-2 group-hover:scale-110 transition-transform">
-          <Star className="text-white" size={18} strokeWidth={2.5} />
-        </div>
-        <p className="text-xs font-black text-gray-800">Rewards</p>
-      </button>
-      
-      <button className="bg-white rounded-xl p-3 shadow-lg hover:shadow-xl transition-all group">
-        <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg flex items-center justify-center mx-auto mb-2 group-hover:scale-110 transition-transform">
-          <Award className="text-white" size={18} strokeWidth={2.5} />
-        </div>
-        <p className="text-xs font-black text-gray-800">Offers</p>
-      </button>
-    </div>
-  </div>
-)}
-
+          )}
 
           {/* Carousel Section */}
           <div className="mb-6 sm:mb-10">
@@ -278,7 +327,6 @@ const Hero = () => {
                   <Slide src={images[currentSlide]} alt={`Premium Ghee ${currentSlide + 1}`} />
                 )}
 
-                {/* Navigation */}
                 <button
                   onClick={prevSlide}
                   disabled={!imagesLoaded}
@@ -410,7 +458,6 @@ const Hero = () => {
 
           {/* Main Content Grid */}
           <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
-            {/* Left Column */}
             <div>
               <div className="inline-flex items-center gap-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white px-4 py-2 rounded-full text-sm font-bold mb-4 shadow-lg">
                 <Award size={16} />
@@ -467,7 +514,6 @@ const Hero = () => {
               </div>
             </div>
 
-            {/* Right Column - Product Card */}
             <div className="relative">
               <div className="bg-white/80 backdrop-blur-md rounded-3xl shadow-2xl p-5 sm:p-6">
                 <div className="relative w-full h-[350px] sm:h-[400px] bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl overflow-hidden mb-4">
@@ -526,6 +572,15 @@ const Hero = () => {
         </div>
       </section>
 
+      {/* Edit Profile Modal */}
+      <EditProfileModal
+        user={user}
+        isOpen={isEditProfileOpen}
+        onClose={() => setIsEditProfileOpen(false)}
+        onUpdate={handleProfileUpdate}
+      />
+
+      {/* Order Form */}
       <OrderForm
         isOpen={isOrderFormOpen}
         onClose={() => setIsOrderFormOpen(false)}
