@@ -1,5 +1,5 @@
 import React, { useState, useEffect, createContext, useContext } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { supabase } from './supabaseClient';
 import Navbar from './components/Navbar';
@@ -115,6 +115,13 @@ function AppContent({ isSidebarOpen, setIsSidebarOpen }) {
     });
   };
 
+  // Handle login click from Navbar or Sidebar
+  const handleLoginClick = () => {
+    console.log('App: Opening GoogleAuth modal');
+    setShowAuth(true);
+    setIsSidebarOpen(false); // Close sidebar if open
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-amber-50 via-white to-orange-50">
@@ -128,12 +135,19 @@ function AppContent({ isSidebarOpen, setIsSidebarOpen }) {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-amber-50 via-white to-orange-50">
+      {/* Navbar with Login Handler */}
       <Navbar 
         onMenuClick={() => setIsSidebarOpen(true)}
-        onLoginClick={() => setShowAuth(true)}
+        onLoginClick={handleLoginClick}
         user={user}
       />
-      <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+      
+      {/* Sidebar with Login Handler */}
+      <Sidebar 
+        isOpen={isSidebarOpen} 
+        onClose={() => setIsSidebarOpen(false)}
+        onLoginClick={handleLoginClick} // ✅ Pass login handler
+      />
       
       <motion.main
         initial={{ opacity: 0 }}
@@ -151,7 +165,10 @@ function AppContent({ isSidebarOpen, setIsSidebarOpen }) {
       {/* Google Auth Modal */}
       {showAuth && !user && (
         <GoogleAuth
-          onClose={() => setShowAuth(false)}
+          onClose={() => {
+            console.log('Closing GoogleAuth modal');
+            setShowAuth(false);
+          }}
           onSuccess={(userData) => {
             console.log('User logged in with Google:', userData);
             setShowAuth(false);
