@@ -1,20 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
+import {
   Users, User, Phone, Mail, MapPin, Eye, X, Calendar,
   Package, Plus, Edit2, Trash2, Upload, AlertCircle, Search
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 
 const Products = () => {
-  // States
   const [activeTab, setActiveTab] = useState('users');
   const [users, setUsers] = useState([]);
   const [products, setProducts] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
   const [showUsersModal, setShowUsersModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [loading, setLoading] = useState(true);
+  
+  const [loading, setLoading] = useState(false);
 
   // Product Form States
   const [showProductModal, setShowProductModal] = useState(false);
@@ -28,10 +28,10 @@ const Products = () => {
     original_price: '',
     image_base64: '',
     description: 'Made from pure cow milk',
-    is_active: true
+    is_active: true,
   });
 
-  // Load Data
+  // Load users and products on mount
   useEffect(() => {
     loadUsers();
     loadProducts();
@@ -40,28 +40,15 @@ const Products = () => {
   const loadUsers = async () => {
     setLoading(true);
     try {
-      const { data, error, count } = await supabase
+      const { data, error } = await supabase
         .from('profiles')
-        .select('*', { count: 'exact' })
+        .select('*')
         .order('created_at', { ascending: false });
-      
-      if (error) {
-        console.error('Supabase Error:', error);
-        if (error.code === 'PGRST301' || error.message.includes('policy')) {
-          alert('⚠️ Database permission issue. Please check Row Level Security policies.');
-        }
-        throw error;
-      }
-      
-      console.log(`✅ Loaded ${data?.length || 0} users from database`);
+
+      if (error) throw error;
       setUsers(data || []);
-      
-      if (!data || data.length === 0) {
-        console.warn('No users found in database. Check if data exists.');
-      }
-      
-    } catch (err) {
-      console.error('Failed to load users:', err);
+    } catch (error) {
+      console.error('Load users error:', error);
       setUsers([]);
     } finally {
       setLoading(false);
@@ -78,14 +65,14 @@ const Products = () => {
 
       if (error) throw error;
       setProducts(data || []);
-    } catch (err) {
-      console.error('Error loading products:', err);
+    } catch (error) {
+      console.error('Load products error:', error);
+      setProducts([]);
     } finally {
       setLoading(false);
     }
   };
 
-  // Convert Image to Base64
   const convertToBase64 = (file) => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -95,7 +82,6 @@ const Products = () => {
     });
   };
 
-  // Handle Image Upload
   const handleImageUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -108,7 +94,7 @@ const Products = () => {
     setUploading(true);
     try {
       const base64String = await convertToBase64(file);
-      setFormData({ ...formData, image_base64: base64String });
+      setFormData((prev) => ({ ...prev, image_base64: base64String }));
       setPreviewImage(base64String);
     } catch (error) {
       alert('Error uploading image');
@@ -117,49 +103,58 @@ const Products = () => {
     }
   };
 
-  // Handle Product Submit
   const handleProductSubmit = async (e) => {
     e.preventDefault();
-
     if (!formData.weight || !formData.price || !formData.original_price) {
       alert('Please fill all required fields');
       return;
     }
 
     setLoading(true);
-    try {
-      const productData = {
-        name: formData.name,
-        weight: formData.weight,
-        price: parseInt(formData.price),
-        original_price: parseInt(formData.original_price),
-        image_base64: formData.image_base64 || null,
-        description: formData.description,
-        is_active: formData.is_active,
-        updated_at: new Date().toISOString()
-      };
 
+    const productData = {
+      name: formData.name,
+      weight: formData.weight,
+      price: parseInt(formData.price),
+      original_price: parseInt(formData.original_price),
+      image_base64: formData.image_base64 || null,
+      description: formData.description,
+      is_active: formData.is_active,
+      updated_at: new Date().toISOString(),
+    };
+
+    try {
       if (editingProduct) {
+        // Update product
         const { error } = await supabase
           .from('products')
           .update(productData)
           .eq('id', editingProduct.id);
 
         if (error) throw error;
-        alert('✅ Product updated!');
+
+        // Update products list locally for immediate UI reflect
+        setProducts((prev) =>
+          prev.map((p) => (p.id === editingProduct.id ? { ...p, ...productData } : p))
+        );
+
+        alert('✓ Product updated!');
       } else {
-        const { error } = await supabase
+        // Insert new product
+        const { data, error } = await supabase
           .from('products')
-          .insert([productData]);
+          .insert([productData])
+          .select();
 
         if (error) throw error;
-        alert('✅ Product created!');
+
+        // Append newly added product to list
+        setProducts((prev) => [...data, ...prev]);
+
+        alert('✓ Product created!');
       }
 
-      setShowProductModal(false);
-      setEditingProduct(null);
-      resetForm();
-      loadProducts();
+      closeAndReset();
     } catch (error) {
       alert('❌ Error: ' + error.message);
     } finally {
@@ -167,25 +162,20 @@ const Products = () => {
     }
   };
 
-  // Delete Product
   const handleDeleteProduct = async (id) => {
     if (!window.confirm('Delete this product?')) return;
 
     try {
-      const { error } = await supabase
-        .from('products')
-        .delete()
-        .eq('id', id);
-
+      const { error } = await supabase.from('products').delete().eq('id', id);
       if (error) throw error;
-      alert('✅ Deleted!');
-      loadProducts();
+
+      setProducts((prev) => prev.filter((p) => p.id !== id));
+      alert('✓ Deleted!');
     } catch (error) {
       alert('❌ Error: ' + error.message);
     }
   };
 
-  // Edit Product
   const handleEditProduct = (product) => {
     setEditingProduct(product);
     setFormData({
@@ -195,13 +185,12 @@ const Products = () => {
       original_price: product.original_price,
       image_base64: product.image_base64 || '',
       description: product.description || '',
-      is_active: product.is_active
+      is_active: product.is_active,
     });
     setPreviewImage(product.image_base64 || '');
     setShowProductModal(true);
   };
 
-  // Reset Form
   const resetForm = () => {
     setFormData({
       name: 'Premium Pure Ghee',
@@ -210,34 +199,41 @@ const Products = () => {
       original_price: '',
       image_base64: '',
       description: 'Made from pure cow milk',
-      is_active: true
+      is_active: true,
     });
     setPreviewImage('');
+    setEditingProduct(null);
   };
 
-  // Calculate Discount
+  const closeAndReset = () => {
+    setShowProductModal(false);
+    resetForm();
+  };
+
   const calculateDiscount = (price, originalPrice) => {
     if (!price || !originalPrice) return 0;
     return Math.round(((originalPrice - price) / originalPrice) * 100);
   };
 
-  // Filter Users
-  const filteredUsers = users.filter(user =>
-    user.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    user.phone?.includes(searchQuery) ||
-    user.email?.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredUsers = users.filter(
+    (user) =>
+      user.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      user.phone?.includes(searchQuery) ||
+      user.email?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-2 sm:p-4 md:p-8">
       <div className="max-w-7xl mx-auto">
-        {/* Header - Mobile Optimized */}
+        {/* Header */}
         <div className="mb-4 sm:mb-8">
-          <h1 className="text-2xl sm:text-3xl md:text-4xl font-black text-gray-900 mb-1 sm:mb-2">Management</h1>
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-black text-gray-900 mb-1 sm:mb-2">
+            Management
+          </h1>
           <p className="text-xs sm:text-sm text-gray-600 font-medium">Users & Products</p>
         </div>
 
-        {/* Tab Switcher - Mobile Optimized */}
+        {/* Tabs */}
         <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg p-1 mb-4 sm:mb-8 flex gap-1 sm:gap-2">
           <button
             onClick={() => setActiveTab('users')}
@@ -246,6 +242,7 @@ const Products = () => {
                 ? 'bg-gradient-to-r from-purple-500 to-indigo-600 text-white shadow-lg'
                 : 'text-gray-600 hover:bg-gray-50 active:bg-gray-100'
             }`}
+            type="button"
           >
             <Users size={16} className="inline mr-1 sm:mr-2" />
             <span className="hidden xs:inline">Users </span>({users.length})
@@ -257,6 +254,7 @@ const Products = () => {
                 ? 'bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-lg'
                 : 'text-gray-600 hover:bg-gray-50 active:bg-gray-100'
             }`}
+            type="button"
           >
             <Package size={16} className="inline mr-1 sm:mr-2" />
             <span className="hidden xs:inline">Products </span>({products.length})
@@ -266,7 +264,7 @@ const Products = () => {
         {/* Users Tab */}
         {activeTab === 'users' && (
           <div className="space-y-3 sm:space-y-6">
-            {/* Users Header - Mobile Optimized */}
+            {/* Header */}
             <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg p-3 sm:p-6">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4 mb-3 sm:mb-4">
                 <div>
@@ -278,13 +276,14 @@ const Products = () => {
                 <button
                   onClick={() => setShowUsersModal(true)}
                   className="w-full sm:w-auto bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg sm:rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transition text-xs sm:text-sm touch-manipulation"
+                  type="button"
                 >
                   <Eye size={16} />
                   View All
                 </button>
               </div>
 
-              {/* Search - Mobile Optimized */}
+              {/* Search */}
               <div className="relative">
                 <Search className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                 <input
@@ -297,7 +296,7 @@ const Products = () => {
               </div>
             </div>
 
-            {/* Users Grid - Mobile Optimized */}
+            {/* Users grid */}
             {loading ? (
               <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg p-8 sm:p-12 text-center">
                 <div className="w-10 h-10 sm:w-12 sm:h-12 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-3 sm:mb-4"></div>
@@ -311,7 +310,10 @@ const Products = () => {
             ) : (
               <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-4">
                 {filteredUsers.slice(0, 12).map((user) => (
-                  <div key={user.id} className="bg-white rounded-xl sm:rounded-2xl shadow-lg p-3 sm:p-4 hover:shadow-xl transition active:scale-95 touch-manipulation">
+                  <div
+                    key={user.id}
+                    className="bg-white rounded-xl sm:rounded-2xl shadow-lg p-3 sm:p-4 hover:shadow-xl transition active:scale-95 touch-manipulation"
+                  >
                     <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
                       <div className="w-10 h-10 sm:w-14 sm:h-14 bg-gradient-to-br from-purple-400 to-indigo-500 rounded-full flex items-center justify-center flex-shrink-0">
                         <User className="text-white" size={18} />
@@ -328,6 +330,7 @@ const Products = () => {
                     <button
                       onClick={() => setSelectedUser(user)}
                       className="w-full bg-purple-100 hover:bg-purple-200 active:bg-purple-300 text-purple-700 py-1.5 sm:py-2 rounded-lg font-bold text-[10px] sm:text-xs transition touch-manipulation"
+                      type="button"
                     >
                       View Details
                     </button>
@@ -338,10 +341,10 @@ const Products = () => {
           </div>
         )}
 
-        {/* Products Tab - Mobile Optimized */}
+        {/* Products Tab */}
         {activeTab === 'products' && (
           <div className="space-y-3 sm:space-y-6">
-            {/* Products Header - Mobile Optimized */}
+            {/* Header */}
             <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg p-3 sm:p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
               <div>
                 <h2 className="text-lg sm:text-xl md:text-2xl font-black text-gray-900">Products</h2>
@@ -349,18 +352,18 @@ const Products = () => {
               </div>
               <button
                 onClick={() => {
-                  setEditingProduct(null);
                   resetForm();
                   setShowProductModal(true);
                 }}
                 className="w-full sm:w-auto bg-gradient-to-r from-green-500 to-emerald-600 text-white px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg sm:rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transition text-xs sm:text-sm touch-manipulation"
+                type="button"
               >
                 <Plus size={18} />
                 Add Product
               </button>
             </div>
 
-            {/* Products Grid - Mobile Optimized */}
+            {/* Products Grid */}
             {loading ? (
               <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg p-8 sm:p-12 text-center">
                 <div className="w-10 h-10 sm:w-12 sm:h-12 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mx-auto mb-3 sm:mb-4"></div>
@@ -371,8 +374,12 @@ const Products = () => {
                 <Package className="text-gray-300 mx-auto mb-3 sm:mb-4" size={48} />
                 <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-1 sm:mb-2">No products yet</h3>
                 <button
-                  onClick={() => setShowProductModal(true)}
+                  onClick={() => {
+                    resetForm();
+                    setShowProductModal(true);
+                  }}
                   className="mt-3 sm:mt-4 bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg sm:rounded-xl font-bold inline-flex items-center gap-2 text-xs sm:text-sm touch-manipulation"
+                  type="button"
                 >
                   <Plus size={18} />
                   Add First Product
@@ -383,7 +390,10 @@ const Products = () => {
                 {products.map((product) => {
                   const discount = calculateDiscount(product.price, product.original_price);
                   return (
-                    <div key={product.id} className="bg-white rounded-xl sm:rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition active:scale-95 touch-manipulation">
+                    <div
+                      key={product.id}
+                      className="bg-white rounded-xl sm:rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition active:scale-95 touch-manipulation"
+                    >
                       <div className="relative aspect-square bg-gradient-to-br from-orange-100 to-amber-100">
                         {product.image_base64 ? (
                           <img src={product.image_base64} alt={product.name} className="w-full h-full object-cover" />
@@ -409,6 +419,7 @@ const Products = () => {
                           <button
                             onClick={() => handleEditProduct(product)}
                             className="flex-1 bg-blue-50 hover:bg-blue-100 active:bg-blue-200 text-blue-700 py-1.5 sm:py-2 rounded-lg font-bold text-[10px] sm:text-xs flex items-center justify-center gap-1 transition touch-manipulation"
+                            type="button"
                           >
                             <Edit2 size={12} />
                             Edit
@@ -416,6 +427,7 @@ const Products = () => {
                           <button
                             onClick={() => handleDeleteProduct(product.id)}
                             className="flex-1 bg-red-50 hover:bg-red-100 active:bg-red-200 text-red-700 py-1.5 sm:py-2 rounded-lg font-bold text-[10px] sm:text-xs flex items-center justify-center gap-1 transition touch-manipulation"
+                            type="button"
                           >
                             <Trash2 size={12} />
                             Delete
@@ -430,7 +442,7 @@ const Products = () => {
           </div>
         )}
 
-        {/* User Details Modal - Mobile Optimized */}
+        {/* User Details Modal */}
         <AnimatePresence>
           {selectedUser && (
             <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-3 sm:p-4">
@@ -443,7 +455,11 @@ const Products = () => {
                 <div className="bg-gradient-to-r from-purple-500 to-indigo-600 p-4 sm:p-6 rounded-t-xl sm:rounded-t-2xl">
                   <div className="flex justify-between items-start mb-3 sm:mb-4">
                     <h3 className="text-lg sm:text-2xl font-black text-white">User Details</h3>
-                    <button onClick={() => setSelectedUser(null)} className="w-8 h-8 sm:w-10 sm:h-10 bg-white/20 rounded-lg sm:rounded-xl flex items-center justify-center touch-manipulation">
+                    <button
+                      onClick={() => setSelectedUser(null)}
+                      className="w-8 h-8 sm:w-10 sm:h-10 bg-white/20 rounded-lg sm:rounded-xl flex items-center justify-center touch-manipulation"
+                      type="button"
+                    >
                       <X className="text-white" size={18} />
                     </button>
                   </div>
@@ -471,6 +487,7 @@ const Products = () => {
                   <button
                     onClick={() => setSelectedUser(null)}
                     className="w-full bg-gray-100 hover:bg-gray-200 active:bg-gray-300 py-2.5 sm:py-3 rounded-lg sm:rounded-xl font-bold text-sm touch-manipulation"
+                    type="button"
                   >
                     Close
                   </button>
@@ -480,7 +497,7 @@ const Products = () => {
           )}
         </AnimatePresence>
 
-        {/* Product Modal - Mobile Optimized */}
+        {/* Product Modal */}
         <AnimatePresence>
           {showProductModal && (
             <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-3 sm:p-4">
@@ -495,11 +512,9 @@ const Products = () => {
                     {editingProduct ? 'Edit Product' : 'Add Product'}
                   </h3>
                   <button
-                    onClick={() => {
-                      setShowProductModal(false);
-                      resetForm();
-                    }}
+                    onClick={closeAndReset}
                     className="w-8 h-8 sm:w-10 sm:h-10 bg-white/20 rounded-lg sm:rounded-xl flex items-center justify-center touch-manipulation"
+                    type="button"
                   >
                     <X className="text-white" size={18} />
                   </button>
@@ -569,7 +584,7 @@ const Products = () => {
                           type="button"
                           onClick={() => {
                             setPreviewImage('');
-                            setFormData({ ...formData, image_base64: '' });
+                            setFormData((prev) => ({ ...prev, image_base64: '' }));
                           }}
                           className="absolute top-2 right-2 w-7 h-7 sm:w-8 sm:h-8 bg-red-500 rounded-lg flex items-center justify-center touch-manipulation"
                         >
@@ -597,7 +612,7 @@ const Products = () => {
                     <textarea
                       value={formData.description}
                       onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                      rows="3"
+                      rows={3}
                       className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border-2 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-orange-400 outline-none resize-none text-sm"
                     />
                   </div>
@@ -618,7 +633,7 @@ const Products = () => {
                     disabled={loading || uploading}
                     className="w-full bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 active:from-orange-700 active:to-amber-700 text-white font-black py-3 sm:py-4 rounded-lg sm:rounded-xl shadow-lg transition disabled:opacity-50 text-sm touch-manipulation"
                   >
-                    {loading ? 'Saving...' : editingProduct ? 'Update Product' : 'Create Product'}
+                    {loading ? (editingProduct ? 'Updating...' : 'Saving...') : editingProduct ? 'Update Product' : 'Create Product'}
                   </button>
                 </form>
               </motion.div>
@@ -626,7 +641,7 @@ const Products = () => {
           )}
         </AnimatePresence>
 
-        {/* All Users Modal - Mobile Optimized */}
+        {/* All Users Modal */}
         <AnimatePresence>
           {showUsersModal && (
             <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-3 sm:p-4">
@@ -638,14 +653,21 @@ const Products = () => {
               >
                 <div className="bg-gradient-to-r from-purple-500 to-indigo-600 p-4 sm:p-5 flex justify-between items-center">
                   <h3 className="text-lg sm:text-2xl font-black text-white">All Users ({users.length})</h3>
-                  <button onClick={() => setShowUsersModal(false)} className="w-8 h-8 sm:w-10 sm:h-10 bg-white/20 rounded-lg sm:rounded-xl flex items-center justify-center touch-manipulation">
+                  <button
+                    onClick={() => setShowUsersModal(false)}
+                    className="w-8 h-8 sm:w-10 sm:h-10 bg-white/20 rounded-lg sm:rounded-xl flex items-center justify-center touch-manipulation"
+                    type="button"
+                  >
                     <X className="text-white" size={18} />
                   </button>
                 </div>
                 <div className="flex-1 overflow-y-auto p-3 sm:p-6">
                   <div className="space-y-2 sm:space-y-3">
                     {users.map((user) => (
-                      <div key={user.id} className="bg-gray-50 rounded-lg sm:rounded-xl p-3 sm:p-4 hover:bg-purple-50 active:bg-purple-100 transition touch-manipulation">
+                      <div
+                        key={user.id}
+                        className="bg-gray-50 rounded-lg sm:rounded-xl p-3 sm:p-4 hover:bg-purple-50 active:bg-purple-100 transition touch-manipulation"
+                      >
                         <div className="flex items-start gap-2 sm:gap-4">
                           <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-purple-400 to-indigo-500 rounded-full flex items-center justify-center flex-shrink-0">
                             <User className="text-white" size={24} />
