@@ -2,7 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Upload, X, Image as ImageIcon, Save, Trash2, Eye, EyeOff, 
-  ArrowUp, ArrowDown, Home, RefreshCw, CheckCircle, AlertCircle 
+  ArrowUp, ArrowDown, Home, RefreshCw, CheckCircle, AlertCircle,
+  Sparkles, Package, TrendingUp, Zap, Layers, Camera
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { useNavigate } from 'react-router-dom';
@@ -16,13 +17,11 @@ const ManageImages = () => {
   const [previewUrls, setPreviewUrls] = useState([]);
   const [notification, setNotification] = useState({ show: false, type: '', message: '' });
 
-  // Show notification
   const showNotification = (type, message) => {
     setNotification({ show: true, type, message });
     setTimeout(() => setNotification({ show: false, type: '', message: '' }), 3000);
   };
 
-  // Fetch images from database
   const fetchImages = async () => {
     setLoading(true);
     try {
@@ -45,7 +44,6 @@ const ManageImages = () => {
     fetchImages();
   }, []);
 
-  // Convert file to Base64
   const convertToBase64 = (file) => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -55,7 +53,6 @@ const ManageImages = () => {
     });
   };
 
-  // Handle multiple file selection
   const handleFileSelect = async (e) => {
     const files = Array.from(e.target.files);
     if (files.length === 0) return;
@@ -64,15 +61,13 @@ const ManageImages = () => {
     const validPreviews = [];
 
     for (const file of files) {
-      // Validate file type
       if (!file.type.startsWith('image/')) {
         showNotification('error', `${file.name} is not an image`);
         continue;
       }
 
-      // Validate file size (max 2MB)
       if (file.size > 2 * 1024 * 1024) {
-        showNotification('error', `${file.name} is larger than 2MB`);
+        showNotification('error', `${file.name} exceeds 2MB limit`);
         continue;
       }
 
@@ -89,13 +84,11 @@ const ManageImages = () => {
     setPreviewUrls([...previewUrls, ...validPreviews]);
   };
 
-  // Remove preview
   const removePreview = (index) => {
     setSelectedFiles(selectedFiles.filter((_, i) => i !== index));
     setPreviewUrls(previewUrls.filter((_, i) => i !== index));
   };
 
-  // Upload all selected images
   const handleUploadAll = async () => {
     if (previewUrls.length === 0) {
       showNotification('error', 'Please select images first');
@@ -119,7 +112,7 @@ const ManageImages = () => {
 
       if (error) throw error;
 
-      showNotification('success', `${insertData.length} image(s) uploaded! ✅`);
+      showNotification('success', `${insertData.length} image(s) uploaded successfully! 🎉`);
       setSelectedFiles([]);
       setPreviewUrls([]);
       fetchImages();
@@ -131,7 +124,6 @@ const ManageImages = () => {
     }
   };
 
-  // Toggle image active status
   const toggleImageStatus = async (id, currentStatus) => {
     try {
       const { error } = await supabase
@@ -140,16 +132,15 @@ const ManageImages = () => {
         .eq('id', id);
 
       if (error) throw error;
-      showNotification('success', currentStatus ? 'Image hidden' : 'Image activated');
+      showNotification('success', currentStatus ? '🔒 Image hidden' : '✅ Image activated');
       fetchImages();
     } catch (error) {
       showNotification('error', 'Failed to update status');
     }
   };
 
-  // Delete image
   const deleteImage = async (id) => {
-    if (!window.confirm('Delete this image permanently?')) return;
+    if (!window.confirm('🗑️ Delete this image permanently?')) return;
 
     try {
       const { error } = await supabase
@@ -158,14 +149,13 @@ const ManageImages = () => {
         .eq('id', id);
 
       if (error) throw error;
-      showNotification('success', 'Image deleted');
+      showNotification('success', '🗑️ Image deleted successfully');
       fetchImages();
     } catch (error) {
       showNotification('error', 'Failed to delete');
     }
   };
 
-  // Change image order
   const changeOrder = async (id, currentOrder, direction) => {
     const targetImage = images.find(img => img.id === id);
     const targetIndex = images.findIndex(img => img.id === id);
@@ -182,7 +172,6 @@ const ManageImages = () => {
     const swapImage = images[swapIndex];
 
     try {
-      // Swap orders
       await supabase
         .from('hero_images')
         .update({ image_order: swapImage.image_order })
@@ -199,206 +188,244 @@ const ManageImages = () => {
     }
   };
 
+  const activeCount = images.filter(img => img.is_active).length;
+  const hiddenCount = images.filter(img => !img.is_active).length;
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50">
       
-      {/* Notification Toast */}
+      {/* Floating Notification Toast */}
       {notification.show && (
-        <div className={`fixed top-4 right-4 z-50 px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 animate-slideDown ${
+        <div className={`fixed top-4 left-4 right-4 sm:left-auto sm:right-4 sm:max-w-sm z-50 px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-3 animate-slideDown backdrop-blur-lg ${
           notification.type === 'success' 
-            ? 'bg-green-500 text-white' 
-            : 'bg-red-500 text-white'
+            ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white' 
+            : 'bg-gradient-to-r from-red-500 to-pink-500 text-white'
         }`}>
-          {notification.type === 'success' ? <CheckCircle size={20} /> : <AlertCircle size={20} />}
-          <span className="font-semibold">{notification.message}</span>
+          {notification.type === 'success' ? <CheckCircle size={20} strokeWidth={2.5} /> : <AlertCircle size={20} strokeWidth={2.5} />}
+          <span className="font-bold text-sm flex-1">{notification.message}</span>
         </div>
       )}
 
-      <div className="max-w-7xl mx-auto px-4 py-6 sm:py-8">
+      <div className="mx-auto px-3 sm:px-4 lg:px-6 py-4 sm:py-6 max-w-7xl">
         
-        {/* Header */}
-        <div className="bg-white rounded-2xl shadow-lg p-5 sm:p-6 mb-6">
-          <div className="flex items-center justify-between mb-3">
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-black text-gray-900 mb-1">
-                🖼️ Hero Image Manager
-              </h1>
-              <p className="text-gray-600 text-sm sm:text-base">
-                Upload and manage carousel images
-              </p>
+        {/* Modern Header */}
+        <div className="bg-white rounded-2xl sm:rounded-3xl shadow-xl p-4 sm:p-6 mb-4 sm:mb-6 border border-orange-100">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex items-start gap-3">
+              <div className="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-orange-500 to-amber-500 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-lg">
+                <Camera className="text-white" size={24} strokeWidth={2.5} />
+              </div>
+              <div>
+                <h1 className="text-xl sm:text-2xl lg:text-3xl font-black text-gray-900 mb-1 flex items-center gap-2">
+                  Hero Gallery
+                  <Sparkles className="text-orange-500" size={20} />
+                </h1>
+                <p className="text-gray-600 text-xs sm:text-sm font-medium">
+                  Manage carousel images with ease
+                </p>
+              </div>
             </div>
 
             <div className="flex gap-2">
               <button
                 onClick={fetchImages}
-                className="p-2.5 sm:p-3 bg-blue-100 hover:bg-blue-200 active:bg-blue-300 text-blue-700 rounded-xl transition touch-manipulation"
+                className="flex-1 sm:flex-initial px-4 py-2.5 bg-blue-50 hover:bg-blue-100 active:bg-blue-200 text-blue-700 rounded-xl transition font-bold text-sm flex items-center justify-center gap-2 touch-manipulation shadow-sm"
                 title="Refresh"
               >
-                <RefreshCw size={20} />
+                <RefreshCw size={16} strokeWidth={2.5} />
+                <span className="sm:inline">Refresh</span>
               </button>
               <button
                 onClick={() => navigate('/')}
-                className="p-2.5 sm:p-3 bg-orange-100 hover:bg-orange-200 active:bg-orange-300 text-orange-700 rounded-xl transition touch-manipulation"
-                title="Go to Home"
+                className="flex-1 sm:flex-initial px-4 py-2.5 bg-orange-50 hover:bg-orange-100 active:bg-orange-200 text-orange-700 rounded-xl transition font-bold text-sm flex items-center justify-center gap-2 touch-manipulation shadow-sm"
+                title="Home"
               >
-                <Home size={20} />
+                <Home size={16} strokeWidth={2.5} />
+                <span className="sm:inline">Home</span>
               </button>
             </div>
           </div>
 
-          <div className="flex items-center gap-4 text-sm">
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-              <span className="text-gray-700 font-semibold">{images.filter(img => img.is_active).length} Active</span>
+          {/* Stats Cards - Mobile First */}
+          <div className="grid grid-cols-3 gap-2 sm:gap-3 mt-4">
+            <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-3 border border-green-200">
+              <div className="flex items-center gap-2 mb-1">
+                <Eye size={14} className="text-green-600" strokeWidth={2.5} />
+                <span className="text-xs font-bold text-green-700 uppercase">Active</span>
+              </div>
+              <p className="text-2xl sm:text-3xl font-black text-green-600">{activeCount}</p>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 bg-gray-400 rounded-full"></div>
-              <span className="text-gray-700 font-semibold">{images.filter(img => !img.is_active).length} Hidden</span>
+
+            <div className="bg-gradient-to-br from-gray-50 to-slate-50 rounded-xl p-3 border border-gray-200">
+              <div className="flex items-center gap-2 mb-1">
+                <EyeOff size={14} className="text-gray-600" strokeWidth={2.5} />
+                <span className="text-xs font-bold text-gray-700 uppercase">Hidden</span>
+              </div>
+              <p className="text-2xl sm:text-3xl font-black text-gray-600">{hiddenCount}</p>
             </div>
-            <div className="flex items-center gap-2">
-              <ImageIcon size={16} className="text-blue-600" />
-              <span className="text-gray-700 font-semibold">{images.length} Total</span>
+
+            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-3 border border-blue-200">
+              <div className="flex items-center gap-2 mb-1">
+                <Layers size={14} className="text-blue-600" strokeWidth={2.5} />
+                <span className="text-xs font-bold text-blue-700 uppercase">Total</span>
+              </div>
+              <p className="text-2xl sm:text-3xl font-black text-blue-600">{images.length}</p>
             </div>
           </div>
         </div>
 
-        {/* Upload Section */}
-        <div className="bg-white rounded-2xl shadow-lg p-5 sm:p-6 mb-6">
-          <h2 className="text-lg sm:text-xl font-black text-gray-900 mb-4 flex items-center gap-2">
-            <Upload size={22} className="text-orange-600" />
-            Upload New Images
-          </h2>
+        {/* Upload Zone - Mobile Optimized */}
+        <div className="bg-white rounded-2xl sm:rounded-3xl shadow-xl p-4 sm:p-6 mb-4 sm:mb-6 border border-orange-100">
+          <div className="flex items-center gap-2 mb-4">
+            <div className="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center">
+              <Upload size={18} className="text-orange-600" strokeWidth={2.5} />
+            </div>
+            <h2 className="text-lg sm:text-xl font-black text-gray-900">Upload Images</h2>
+          </div>
 
-          <div className="space-y-4">
-            {/* File Input */}
-            <label className="block w-full cursor-pointer">
-              <div className="border-3 border-dashed border-gray-300 rounded-2xl p-8 sm:p-12 text-center hover:border-orange-500 hover:bg-orange-50/50 transition-all">
-                <div className="flex flex-col items-center gap-3">
-                  <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-orange-100 to-amber-100 rounded-2xl flex items-center justify-center">
-                    <ImageIcon size={32} className="text-orange-600" strokeWidth={2} />
-                  </div>
-                  <div>
-                    <p className="text-gray-900 font-bold text-base sm:text-lg mb-1">
-                      Click to select images
-                    </p>
-                    <p className="text-sm text-gray-500">
-                      PNG, JPG, WEBP • Max 2MB each • Multiple allowed
-                    </p>
-                  </div>
+          <label className="block w-full cursor-pointer group">
+            <div className="border-2 border-dashed border-orange-300 group-hover:border-orange-500 group-active:border-orange-600 rounded-2xl p-6 sm:p-10 text-center bg-gradient-to-br from-orange-50/50 to-amber-50/50 group-hover:from-orange-100/50 group-hover:to-amber-100/50 transition-all">
+              <div className="flex flex-col items-center gap-3">
+                <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-orange-400 to-amber-500 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                  <ImageIcon size={32} className="text-white" strokeWidth={2} />
+                </div>
+                <div>
+                  <p className="text-gray-900 font-bold text-base sm:text-lg mb-1">
+                    Tap to select images
+                  </p>
+                  <p className="text-xs sm:text-sm text-gray-500 font-medium">
+                    PNG, JPG, WEBP • Max 2MB • Multiple files
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 text-xs text-orange-600 font-semibold">
+                  <Zap size={14} />
+                  <span>Quick upload enabled</span>
                 </div>
               </div>
-              <input
-                type="file"
-                accept="image/*"
-                multiple
-                onChange={handleFileSelect}
-                className="hidden"
-              />
-            </label>
+            </div>
+            <input
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={handleFileSelect}
+              className="hidden"
+            />
+          </label>
 
-            {/* Preview Grid */}
-            {previewUrls.length > 0 && (
-              <div>
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="font-bold text-gray-900">Selected Images ({previewUrls.length})</h3>
-                  <button
-                    onClick={() => {
-                      setPreviewUrls([]);
-                      setSelectedFiles([]);
-                    }}
-                    className="text-sm text-red-600 hover:text-red-700 font-semibold"
-                  >
-                    Clear All
-                  </button>
-                </div>
-
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                  {previewUrls.map((url, index) => (
-                    <div key={index} className="relative group">
-                      <div className="border-2 border-gray-200 rounded-xl overflow-hidden aspect-square">
-                        <img
-                          src={url}
-                          alt={`Preview ${index + 1}`}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                      <button
-                        onClick={() => removePreview(index)}
-                        className="absolute -top-2 -right-2 w-7 h-7 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center shadow-lg opacity-0 group-hover:opacity-100 transition"
-                      >
-                        <X size={14} strokeWidth={3} />
-                      </button>
-                      <div className="absolute bottom-2 left-2 right-2">
-                        <p className="text-xs font-semibold text-white bg-black/70 px-2 py-1 rounded truncate">
-                          {selectedFiles[index]?.name}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
+          {/* Preview Grid - Mobile First */}
+          {previewUrls.length > 0 && (
+            <div className="mt-4">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-black text-gray-900 text-sm sm:text-base flex items-center gap-2">
+                  <Package size={16} className="text-orange-500" />
+                  Selected ({previewUrls.length})
+                </h3>
                 <button
-                  onClick={handleUploadAll}
-                  disabled={uploading}
-                  className="w-full mt-4 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 active:from-orange-700 active:to-amber-700 text-white py-3.5 sm:py-4 rounded-xl font-bold text-base sm:text-lg shadow-xl transition disabled:opacity-50 flex items-center justify-center gap-2 touch-manipulation"
+                  onClick={() => {
+                    setPreviewUrls([]);
+                    setSelectedFiles([]);
+                  }}
+                  className="text-xs sm:text-sm text-red-600 hover:text-red-700 font-bold flex items-center gap-1"
                 >
-                  {uploading ? (
-                    <>
-                      <div className="w-5 h-5 border-3 border-white border-t-transparent rounded-full animate-spin"></div>
-                      Uploading...
-                    </>
-                  ) : (
-                    <>
-                      <Save size={20} strokeWidth={2.5} />
-                      Upload {previewUrls.length} Image{previewUrls.length > 1 ? 's' : ''}
-                    </>
-                  )}
+                  <X size={14} />
+                  Clear All
                 </button>
               </div>
-            )}
-          </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3">
+                {previewUrls.map((url, index) => (
+                  <div key={index} className="relative group">
+                    <div className="aspect-square border-2 border-orange-200 rounded-xl overflow-hidden bg-gray-100">
+                      <img
+                        src={url}
+                        alt={`Preview ${index + 1}`}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <button
+                      onClick={() => removePreview(index)}
+                      className="absolute -top-2 -right-2 w-7 h-7 bg-red-500 hover:bg-red-600 active:bg-red-700 text-white rounded-full flex items-center justify-center shadow-lg opacity-0 group-hover:opacity-100 transition-opacity touch-manipulation"
+                    >
+                      <X size={14} strokeWidth={3} />
+                    </button>
+                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2">
+                      <p className="text-xs font-bold text-white truncate">
+                        {selectedFiles[index]?.name}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <button
+                onClick={handleUploadAll}
+                disabled={uploading}
+                className="w-full mt-4 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 active:from-orange-700 active:to-amber-700 disabled:from-gray-400 disabled:to-gray-500 text-white py-3 sm:py-3.5 rounded-xl font-black text-sm sm:text-base shadow-xl transition-all disabled:opacity-50 flex items-center justify-center gap-2 touch-manipulation"
+              >
+                {uploading ? (
+                  <>
+                    <div className="w-5 h-5 border-3 border-white border-t-transparent rounded-full animate-spin"></div>
+                    Uploading...
+                  </>
+                ) : (
+                  <>
+                    <Save size={18} strokeWidth={2.5} />
+                    Upload {previewUrls.length} Image{previewUrls.length > 1 ? 's' : ''}
+                  </>
+                )}
+              </button>
+            </div>
+          )}
         </div>
 
-        {/* Images Gallery */}
-        <div className="bg-white rounded-2xl shadow-lg p-5 sm:p-6">
-          <h2 className="text-lg sm:text-xl font-black text-gray-900 mb-4">
-            Uploaded Images ({images.length})
-          </h2>
+        {/* Image Gallery - Mobile Optimized */}
+        <div className="bg-white rounded-2xl sm:rounded-3xl shadow-xl p-4 sm:p-6 border border-orange-100">
+          <div className="flex items-center gap-2 mb-4">
+            <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+              <Layers size={18} className="text-blue-600" strokeWidth={2.5} />
+            </div>
+            <h2 className="text-lg sm:text-xl font-black text-gray-900">
+              Gallery ({images.length})
+            </h2>
+          </div>
 
           {loading ? (
-            <div className="text-center py-16">
+            <div className="text-center py-12 sm:py-16">
               <div className="w-14 h-14 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-              <p className="text-gray-600 font-semibold">Loading images...</p>
+              <p className="text-gray-600 font-bold text-sm sm:text-base">Loading gallery...</p>
             </div>
           ) : images.length === 0 ? (
-            <div className="text-center py-16 text-gray-500">
-              <ImageIcon size={56} className="mx-auto mb-4 opacity-40" strokeWidth={1.5} />
-              <p className="text-lg font-semibold">No images uploaded yet</p>
-              <p className="text-sm mt-1">Upload your first image above</p>
+            <div className="text-center py-12 sm:py-16">
+              <div className="w-20 h-20 mx-auto mb-4 bg-gray-100 rounded-2xl flex items-center justify-center">
+                <ImageIcon size={40} className="text-gray-400" strokeWidth={1.5} />
+              </div>
+              <p className="text-base sm:text-lg font-bold text-gray-700 mb-1">No images yet</p>
+              <p className="text-xs sm:text-sm text-gray-500">Upload your first carousel image above</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
               {images.map((image, index) => (
                 <div
                   key={image.id}
-                  className={`border-2 rounded-xl overflow-hidden transition-all ${
+                  className={`border-2 rounded-2xl overflow-hidden transition-all ${
                     image.is_active 
-                      ? 'border-green-500 shadow-lg shadow-green-100' 
-                      : 'border-gray-300 opacity-70'
+                      ? 'border-green-400 shadow-lg shadow-green-100' 
+                      : 'border-gray-300 opacity-60'
                   }`}
                 >
-                  {/* Image Display */}
-                  <div className="relative h-48 bg-gray-100">
+                  {/* Image Preview */}
+                  <div className="relative h-44 sm:h-48 bg-gray-100">
                     <img
                       src={image.image_data}
                       alt={image.image_name}
                       className="w-full h-full object-cover"
                     />
-                    <div className="absolute top-2 left-2 bg-black/80 text-white px-2.5 py-1 rounded-lg text-xs font-black">
+                    <div className="absolute top-2 left-2 bg-black/80 backdrop-blur-sm text-white px-2.5 py-1 rounded-lg text-xs font-black flex items-center gap-1.5">
+                      <TrendingUp size={12} />
                       #{image.image_order + 1}
                     </div>
                     {image.is_active && (
-                      <div className="absolute top-2 right-2 bg-green-500 text-white px-2.5 py-1 rounded-lg text-xs font-black flex items-center gap-1">
+                      <div className="absolute top-2 right-2 bg-green-500 text-white px-2.5 py-1 rounded-lg text-xs font-black flex items-center gap-1 shadow-lg">
                         <Eye size={12} />
                         LIVE
                       </div>
@@ -406,7 +433,7 @@ const ManageImages = () => {
                   </div>
 
                   {/* Controls */}
-                  <div className="p-3 bg-gray-50 space-y-2">
+                  <div className="p-3 bg-gradient-to-b from-white to-gray-50 space-y-2">
                     <p className="text-sm font-bold text-gray-900 truncate" title={image.image_name}>
                       {image.image_name}
                     </p>
@@ -415,21 +442,21 @@ const ManageImages = () => {
                     <div className="grid grid-cols-2 gap-2">
                       <button
                         onClick={() => toggleImageStatus(image.id, image.is_active)}
-                        className={`py-2.5 rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 transition touch-manipulation ${
+                        className={`py-2 rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 transition-all touch-manipulation ${
                           image.is_active
                             ? 'bg-green-100 text-green-700 hover:bg-green-200 active:bg-green-300'
                             : 'bg-gray-200 text-gray-600 hover:bg-gray-300 active:bg-gray-400'
                         }`}
                       >
-                        {image.is_active ? <Eye size={14} /> : <EyeOff size={14} />}
+                        {image.is_active ? <Eye size={14} strokeWidth={2.5} /> : <EyeOff size={14} strokeWidth={2.5} />}
                         {image.is_active ? 'Active' : 'Hidden'}
                       </button>
 
                       <button
                         onClick={() => deleteImage(image.id)}
-                        className="py-2.5 bg-red-100 text-red-600 hover:bg-red-200 active:bg-red-300 rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 transition touch-manipulation"
+                        className="py-2 bg-red-100 text-red-600 hover:bg-red-200 active:bg-red-300 rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 transition-all touch-manipulation"
                       >
-                        <Trash2 size={14} />
+                        <Trash2 size={14} strokeWidth={2.5} />
                         Delete
                       </button>
                     </div>
@@ -439,18 +466,18 @@ const ManageImages = () => {
                       <button
                         onClick={() => changeOrder(image.id, image.image_order, 'up')}
                         disabled={index === 0}
-                        className="flex-1 py-2.5 bg-blue-100 text-blue-700 hover:bg-blue-200 active:bg-blue-300 rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 disabled:opacity-30 disabled:cursor-not-allowed transition touch-manipulation"
+                        className="flex-1 py-2 bg-blue-100 text-blue-700 hover:bg-blue-200 active:bg-blue-300 rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 disabled:opacity-30 disabled:cursor-not-allowed transition-all touch-manipulation"
                       >
-                        <ArrowUp size={14} />
-                        Move Up
+                        <ArrowUp size={14} strokeWidth={2.5} />
+                        Up
                       </button>
                       <button
                         onClick={() => changeOrder(image.id, image.image_order, 'down')}
                         disabled={index === images.length - 1}
-                        className="flex-1 py-2.5 bg-blue-100 text-blue-700 hover:bg-blue-200 active:bg-blue-300 rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 disabled:opacity-30 disabled:cursor-not-allowed transition touch-manipulation"
+                        className="flex-1 py-2 bg-blue-100 text-blue-700 hover:bg-blue-200 active:bg-blue-300 rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 disabled:opacity-30 disabled:cursor-not-allowed transition-all touch-manipulation"
                       >
-                        <ArrowDown size={14} />
-                        Move Down
+                        <ArrowDown size={14} strokeWidth={2.5} />
+                        Down
                       </button>
                     </div>
                   </div>
