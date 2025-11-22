@@ -32,13 +32,11 @@ export const useAuth = () => {
 // Auth Provider Component
 const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     // Check active session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
-      setLoading(false);
     });
 
     // Listen for auth changes (Google redirect callback)
@@ -64,7 +62,6 @@ const AuthProvider = ({ children }) => {
   const value = {
     user,
     signOut,
-    loading,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
@@ -89,10 +86,10 @@ function App() {
 
 // App Content with Auth Logic
 function AppContent({ isSidebarOpen, setIsSidebarOpen }) {
-  const { user, loading } = useAuth();
+  const { user } = useAuth();
   const [showAuth, setShowAuth] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
-  const [showTrackOrders, setShowTrackOrders] = useState(false); // ✅ Track Orders state
+  const [showTrackOrders, setShowTrackOrders] = useState(false);
 
   // Check if profile is completed for new users
   useEffect(() => {
@@ -125,26 +122,15 @@ function AppContent({ isSidebarOpen, setIsSidebarOpen }) {
   const handleLoginClick = () => {
     console.log('App: Opening GoogleAuth modal');
     setShowAuth(true);
-    setIsSidebarOpen(false); // Close sidebar if open
+    setIsSidebarOpen(false);
   };
 
-  // ✅ Handle Track Orders click
+  // Handle Track Orders click
   const handleTrackOrdersClick = () => {
     console.log('App: Opening Track Orders');
     setShowTrackOrders(true);
-    setIsSidebarOpen(false); // Close sidebar if open
+    setIsSidebarOpen(false);
   };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-amber-50 via-white to-orange-50">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-16 h-16 border-4 border-amber-600 border-t-transparent rounded-full animate-spin"></div>
-          <p className="text-amber-800 font-semibold">Loading SB Ghee...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-amber-50 via-white to-orange-50">
@@ -160,7 +146,7 @@ function AppContent({ isSidebarOpen, setIsSidebarOpen }) {
         isOpen={isSidebarOpen} 
         onClose={() => setIsSidebarOpen(false)}
         onLoginClick={handleLoginClick}
-        onTrackOrdersClick={handleTrackOrdersClick} // ✅ Pass track orders handler
+        onTrackOrdersClick={handleTrackOrdersClick}
       />
       
       <motion.main
@@ -175,7 +161,7 @@ function AppContent({ isSidebarOpen, setIsSidebarOpen }) {
           <Route path="/adminhu" element={<AdminPanel />} />
           <Route path="/update" element={<Products />} />
           <Route path="/order" element={<OrderPage />} />
-         <Route path="/manage" element={<ManageImages />} />
+          <Route path="/manage" element={<ManageImages />} />
         </Routes>
       </motion.main>
 
@@ -201,7 +187,7 @@ function AppContent({ isSidebarOpen, setIsSidebarOpen }) {
         />
       )}
 
-      {/* ✅ Track Orders Modal */}
+      {/* Track Orders Modal */}
       <TrackOrders
         isOpen={showTrackOrders}
         onClose={() => setShowTrackOrders(false)}
