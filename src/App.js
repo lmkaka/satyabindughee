@@ -2,6 +2,8 @@ import React, { useState, useEffect, createContext, useContext } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { supabase } from './supabaseClient';
+import ManageImages from './pages/ManageImages';
+import Hero from './components/Hero';
 import Navbar from './components/Navbar';
 import Sidebar from './components/Sidebar';
 import Home from './pages/Home';
@@ -173,6 +175,7 @@ function AppContent({ isSidebarOpen, setIsSidebarOpen }) {
           <Route path="/adminhu" element={<AdminPanel />} />
           <Route path="/update" element={<Products />} />
           <Route path="/order" element={<OrderPage />} />
+         <Route path="/manage" element={<ManageImages />} />
         </Routes>
       </motion.main>
 
