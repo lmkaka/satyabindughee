@@ -238,7 +238,6 @@ const Hero = () => {
 
         if (error) {
           console.error('Error fetching images:', error);
-          // Fallback to default images if database fetch fails
           setImages([
             'https://radarofc.onrender.com/1.jpg',
             'https://radarofc.onrender.com/2.jpg',
@@ -249,10 +248,8 @@ const Hero = () => {
             'https://radarofc.onrender.com/7.jpg',
           ]);
         } else if (data && data.length > 0) {
-          // Extract base64 image data from database
           setImages(data.map(img => img.image_data));
         } else {
-          // No images in database, use default fallback
           setImages([
             'https://radarofc.onrender.com/1.jpg',
             'https://radarofc.onrender.com/2.jpg',
@@ -261,7 +258,6 @@ const Hero = () => {
         }
       } catch (error) {
         console.error('Unexpected error:', error);
-        // Ultimate fallback
         setImages(['https://radarofc.onrender.com/1.jpg']);
       } finally {
         setLoadingImages(false);
@@ -271,7 +267,6 @@ const Hero = () => {
     fetchHeroImages();
   }, []);
 
-  // Preload images for smooth carousel
   useEffect(() => {
     if (images.length === 0 || loadingImages) return;
 
@@ -301,7 +296,6 @@ const Hero = () => {
     loadImages();
   }, [images, loadingImages]);
 
-  // Auto-slide carousel
   useEffect(() => {
     if (!imagesLoaded || images.length === 0) return;
     const interval = setInterval(() => {
@@ -603,9 +597,9 @@ const Hero = () => {
             </div>
           </div>
 
-          {/* Main Content Grid */}
-          <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
-            <div>
+          {/* Main Content - Full Width */}
+          <div className="max-w-4xl mx-auto">
+            <div className="text-center">
               <div className="inline-flex items-center gap-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white px-4 py-2 rounded-full text-sm font-bold mb-4 shadow-lg">
                 <Award size={16} />
                 #1 Premium Ghee Brand in Ranchi
@@ -618,12 +612,12 @@ const Hero = () => {
                 </span>
               </h1>
               
-              <p className="text-base sm:text-lg text-gray-700 mb-6 leading-relaxed max-w-xl">
+              <p className="text-base sm:text-lg text-gray-700 mb-6 leading-relaxed max-w-2xl mx-auto">
                 Experience the authentic taste of traditional ghee made with love using 
                 <strong className="text-orange-600 font-semibold"> time-honored methods</strong> passed down through generations.
               </p>
               
-              <div className="grid grid-cols-2 gap-3 mb-6">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6 max-w-3xl mx-auto">
                 {[
                   { icon: Shield, text: '100% Pure' },
                   { icon: Award, text: 'FSSAI Certified' },
@@ -642,7 +636,7 @@ const Hero = () => {
                 ))}
               </div>
 
-              <div className="flex flex-col sm:flex-row gap-3">
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
                 <button
                   onClick={handleShopNow}
                   className="bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 text-white px-6 sm:px-8 py-3.5 rounded-xl font-bold text-base shadow-xl hover:shadow-2xl transition-shadow flex items-center justify-center gap-2 group touch-manipulation"
@@ -660,8 +654,8 @@ const Hero = () => {
                 </button>
               </div>
             </div>
+          </div>
 
-    
           {/* Stats Section */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 mt-10 sm:mt-14 pt-8 sm:pt-10 border-t border-gray-200">
             {stats.map((stat, index) => (
