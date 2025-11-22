@@ -661,50 +661,7 @@ const Hero = () => {
               </div>
             </div>
 
-            <div className="relative">
-              <div className="bg-white/80 backdrop-blur-md rounded-3xl shadow-2xl p-5 sm:p-6">
-                <div className="relative w-full h-[350px] sm:h-[400px] bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl overflow-hidden mb-4">
-                  <img
-                    src="https://radarofc.onrender.com/sb1.jpg"
-                    alt="Premium SBGhee Jar"
-                    className="w-full h-full object-contain p-4"
-                    loading="eager"
-                  />
-                  <div className="absolute top-4 right-4 bg-red-500 text-white px-3 py-1.5 rounded-full text-sm font-bold shadow-lg">
-                    BESTSELLER
-                  </div>
-                </div>
-                
-                <div className="text-center">
-                  <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">Premium Pure Ghee</h3>
-                  <div className="flex items-center justify-center gap-2 text-gray-600 font-medium mb-3">
-                    <span className="text-sm">250 grams</span>
-                    <span className="w-1 h-1 bg-gray-400 rounded-full"></span>
-                    <div className="flex items-center gap-1">
-                      <Star size={14} className="text-yellow-500 fill-current" />
-                      <span className="text-sm">4.9</span>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center justify-center gap-3 flex-wrap mb-4">
-                    <span className="text-3xl font-bold text-gray-900">₹299</span>
-                    <span className="text-lg text-gray-500 line-through">₹349</span>
-                    <span className="bg-gradient-to-r from-red-500 to-orange-500 text-white px-3 py-1 rounded-lg text-sm font-bold">
-                      SAVE 15%
-                    </span>
-                  </div>
-                  
-                  <button
-                    onClick={handleOrderClick}
-                    className="w-full bg-gradient-to-r from-orange-500 to-amber-500 text-white px-6 py-3 rounded-xl font-bold text-base hover:shadow-xl transition-shadow touch-manipulation"
-                  >
-                    Quick Buy Now
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-
+    
           {/* Stats Section */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 mt-10 sm:mt-14 pt-8 sm:pt-10 border-t border-gray-200">
             {stats.map((stat, index) => (
