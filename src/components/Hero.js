@@ -211,17 +211,9 @@ const Hero = () => {
   const [imagesLoaded, setImagesLoaded] = useState(false);
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
   const [loadingProgress, setLoadingProgress] = useState(0);
+  const [images, setImages] = useState([]);
+  const [loadingImages, setLoadingImages] = useState(true);
   
-  const images = [
-    'https://radarofc.onrender.com/1.jpg',
-    'https://radarofc.onrender.com/2.jpg',
-    'https://radarofc.onrender.com/3.jpg',
-    'https://radarofc.onrender.com/4.jpg',
-    'https://radarofc.onrender.com/5.jpg',
-    'https://radarofc.onrender.com/6.jpg',
-    'https://radarofc.onrender.com/7.jpg',
-  ];
-
   const stats = [
     { number: '2k+', label: 'Happy Customers' },
     { number: '4.9★', label: 'Rating' },
@@ -233,7 +225,56 @@ const Hero = () => {
   const userPhone = user?.user_metadata?.phone || '';
   const userAddress = user?.user_metadata?.address || '';
 
+  // ✅ Fetch images from Supabase database
   useEffect(() => {
+    const fetchHeroImages = async () => {
+      setLoadingImages(true);
+      try {
+        const { data, error } = await supabase
+          .from('hero_images')
+          .select('*')
+          .eq('is_active', true)
+          .order('image_order', { ascending: true });
+
+        if (error) {
+          console.error('Error fetching images:', error);
+          // Fallback to default images if database fetch fails
+          setImages([
+            'https://radarofc.onrender.com/1.jpg',
+            'https://radarofc.onrender.com/2.jpg',
+            'https://radarofc.onrender.com/3.jpg',
+            'https://radarofc.onrender.com/4.jpg',
+            'https://radarofc.onrender.com/5.jpg',
+            'https://radarofc.onrender.com/6.jpg',
+            'https://radarofc.onrender.com/7.jpg',
+          ]);
+        } else if (data && data.length > 0) {
+          // Extract base64 image data from database
+          setImages(data.map(img => img.image_data));
+        } else {
+          // No images in database, use default fallback
+          setImages([
+            'https://radarofc.onrender.com/1.jpg',
+            'https://radarofc.onrender.com/2.jpg',
+            'https://radarofc.onrender.com/3.jpg',
+          ]);
+        }
+      } catch (error) {
+        console.error('Unexpected error:', error);
+        // Ultimate fallback
+        setImages(['https://radarofc.onrender.com/1.jpg']);
+      } finally {
+        setLoadingImages(false);
+      }
+    };
+
+    fetchHeroImages();
+  }, []);
+
+  // Preload images for smooth carousel
+  useEffect(() => {
+    if (images.length === 0 || loadingImages) return;
+
     const loadImages = async () => {
       let loaded = 0;
       const promises = images.map((src) => {
@@ -258,17 +299,17 @@ const Hero = () => {
     };
 
     loadImages();
-  }, []);
+  }, [images, loadingImages]);
 
+  // Auto-slide carousel
   useEffect(() => {
-    if (!imagesLoaded) return;
+    if (!imagesLoaded || images.length === 0) return;
     const interval = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % images.length);
     }, 3500);
     return () => clearInterval(interval);
   }, [images.length, imagesLoaded]);
 
-  // ✅ Opens /order in new tab
   const handleShopNow = useCallback(() => {
     window.open('/order', '_blank');
   }, []);
@@ -289,7 +330,6 @@ const Hero = () => {
     supabase.auth.getSession();
   };
 
-  // ✅ All order buttons open /order in new tab
   const handleOrderClick = () => {
     window.open('/order', '_blank');
   };
@@ -408,12 +448,14 @@ const Hero = () => {
           <div className="mb-6 sm:mb-10">
             <div className="relative max-w-5xl mx-auto">
               <div className="relative h-[280px] sm:h-[360px] md:h-[450px] lg:h-[520px] xl:h-[600px] bg-gradient-to-br from-orange-100 to-amber-100 rounded-2xl shadow-xl overflow-hidden">
-                {!imagesLoaded ? (
+                {!imagesLoaded || loadingImages ? (
                   <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-orange-50 to-amber-100">
                     <div className="flex flex-col items-center gap-4 w-full max-w-sm px-6">
                       <div className="w-16 h-16 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
                       <div className="text-center">
-                        <p className="text-orange-700 font-bold text-lg mb-1">Loading Images...</p>
+                        <p className="text-orange-700 font-bold text-lg mb-1">
+                          {loadingImages ? 'Fetching Images...' : 'Loading Images...'}
+                        </p>
                         <p className="text-orange-600 text-base font-semibold">{loadingProgress}%</p>
                       </div>
                       <div className="w-full h-2 bg-orange-200 rounded-full overflow-hidden">
@@ -424,27 +466,31 @@ const Hero = () => {
                       </div>
                     </div>
                   </div>
-                ) : (
+                ) : images.length > 0 ? (
                   <Slide src={images[currentSlide]} alt={`Premium Ghee ${currentSlide + 1}`} />
+                ) : (
+                  <div className="absolute inset-0 flex items-center justify-center bg-gray-200">
+                    <p className="text-gray-500 font-semibold">No images available</p>
+                  </div>
                 )}
 
                 <button
                   onClick={prevSlide}
-                  disabled={!imagesLoaded}
-                  className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 w-10 h-10 sm:w-12 sm:h-12 bg-white/95 hover:bg-white rounded-full shadow-xl flex items-center justify-center transition-all z-10 disabled:opacity-50"
+                  disabled={!imagesLoaded || images.length === 0}
+                  className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 w-10 h-10 sm:w-12 sm:h-12 bg-white/95 hover:bg-white rounded-full shadow-xl flex items-center justify-center transition-all z-10 disabled:opacity-50 touch-manipulation"
                 >
                   <ChevronLeft size={24} className="text-gray-800" strokeWidth={2.5} />
                 </button>
                 
                 <button
                   onClick={nextSlide}
-                  disabled={!imagesLoaded}
-                  className="absolute right-3 sm:right-4 top-1/2 -translate-y-1/2 w-10 h-10 sm:w-12 sm:h-12 bg-white/95 hover:bg-white rounded-full shadow-xl flex items-center justify-center transition-all z-10 disabled:opacity-50"
+                  disabled={!imagesLoaded || images.length === 0}
+                  className="absolute right-3 sm:right-4 top-1/2 -translate-y-1/2 w-10 h-10 sm:w-12 sm:h-12 bg-white/95 hover:bg-white rounded-full shadow-xl flex items-center justify-center transition-all z-10 disabled:opacity-50 touch-manipulation"
                 >
                   <ChevronRight size={24} className="text-gray-800" strokeWidth={2.5} />
                 </button>
 
-                {imagesLoaded && (
+                {imagesLoaded && images.length > 0 && (
                   <>
                     <div className="absolute bottom-4 sm:bottom-5 left-1/2 -translate-x-1/2 flex gap-2 z-10 bg-black/30 backdrop-blur-md px-3 py-2 rounded-full">
                       {images.map((_, index) => (
@@ -520,7 +566,7 @@ const Hero = () => {
 
                     <button
                       onClick={handleOrderClick}
-                      className="w-full bg-white text-green-600 py-3 sm:py-3.5 rounded-xl font-black text-sm sm:text-base hover:shadow-xl active:scale-95 transition-all flex items-center justify-center gap-2"
+                      className="w-full bg-white text-green-600 py-3 sm:py-3.5 rounded-xl font-black text-sm sm:text-base hover:shadow-xl active:scale-95 transition-all flex items-center justify-center gap-2 touch-manipulation"
                     >
                       Order with Confidence
                       <ArrowRight size={18} strokeWidth={3} />
@@ -599,7 +645,7 @@ const Hero = () => {
               <div className="flex flex-col sm:flex-row gap-3">
                 <button
                   onClick={handleShopNow}
-                  className="bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 text-white px-6 sm:px-8 py-3.5 rounded-xl font-bold text-base shadow-xl hover:shadow-2xl transition-shadow flex items-center justify-center gap-2 group"
+                  className="bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 text-white px-6 sm:px-8 py-3.5 rounded-xl font-bold text-base shadow-xl hover:shadow-2xl transition-shadow flex items-center justify-center gap-2 group touch-manipulation"
                 >
                   Shop Now
                   <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" strokeWidth={2.5} />
@@ -607,7 +653,7 @@ const Hero = () => {
                 
                 <button
                   onClick={handleWatchStory}
-                  className="border-2 border-orange-500 text-orange-600 px-6 sm:px-8 py-3.5 rounded-xl font-bold text-base hover:bg-orange-500 hover:text-white transition-colors flex items-center justify-center gap-2 bg-white/50"
+                  className="border-2 border-orange-500 text-orange-600 px-6 sm:px-8 py-3.5 rounded-xl font-bold text-base hover:bg-orange-500 hover:text-white transition-colors flex items-center justify-center gap-2 bg-white/50 touch-manipulation"
                 >
                   <Play size={20} strokeWidth={2.5} />
                   Watch Story
@@ -650,7 +696,7 @@ const Hero = () => {
                   
                   <button
                     onClick={handleOrderClick}
-                    className="w-full bg-gradient-to-r from-orange-500 to-amber-500 text-white px-6 py-3 rounded-xl font-bold text-base hover:shadow-xl transition-shadow"
+                    className="w-full bg-gradient-to-r from-orange-500 to-amber-500 text-white px-6 py-3 rounded-xl font-bold text-base hover:shadow-xl transition-shadow touch-manipulation"
                   >
                     Quick Buy Now
                   </button>
